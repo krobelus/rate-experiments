@@ -1,0 +1,7 @@
+#+OPTIONS: html-postamble:nil latex-images-centered:t
+
+This [[file:t/difference-accepted.csv][table]] shows the execution time of rate with and without reason deletions. Instances rejected by ~rate~ are left out since it doesn't make sense to compare performance for those. The table is sorted descendingly by the difference of ~rate time~ minus ~rate --skip-unit-deletions time~.
+
+#+begin_src sh :exports results
+cat t/difference-accepted.csv
+#+end_src

@@ -1,0 +1,120 @@
+T129.2.0	Riss7.1-fix@BVE_DRAT	110505	446.0	159.9
+
+#+begin_src sh :results raw
+      jq < uranus.json '.[] | select(.instance == "cms-scheel-md5-families-r24-c5-p6-11-15-16-19")
+      | .solvers[] | select(.solver == "Minisat-v2.2.0-106-ge2dd095@simp_proof")
+      | .checkers[] | select(.checker == "rate-d" or .checker == "drat-trim") '
+#+end_src
+
+#+RESULTS:
+{
+  "argv[0]": "tools/bin/rate",
+  "children": "0",
+  "version": "1.12",
+  "real time limit": "311040000",
+  "stats": {
+    "assignment-count": "                  5560757",
+    "deletions": "                         27863427",
+    "elapsed time": "1094 seconds",
+    "memory-db": "                         8646.49",
+    "memory-lemma-newly-marked-clauses": " 653.52",
+    "memory-lrat": "                       31.80",
+    "memory-proof": "                      1024.00",
+    "memory-rest": "                       0.00",
+    "memory-revisions": "                  2.72",
+    "memory-TOTAL": "                      10463.67",
+    "memory-watchlist-core": "             5.13"
+    "memory-watchlist-noncore": "          100.01",
+    "premise-clauses": "                   131267",
+    "proof-steps": "                       67108864",
+    "rat-introductions": "                 0",
+    "reason-deletions": "                  894",
+    "rup-introductions": "                 180493",
+    "skipped-deletion": "                  897",
+    "skipped-tautologies": "               2805",
+  },
+  "sample": "876.4 time, 1091.0 real, 7153.2",
+  "space": "23210.3",
+  "argv[1]": "-d",
+  "verified": "VERIFIED",
+  "main pid": "6645",
+  "time limit": "20000",
+  "solution": "VERIFIED",
+  "argv[3]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof.rate-d/proof.drat",
+  "status": "ok",
+  "result": "verified",
+  "argv[2]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof.rate-d/formula.cnf",
+  "start": "Wed Feb 13 00:52:13 2019",
+  "end": "Wed Feb 13 01:10:29 2019",
+  "time": "881.04",
+  "samples": "10960",
+  "argv[5]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof.rate-d/proof.lrat",
+  "space limit": "24000",
+  "host": "uranus",
+  "checker": "rate-d",
+  "real": "1097.00",
+  "argv[4]": "-L"
+}
+{
+  "argv[0]": "tools/bin/drat-trim",
+  "children": "0",
+  "version": "1.12",
+  "real time limit": "311040000",
+  "stats": {
+    "WARNING": "deleted clause on line 55462102 does not occur: [0] -27196 -27190 -27184 -8338 -8332 -8328 -429 -428 -427 -426 -425 -424 -423 -422 -421 -420 -419 -418 -417 -416 -415 -414 -413 -412 -411 -410 -409 -408 -407 -406 -405 -403 -402 -401 8327 8344 26878 27202 0",
+    "verification time": "2009.304 seconds"
+  },
+  "sample": "1554.8 time, 2010.6 real, 1506.4",
+  "space": "5067.2",
+  "argv[1]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof.drat-trim/formula.cnf",
+  "verified": "VERIFIED",
+  "main pid": "8279",
+  "time limit": "20000",
+  "solution": "VERIFIED",
+  "argv[3]": "-L",
+  "status": "ok",
+  "result": "verified",
+  "argv[2]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof.drat-trim/proof.drat",
+  "start": "Wed Feb 13 01:46:24 2019",
+  "end": "Wed Feb 13 02:19:54 2019",
+  "time": "1555.07",
+  "samples": "20103",
+  "space limit": "24000",
+  "host": "uranus",
+  "checker": "drat-trim",
+  "real": "2010.93",
+  "argv[4]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof.drat-trim/proof.lrat"
+}
+
+
+#+begin_src sh :results raw
+      jq < uranus.json '.[] | select(.instance == "cms-scheel-md5-families-r24-c5-p6-11-15-16-19")
+      | .solvers[] | select(.solver == "Minisat-v2.2.0-106-ge2dd095@simp_proof")
+      | del(.checkers[])'
+#+end_src
+
+#+RESULTS:
+{
+  "argv[0]": "./starexec_run_simp_proof",
+  "children": "34879",
+  "version": "1.12",
+  "real time limit": "311040000",
+  "sample": "3456.8 time, 3480.1 real, 282.6",
+  "space": "339.5",
+  "argv[1]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof/formula.cnf",
+  "main pid": "27827",
+  "time limit": "5000",
+  "solution": "UNSATISFIABLE",
+  "status": "ok",
+  "result": "0",
+  "argv[2]": "/files/00-DBAI/home/jaltmann/rate-experiments/staging/cms-scheel-md5-families-r24-c5-p6-11-15-16-19.Minisat-v2.2.0-106-ge2dd095@simp_proof",
+  "start": "Sat Feb  9 10:28:01 2019",
+  "end": "Sat Feb  9 11:26:09 2019",
+  "time": "3464.74",
+  "samples": "34879",
+  "checkers": [],
+  "space limit": "24000",
+  "solver": "Minisat-v2.2.0-106-ge2dd095@simp_proof",
+  "host": "uranus",
+  "real": "3488.12"
+}

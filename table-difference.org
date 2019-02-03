@@ -1,0 +1,10 @@
+#+OPTIONS: html-postamble:nil latex-images-centered:t
+
+This [[file:t/difference.csv][table]] shows the results of ~rate~ and ~rate --skip-unit-deletions~.
+
+#+begin_src sh :exports results
+cat t/difference.csv
+#+end_src
+
+#+RESULTS:
+

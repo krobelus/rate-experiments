@@ -1,0 +1,2 @@
+#!/bin/sh
+# mock executable to make acl2 build

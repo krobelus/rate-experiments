@@ -1,0 +1,10 @@
+#+OPTIONS: html-postamble:nil latex-images-centered:t
+
+This [[file:t/performance.csv][table]] shows the per-instance performance of the checkers.
+
+Columns suffixed ~-time~ show the execution time of a checker,
+the ones with ~-space~ give the memory usage.
+
+#+begin_src sh :exports results
+cat t/performance.csv
+#+end_src
