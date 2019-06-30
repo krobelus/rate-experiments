@@ -202,8 +202,9 @@ is removed from the trail.  However, if every literal in the cone is still
 implied after deleting a reason clause, then the deletion can be performed
 without loss of information.  We call this special case a *redundant reason
 deletion*, distinguishing it from a *reason deletion* where information is
-lost necessarily.  A more general term, *unit deletion*, comprises deletions
-of clauses where exactly one literal is satisfied.
+necessarily lost.  A more general term than both would *unit deletion*,
+comprising deletions of clauses where exactly one literal is satisfied
+and all other literals are falsified.
 
 DRAT Proofs
 -----------
@@ -318,19 +319,18 @@ propagation, so we use it in our implementation.
 
 - Resolution candidate caching / RAT run heuristic [@lammich2017efficient]:
 DRAT proofs tend to contain sequences of RAT lemmas with the same pivot, in
-which case they only compute the list of RAT candidates once per sequence
-and reuse it subsequently. We did not implement that because the number
-of RAT introductions in our benchmarks is negligible when compared to the
-number of RUP introductions.
+which case they only compute the list of RAT candidates once per sequence and
+reuse. We did not implement that because the number of RAT introductions in
+our benchmarks is negligible when compared to the number of RUP introductions.
 
 We also implement GRAT generation in our tool which. However, it seems that
 the `gratchk` tool is not designed to handle unit deletions (apparently they
 are ignored) so proofs with unit deletions will fail.
 
-`rupee`
--------
+`rupee` [^rupee]
+----------------
 
-This is the original implementation [^rupee] of the algorithm to handle
+This is the original implementation of the algorithm to handle
 reason deletions. We use exactly the same algorithm.  During our research we
 found an issue in the implementation which was fixed [^fix-revise-watches].
 We also use their representation of size-one clauses: they are padded
@@ -552,7 +552,7 @@ deletions.  We provide patches to prevent that for `MiniSat` version 2.2
 The patch for MiniSat is displayed below. Let us explain how it works.
 
 Used during the simplification phase, the method `Solver::removeSatisfied`
-takes a collection of clause references and removes all the ones that are
+takes a collection of clause references and removes the ones that are
 satisfied from the clause database while emitting a deletion in the DRAT
 output for those clauses at the same time.  Note that it is only called
 at decision level zero, which means that those clauses will be satisfied
