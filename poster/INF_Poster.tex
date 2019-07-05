@@ -47,14 +47,13 @@ and Efficient DRAT Proof Checking}
 
 \begin{frame}[fragile]
   \begin{columns}[t]
-    \begin{column}{.45\textwidth}
+    \begin{column}{.30\textwidth}
 
     \begin{block}{Block 1}
         \lipsum[1-1]
     \end{block}
-    \begin{block}{Block 2}
-        {\footnotesize
-            \begin{minted}[]{diff}
+    {\footnotesize
+        \begin{minted}[]{diff}
 diff --git a/minisat/core/Solver.cc b/minisat/core/Solver.cc
 index ddc3801..5941449 100644
 --- a/minisat/core/Solver.cc
@@ -70,19 +69,31 @@ index ddc3801..5941449 100644
 +                fprintf(output, "%i 0\n",
 +                        (var(unit) + 1) * (-2 * sign(unit) + 1));
 +            }
-             removeClause(cs[i]);
+         removeClause(cs[i]);
 -        else{
 +        } else{
-            \end{minted}
-        }
+        \end{minted}
+    }
+
+    \begin{block}{Block 2}
+        \lipsum[1-1]
     \end{block}
       
     \end{column}
-    \begin{column}{.45\textwidth}
+    \begin{column}{.30\textwidth}
+        SICK
+        \begin{block}{Block 2}
+            \lipsum[1-1]
+        \end{block}
+    \end{column}
+    \begin{column}{.30\textwidth}
+    \begin{block}{Block 3}
+        \lipsum[1-1]
+    \end{block}
     \begin{figure}
         \centering
         \caption{Distribution of Proof Checkers' runtime\label{fig:performance-6}}
-        \includegraphics[scale=2]{../p/performance-6.png}
+        \includegraphics[scale=1.5]{../p/performance-6.png}
     \end{figure}
     \begin{block}{Block 3}
         \lipsum[1-1]
