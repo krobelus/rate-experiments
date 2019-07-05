@@ -7,15 +7,15 @@ csl: ieee.csl
 
 ::: {.abstract}
 **Abstract:**
-Clausal proof format DRAT is the de facto standard way to certify SAT
-solvers' unsatisfiability results.  State-of-the-art DRAT checkers ignore
-deletions of unit clauses, which means that they are checking against a
-proof system that differs from the specification of DRAT.  We demonstrate
-that it is possible to implement a competitive checker that honors unit
-deletions at small runtime overhead compared to the total checking time.
-Many current proofs are incorrect under the DRAT specification, because
-they contain spurious unit deletions. We present patches for competitive SAT
-solvers to produce correct proofs with respect to the specification.
+Clausal proof format DRAT is the de facto standard way to certify SAT solvers'
+unsatisfiability results.  State-of-the-art DRAT checkers ignore deletions
+of unit clauses, which means that they are checking against a proof system
+that differs from the specification of DRAT.  We demonstrate that it is
+possible to implement a competitive checker that honors unit deletions at
+small runtime overhead compared to the total checking time.  Many SAT solvers
+produce proofs that are incorrect under the DRAT specification, because
+they contain spurious unit deletions. We present patches for competitive
+SAT solvers to produce correct proofs with respect to the specification.
 :::
 
 1. Introduction
@@ -31,12 +31,13 @@ certified with a proof of unsatisfiability given by the solver. A proof
 checker, a program independent of the solver, can verify such proofs.
 
 In SAT competitions, solvers are required to produce proofs in the DRAT
-format, A DRAT proof is a sequence of lemmas (clause introductions) and clause
-deletions.  One problem with such proofs is that they can grow very large.
-In order to counteract this, DRAT is already as space-efficient as possible,
-at the cost of proof checking runtime. The latter is also heavily optimized
-by including clause deletions for example [@Heule_2013]. Checking time
-can still take a similar amount as solving.
+format, A DRAT proof is a sequence of lemmas (clause introductions)
+and clause deletions.  One problem with such proofs is that they can
+grow very large.  In order to counteract this, the format is already as
+space-efficient as possible, at the cost of proof checking runtime. The
+latter is also heavily optimized by including clause deletions for example
+[@Heule_2013]. Nevertheless, checking a proof can still take a similar amount
+to solving the formula.
 
 Some solvers produce proofs containing some deletions of clauses even though
 the solver operates as though these clauses were not deleted.  To accomodate
@@ -46,8 +47,16 @@ specification of DRAT proofs [@rebola2018two].
 
 We refer to the original definition of the proof format as *specified* DRAT
 and to the one that is actually implemented by state-of-the-art checkers
-as *operational* DRAT [@rebola2018two].  Checking specified DRAT is quite a
-bit more complicated but there exists an efficient algorithm [@RebolaCruz2018].
+as *operational* DRAT [@rebola2018two]. Merely checking operational DRAT is
+sufficient for current use cases, provided the solver produces a proof that
+coincides with what it does internally, however, checking specified DRAT is
+required for verifying inprocessing steps that use unit deletions.
+
+Checking specified DRAT is quite a bit more complicated but there exists an
+efficient algorithm [@RebolaCruz2018].  Previous empirical results suggest
+that the class of proofs that today's solvers produce can be verified with a
+checker of either flavor exhibiting roughly the same time and memory usage. We
+provide more results to furhter solidify this hypothesis.
 
 To show the incorrectness of a proof, it suffices show that a single lemma in
 the proof cannot be inferred.  We use a modified version of the previously
