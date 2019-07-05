@@ -1,0 +1,103 @@
+% $Id: INF_Poster.tex 7714 2011-08-31 17:34:46Z tkren $
+%
+% TU Wien - Faculty of Informatics
+% poster template
+%
+% This template is using the beamer document class and beamerposter package, see
+% <http://www.ctan.org/tex-archive/macros/latex/contrib/beamer/>
+% <http://www.ctan.org/tex-archive/macros/latex/contrib/beamerposter/>
+% <http://www-i6.informatik.rwth-aachen.de/~dreuw/latexbeamerposter.php>
+%
+% For questions and comments send an email to
+% Thomas Krennwallner <tkren@kr.tuwien.ac.at>
+%
+
+\documentclass[final,hyperref={pdfpagelabels=true}]{beamer}
+
+\usepackage{TUINFPST}
+\usepackage{minted}
+% \usepackage{graphicx}
+\usepackage[export]{adjustbox}
+\usepackage{lipsum}
+
+\title[European Master's Program in Computational Logic]{Implementation of Complete
+and Efficient DRAT Proof Checking}
+\author[aclopte@gmail.com]{Johannes Altmanninger}
+\institute[]{%
+  Technische Universit{\"a}t Wien\\[0.25\baselineskip]
+  Institute of Logic and Computation\\[0.25\baselineskip]
+  Arbeitsbereich: Formal Methods in Systems Engineering\\[0.25\baselineskip]
+  Betreuer: Associate Prof. Dipl.-Ing. D.Phil. Georg Weissenbacher
+}
+\titlegraphic{\adjincludegraphics[height=52mm,trim={0 0 {.37\width} 0},clip]{forsyte.png}}
+\date[\today]{\today}
+\subject{epilog}
+\keywords{SAT solving, proof systems, implementation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Display a grid to help align images 
+% \beamertemplategridbackground[1cm]
+
+% for crop marks, uncomment the following line
+% \usepackage[cross,width=88truecm,height=123truecm,center]{crop}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{frame}[fragile]
+  \begin{columns}[t]
+    \begin{column}{.45\textwidth}
+
+    \begin{block}{Block 1}
+        \lipsum[1-1]
+    \end{block}
+    \begin{block}{Block 2}
+        {\footnotesize
+            \begin{minted}[]{diff}
+diff --git a/minisat/core/Solver.cc b/minisat/core/Solver.cc
+index ddc3801..5941449 100644
+--- a/minisat/core/Solver.cc
++++ b/minisat/core/Solver.cc
+@@ -632,9 +632,13 @@ void Solver::removeSatisfied(vec<CRef>& cs)
+     int i, j;
+     for (i = j = 0; i < cs.size(); i++){
+         Clause& c = ca[cs[i]];
+-        if (satisfied(c))
++        if (satisfied(c)) {
++            if (output != NULL && locked(c)) {
++                Lit unit = c[0];
++                fprintf(output, "%i 0\n",
++                        (var(unit) + 1) * (-2 * sign(unit) + 1));
++            }
+             removeClause(cs[i]);
+-        else{
++        } else{
+            \end{minted}
+        }
+    \end{block}
+      
+    \end{column}
+    \begin{column}{.45\textwidth}
+    \begin{figure}
+        \centering
+        \caption{Distribution of Proof Checkers' runtime\label{fig:performance-6}}
+        \includegraphics[scale=2]{../p/performance-6.png}
+    \end{figure}
+    \begin{block}{Block 3}
+        \lipsum[1-1]
+    \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}
+
+%%% Local Variables:
+%%% TeX-PDF-mode: t
+%%% TeX-debug-bad-boxes: t
+%%% TeX-master: t
+%%% TeX-parse-self: t
+%%% TeX-auto-save: t
+%%% reftex-plug-into-AUCTeX: t
+%%% End:

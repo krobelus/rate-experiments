@@ -22,7 +22,7 @@
 /tools/.emacs
 /tools/.emacs.d
 /tools/sysstat*
-*.tex
 *.csv
 *.pdf
 README.html
+README.tex

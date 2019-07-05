@@ -1,6 +1,5 @@
 org_files := index.org table-difference.org table-difference-accepted.org table-performance.org
 html_files := $(patsubst %.org,%.html,$(org_files))
-pdf_file := index.pdf
 plots := p/plots
 tables := t/tables
 
@@ -41,10 +40,12 @@ README.html: README.md $(tables) $(plots)
 	$(pandoc) $< -o $@
 README.pdf: README.md $(tables) $(plots)
 	$(pandoc) $< -o $@
+README.tex: README.md $(tables) $(plots)
+	$(pandoc) $< -o $@
 
 # dist: all index.md
 # 	mv index.md README.md
-# 	git add README.md -f $(html_files) $(pdf_file) p/*.png t/*.csv
+# 	git add README.md -f $(html_files) README.pdf p/*.png t/*.csv
 # 	git commit -am 'add index.html and index.pdf'
 
 # results.json is checked in!
