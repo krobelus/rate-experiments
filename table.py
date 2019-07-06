@@ -23,7 +23,6 @@ def extract(cols, row):
 def pretty_column_title(col):
     if '-' not in col:
         return col
-    dash = col.index('-')
     for checker in checkers:
         if col.startswith(checker):
             return pretty_name(checker) + ' ' + col[len(checker) + 1:]

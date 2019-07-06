@@ -49,8 +49,9 @@ We refer to the original definition of the proof format as *specified* DRAT
 and to the one that is actually implemented by state-of-the-art checkers
 as *operational* DRAT [@rebola2018two]. Merely checking operational DRAT is
 sufficient for current use cases, provided the solver produces a proof that
-coincides with what it does internally, however, checking specified DRAT is
-required for verifying inprocessing steps that use unit deletions.
+coincides with what it does internally, however, checking specified DRAT
+can be required for verifying inprocessing steps that use unit deletions
+[@rebola2018two].
 
 Checking specified DRAT is quite a bit more complicated but there exists an
 efficient algorithm [@RebolaCruz2018].  Previous empirical results suggest
@@ -110,7 +111,7 @@ unassigned.  If there are some unassigned literals, then the assignment
 is partial.  If an assignment contains a literal in both polarities,
 this is a conflict, i.e., the assignment is inconsistent.
 
-SAT solving
+SAT Solving
 -----------
 
 SAT solvers work on formulas in conjunctive normal form (CNF), conjunctions of
@@ -329,7 +330,7 @@ This gives us confidence in the correctness of our implementation and allows
 for a comparison of our checker with `DRAT-trim` since they do roughly the
 same thing except for the unit deletions.
 
-GRAT toolchain
+GRAT Toolchain
 --------------
 
 More recently, Peter Lammich has published the GRAT toolchain
@@ -605,22 +606,21 @@ Features
 
 - output core lemmas as DIMACS or LRAT for accepted proofs
 - output certificate of unsatisfiability for rejected proofs, see [SICK format]
-- competitive performance due to double-sweep checking with
-  core-first unit propagation
-- option to ignore unit deletions (`--skip-unit-deletions`)
+- competitive performance due to backwards checking with core-first unit
+propagation
+- option to ignore unit deletions (flag `-d` or `--skip-unit-deletions`)
 - decompress input files (Gzip, Zstandard, Bzip2, XZ, LZ4)
-
 - The debug build comes with lots of assertions, including checks for
 arithmetic overflows and lossy narrowing conversions.
 
 We initially reserved 62 bits to identify clauses while `DRAT-trim` uses 30.
-Unfortunately, this caused issues with memory consumption because we need to
-encode clause hints in the LRAT proof which is larger than the input proof
-and needs to be kept in memory until the proof checking is complete. Future
-proof formats should allow checking without keeping the entire proof in
-memory, although backwards checking might make this difficult.  In order
-to make `rate` comparable to `DRAT-trim` in terms of memory consumption,
-we also use 30 bits for clause hints in the LRAT output.
+Unfortunately, this caused excess memory consumption because we need to encode
+clause hints in the LRAT proof which is much larger than the input proof and
+needs to be kept in memory until the proof checking is complete. Future proof
+formats should allow checking without keeping the entire proof in memory,
+although backwards checking might make this difficult.  In order to make
+`rate` comparable to `DRAT-trim` in terms of memory consumption, we also
+use 30 bits for clause hints in the LRAT output.
 
 7. Experimental Evaluation
 ==========================
@@ -632,13 +632,15 @@ experiments is available [^rate-experiments].
 Our experimental procedure is as follows:
 
 -   We randomly selected combinations of unsatisfiable instances and
-    solvers from the main track. Running all possible combinations would
-    take several CPU years in the worst case, but sampling seems to give
-    good results still.
+    solvers from the main track. Running all possible combinations would take
+    several CPU years in the worst case. Taking a sample of reasonable size
+    seems to give good results already. [Table 1](#summary_table) shows a
+    summary of how much of the available data we have analyzed.
+
 
 -   If a solver had timed out for a particular instance during the
-    competition, we skip that combination because we will most likely not
-    be able to produce a proof within the time limit.
+    competition, we skip that combination of solver + instance because we
+    expect a timeout.
 
 -   Firstly, the solver is run to create a proof, then all checkers are
     run. For `rate` and `DRAT-trim`, we verify the produced LRAT proof with
@@ -648,55 +650,120 @@ Our experimental procedure is as follows:
     time and 24 GB memory using runlim [^runlim]. For checking the timeout
     is 20000 seconds, which is also consistent with the competition.
 
--   Our benchmarking system has 32 cores, we used GNU parallel
-    [@Tange2018] to run that many jobs simultaneously. Note that this
-    parallelization slows down the solvers and checkers, most likely due to
-    increased memory pressure. However, we believe that it is still a just
-    comparison as the checkers seem to be affected equally. Some solvers
-    timed out due to this, so we have less data for difficult instances.
-
-[Table 2](#summary_table) shows a summary of how much of the available
-data we have analyzed.
+-   Since the machine we used for benchmarking has 32 cores, we used GNU
+    parallel [@Tange2018] to run that many jobs simultaneously. Note that
+    this parallelization slows down the solvers and checkers, most likely due
+    to increased memory pressure. However, we believe that it is still a just
+    comparison as the checkers seem to be affected equally. Some solvers timed
+    out (unlike during the competition), likely due to the high system load.
 
 ```{.table #summary_table file="t/summary.csv" caption="The extent of our analysis."}
 ```
 
-Specified vs. Operational DRAT
-------------------------------
+Comparison of Checkers
+----------------------
 
-As discovered previously [@RebolaCruz2018], many proofs are rejected under
-the semantics of specified DRAT. We believe that larger proofs have a higher
-chance of being rejected. In our set of benchmarks only around one third of
-the proofs were accepted by `rate` in the default configuration while
-all of them are accepted by `rate --skip-unit-deletions`.
+As discovered previously [@RebolaCruz2018], many current proofs are being
+rejected under the semantics of specified DRAT. We believe that larger
+proofs have a higher chance of being rejected (TODO back this up). In our
+set of benchmarks only around one third of the proofs were accepted by
+`rate` in the default configuration, while all of them are accepted by
+`rate --skip-unit-deletions`.
 
-For the proofs that are accepted by both, we compare their performance. A
-large number of reason deletions seems cause some overhead as
-observed in figure @fig:correlation-0. Looking at the [corresponding
-table](t/difference-accepted.csv), there are only a few instances with an
-excessive number of reason deletions. Some of those are being checked slower
-when performing reason deletions, however there are also instances where
-the opposite is true.
+As in [@RebolaCruz2018] we only compare the performance on proofs that
+were accepted by all checkers, because a rejection makes the checker exit early.
 
-![Overhead of `rate` versus `rate
---skip-unit-deletions`](p/correlation-0.png){#fig:correlation-0}
+- Please note that `rate -d` is equivalent to `rate --skip-unit-deletions`,
+standing for the executions of `rate` checking operational DRAT.
 
-Comparison to other checkers
-----------------------------
-
-Compared to other checkers, `rate` seems have a similar performance.
-
-We present performance data as reported by `runlim` --- time in seconds
+- We present performance data as reported by `runlim` --- time in seconds
 and memory usage in megabytes (2^20^ bytes).
+
+\iffalse
+TODO relabel?
+\fi
+\iffalse
 
 As can be seen in figure @fig:performance-6 and @fig:performance-7, there
 seems to be no significant difference in the distribution of runtime and
 memory usage between other state-of-the-art checkers and ours (with or
 without unit deletions).
 
-![runtime](p/performance-6.png){#fig:performance-6}
+! [runtime](p/performance-6.png){#fig:performance-6}
 
-![memory usage](p/performance-7.png){#fig:performance-7}
+! [memory usage](p/performance-7.png){#fig:performance-7}
+\fi
+
+
+Overall, the performance of the four checkers we analyze is very similar,
+as can be seen by the boxplots for runtime (figure @fig:box-time) and memory
+usage (figure @fig:box-space).
+
+In figure @fig:cactus-time and @fig:cactus-space we show the distribution of
+performances across the most difficult proof instances.  Those plot suggest
+that `gratgen` is slightly faster, and `DRAT-trim` is slightly slower than
+`rate`. Moreover `rate`, and `rate --skip-unit-deletions` show roughly the
+same distribution of performance.
+
+We take a closer look, comparing the performance of two checkers on each
+instance, see figures @fig:cross-rate-d-rate, @fig:cross-rate-d-gratgen and
+@fig:cross-rate-d-drat-trim.
+
+In figure @fig:cross-rate-d-rate we see that `rate` exhibits small differences
+in specified and operational model.  Figure @fig:cross-rate-d-gratgen shows
+that `gratgen` is faster than `rate` on almost all instances.  Similarly,
+figure @fig:cross-rate-d-drat-trim shows that `rate` is faster than `DRAT-trim`
+on most instances.
+
+Overhead of Reason Deletions
+----------------------------
+
+Figure @fig:correlation-reason-deletions-time-delta suggests that a
+large number of reason deletions brings about some runtime overhead in
+`rate` when checking specified DRAT as opposed to operational DRAT.
+Curiously, a significant overhead in memory usage seems to occur only
+on proofs with comparably few reason deletions, as illustrated by figure
+@fig:correlation-reason-deletions-space-delta.
+
+\iffalse
+For the proofs that are accepted by both, we compare their performance. 
+A
+large number of reason deletions seems cause some overhead as
+observed in figure @fig:correlation-0.
+Looking at the [corresponding
+table](t/difference-accepted.csv), there are only a few instances with an
+excessive number of reason deletions. Some of those are being checked slower
+when performing reason deletions, however there are also instances where
+the opposite is true.
+!
+[Overhead of `rate` versus `rate
+--skip-unit-deletions`](p/correlation-0.png){#fig:correlation-0}
+\fi
+
+![Boxplot of checker runtimes across all proofs](p/box-time.svg){#fig:box-time}
+
+![Boxplot of the checkers' memory usage across all proofs](p/box-space.svg){#fig:box-space}
+
+![Cactus plot showing the distribution of checker runtimes](p/cactus-time.svg){#fig:cactus-time}
+
+![Cactus plot showing the distribution of the checkers' memory usage](p/cactus-space.svg){#fig:cactus-space}
+
+![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `rate`.
+Each marker represents a proof instance.](p/cross-rate-d-rate.svg){#fig:cross-rate-d-rate}
+
+![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `gratgen`.
+Each marker represents a proof instance.](p/cross-rate-d-gratgen.svg){#fig:cross-rate-d-gratgen}
+
+![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `DRAT-trim`.
+Each marker represents a proof instance.](p/cross-rate-d-drat-trim.svg){#fig:cross-rate-d-drat-trim}
+
+![Correlation of the number of reason deletions and
+the absolute runtime overhead of checking specified
+DRAT.](p/correlation-reason-deletions-time-delta.svg){#fig:correlation-reason-deletions-time-delta}
+
+![Correlation of the number of reason deletions and the
+absolute overhead in terms of memory usage of checking specified
+DRAT.](p/correlation-reason-deletions-space-delta.svg){#fig:correlation-reason-deletions-space-delta}
 
 8. Conclusion
 =============

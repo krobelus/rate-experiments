@@ -210,7 +210,7 @@ def verified_by_rate_rate_d_reason_dels_above(i):
     def verified_by_rate_rate_d(row):
         'instances verified by rate and rate --skip-unit-deletsion'
         return (verified_by(('rate', 'rate-d'))(row)
-                and (float(row['rate-time']) - float(row['rate-d-time'])) > i)
+                and abs(float(row['rate-time']) - float(row['rate-d-time'])) > i)
     return verified_by_rate_rate_d
 
 
@@ -253,7 +253,7 @@ def plot_discrepancy():
 def plot_correlation_reason_deletions_overhead():
     uid = 0
     for baseline in 'rate-d', 'drat-trim':
-        for minimum_overhead in 0, 300:
+        for minimum_overhead in 0, 150, 300:
             for row in global_data:
                 try:
                     tmp = float(row['rate-time']) - \

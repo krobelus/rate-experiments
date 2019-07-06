@@ -24,5 +24,6 @@
 /tools/sysstat*
 *.csv
 *.pdf
+plots.html
 README.html
 README.tex

@@ -33,7 +33,28 @@ README.pdf: README.md $(tables) $(plots)
 README.tex: README.md $(tables) $(plots)
 	$(pandoc) $< -o $@
 
+results.csv: results.json csv.sh
+	./csv.sh < $< > $@
+
+$(plots): results.csv plots.ipynb
+	rm -rf p
+	mkdir p
+	jupyter nbconvert --execute plots.ipynb --stdout >/dev/null
+	touch $@
+
+plots.html: plots.ipynb
+	jupyter nbconvert $<
+
+$(tables): results.csv table.py
+	rm -rf t
+	mkdir t
+	./table.py t < $<
+	touch $@
+
 poster:
+	$(MAKE) -C $@
+
+tools:
 	$(MAKE) -C $@
 
 clean:
@@ -41,29 +62,11 @@ clean:
 	rm -f *.csv *.html *.pdf *.bbl *.tex *.blg *.fdb_latexmk *.fls *.toc
 	rm -f vgcore.* massif.out.* auto
 
-results.csv: results.json csv.sh
-	./csv.sh < $< > $@
-
-$(plots): results.csv plot.py
-	rm -rf p
-	mkdir p
-	./plot.py p < $<
-	touch $(plots)
-
-$(tables): results.csv table.py
-	rm -rf t
-	mkdir t
-	./table.py t < $<
-	touch $(tables)
-
-tools:
-	$(MAKE) -C $@
-
 format:
 	fd \.sh\$$ | parallel checkbashisms
 	fd \.py\$$ | parallel autopep8 --in-place --aggressive --aggressive
 
-.PHONY: hash-solved-instances poster
+.PHONY: hash-solved-instances tools poster
 hash-solved-instances:
 	@# ./hash-solved-instances.sh # check if there is new output
 
