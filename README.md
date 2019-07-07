@@ -132,22 +132,26 @@ for each assigned literal.  We call this data structure the trail.
 DPLL-style SAT solvers search through the space all possible assignments.
 They make assumptions, adding literals to the trail that might be part of
 a satisfying assignment.  The search space is greatly reduced by formula
-simplification, such as unit propagation which will be introduced in the
-next subsection.  Such simplifications prune assignments that are definitely
-unsatisfiable, by adding literals to the trail. These literals are said to
-be forced, because they, unlike assumptions, are necessarily satisfied in
-any model that extends the current trail.  If simplifications are done on a
-trail without any assumptions, the assignment is the set of top-level forced
-literals, the set of literals that are part of any model.  These are essential
-for a checker as we will see later.
+simplification, such as unit propagation which will be introduced in
+the next subsection.  Such simplifications prune assignments that are
+definitely unsatisfiable, by adding literals to the trail. These literals
+are said to be forced, because they, unlike assumptions, are necessarily
+satisfied in any model that extends the current trail.  If simplifications
+are done on a trail without any assumptions, the assignment is the set of
+top-level forced literals, the set of literals that are part of any model.
+These are essential for a checker as we will see later.  Once the set of
+top-level forced literals contains a conflict, the solver has determined
+unsatisfiability of the current formula and also the original formula
+given as input to the solver.
 
-Most modern SAT solvers implement Conflict Driven Clause Learning (CDCL) where
-they learn clauses based on conflicts stemming from assumptions that render
-the formula unsatisfiable.
-These clauses are added to the formula until a top-level conflict (without
-any assumptions) is derived eventually if the formula is unsatisfiable.
-Clauses that are not used to derive conflicts are deleted regularly to avoid
-a slowdown in unit propagation.
+Most modern SAT solvers implement Conflict Driven Clause Learning (CDCL).
+A conflict in the trail means that the current set of assumptions can not
+be part of any model. Therefore a subset of the assumptions is reverted
+and a *conflict clause* is added to the formula to prevent the solver from
+revisiting those ill-advised assumptions, effectively pruning the search space.
+As the number of clauses increases, so does the memory usage and the time
+spent on formula simplification. Because of this, learned clauses that are
+not considered useful enough, are regularly deleted from the formula.
 
 Unit Propagation
 ----------------
@@ -184,10 +188,10 @@ Clausal Proofs
 
 A formula in CNF is modeled as a multiset of clauses.  Each step in a
 clausal proof adds a clause to the current formula, or deletes one from it.
-A solver or checker maintains a a trail of literals that are forced by
-unit propagating in the accumulated formula.  The straightforward way to
-reproduce a proof of unsatisfiability is to perform proof steps, until the
-trail contains a conflict, which means that a top-level conflict was found.
+These steps should be exactly the clause additions and clause deletions that
+a solver performs.  As a result, a checker can reproduce the formula as well
+as the set of top-level forced literals at each step, and finally encounter
+a top-level conflict just like the solver did.
 
 Redundancy Properties
 ---------------------
@@ -195,23 +199,38 @@ Redundancy Properties
 A clause is redundant according to some criteria in Formula $F$ if it can
 be derived from the formula by a proof system associated with that criteria.
 
-A clause $C$ is RUP (reverse unit propagation) in formula $F$ if unit
-propagation in $F \cup \{ \{\overline{l}\} \,|\, l \in C \}$ leads to
-a conflict.
+We use three redundancy properties.
 
-A clause $C$ is a *resolution asymmetric tautologies* (RAT)
-[@inprocessingrules] on some literal $l \in C$ with respect to formula $F$
-whenever for all clauses $D \in F$ where $\overline{l} \in D$, the resolvent
-$C \cup (D \setminus \{\overline{l}\})$ is RUP in $F$. We call $D$ the
-resolution candidate.
+1. Subsumption
+
+    A clause $C$ is *subsumed* by $D$ if $D \subseteq C$.
+
+2. RUP:
+
+    A clause $C$ is RUP (reverse unit propagation) in formula $F$ if unit
+    propagation in $F \cup \{ \{\overline{l}\} \,|\, l \in C \}$ leads to
+    a conflict.
+
+
+3. RAT:
+
+    The resolution rule states that for literal $l$ and clauses $C$ and $D$
+    where $l \in C$ and $\overline{l} \in D$, the conjunct of $C$ and $D$ implies
+    $(C \setminus \{l\}) \cup (D \setminus \{\overline{l}\})$. The
+    derived clause is called the *resolvent on $l$ of $C$ and $D$*. $D$ is called
+    a *resolution candidate* for $C$.
+
+    A clause $C$ is a *resolution asymmetric tautologies* (RAT)
+    [@inprocessingrules] on some literal $l \in C$ with respect to formula
+    $F$ whenever for all clauses $D \in F$ where $\overline{l} \in D$,
+    the resolvent on $l$ of $C$ and $D$ is RUP in $F$.
 
 Deletions
 ---------
 
-Resolution refutations are exponential in the size of the formula, as are DRAT
-proofs. To substantially reduce checking efforts, clause deletion information
-has been added to proof formats [@Heule_2014].  Clauses that are subsumed
-by some other clause can be safely deleted without losing information.
+DRAT proofs are exponential in the size of the formula.  To substantially
+reduce checking efforts, clause deletion information has been added to proof
+formats [@Heule_2014].
 
 DRAT Proofs
 -----------
@@ -566,8 +585,9 @@ Explanation
    - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
    The pivot needs to be the first literal in the lemma.
 - `proof_step` specifies the proof step that failed, starting at one.
-  In case of a textual proof this corresponds to the line number of the
-  introduction instruction that failed.
+  For the remainder of this section, let the lemma denote the clause that is
+  introduced by the referenced proof step.  In case of a textual proof this
+  corresponds to the line number of the introduction instruction that failed.
 - `natural_model` gives the partial model or trail before
   checking this proof step, obtained by exhaustively propagating units
   in the accumulated formula. This is included to avoid having to perform
@@ -575,14 +595,16 @@ Explanation
 
 Each witness is a counterexample to some redundancy check.
 
-- `failing-clause`: A clause in the formula. For RAT variants this is the
-  resolution candidate where RUP failed to produce a conflict.
+- `failing-clause`: A clause in the formula, which is a resolution candidate
+  for the lemma.  This means that RUP of the resolvent on the pivot literal
+  of the lemma and the failing clause.
 - `failing-model`: The literals that were added to the natural model (trail)
-  when performing the redundancy check. When checking for RAT this is the
-  set of literals that are propagated along the reverse resolvent.
-- `pivot`: This specifies the pivot that was used for this witness.
+  when performing the failed redundancy check.
+- `pivot`: This specifies the pivot literal.
 
-Note that if the failed lemma is the empty clause, no witness is needed.
+Note that if the lemma is the empty clause, no witness is needed.
+This corresponds to a proof claiming an empty clause when there is no
+top-level conflict.
 
 Semantics
 ---------
@@ -601,7 +623,7 @@ match the literals in the failing lemma.
 6. For each witness, let the $m_f$ be the union of natural model and failing model.
     1. The failing clause is in the formula.
     2. $m_f$ is consistent.
-    3. $m_f$ contains the reverse units from the resolvent of the .
+    3. $m_f$ contains the reverse units from the resolvent of the lemma and the failing clause.
     4. $m_f$ contains no clause that is unit under $m_f$ and not already in $m_f$.
 
 Contribution
@@ -630,12 +652,12 @@ arithmetic overflows and lossy narrowing conversions.
 
 We initially reserved 62 bits to identify clauses while `DRAT-trim` uses 30.
 Unfortunately, this caused excess memory consumption because we need to encode
-clause hints in the LRAT proof which is much larger than the input proof and
-needs to be kept in memory until the proof checking is complete. Future proof
-formats should allow checking without keeping the entire proof in memory,
-although backwards checking might make this difficult.  In order to make
-`rate` comparable to `DRAT-trim` in terms of memory consumption, we also
-use 30 bits for clause hints in the LRAT output.
+clause hints in the LRAT proof, which is much larger than the input DRAT proof,
+and needs to be kept in memory until the proof checking is complete. Future
+proof formats should allow checking without keeping the entire proof in
+memory, although backwards checking might make this difficult.  In order
+to make `rate` comparable to `DRAT-trim` in terms of memory consumption,
+we also use 30 bits for clause hints in the LRAT output.
 
 7. Experimental Evaluation
 ==========================
@@ -661,7 +683,7 @@ Our experimental procedure is as follows:
     run. For `rate` and `DRAT-trim`, we verify the produced LRAT proof with
     the verified checker [^acl2].
 
--   We used the same limits as in the SAT competition - 5000 seconds CPU
+-   We used the same limits as in the SAT competition --- 5000 seconds CPU
     time and 24 GB memory using runlim [^runlim]. For checking the timeout
     is 20000 seconds, which is also consistent with the competition.
 
@@ -679,11 +701,9 @@ Comparison of Checkers
 ----------------------
 
 As discovered previously [@RebolaCruz2018], many current proofs are being
-rejected under the semantics of specified DRAT. We believe that larger
-proofs have a higher chance of being rejected (TODO back this up). In our
-set of benchmarks only around one third of the proofs were accepted by
-`rate` in the default configuration, while all of them are accepted by
-`rate --skip-unit-deletions`.
+rejected under the semantics of specified DRAT. In our set of benchmarks
+only around one third of the proofs were accepted by `rate` in the default
+configuration, while all of them are accepted by `rate --skip-unit-deletions`.
 
 As in [@RebolaCruz2018] we only compare the performance on proofs that
 were accepted by all checkers, because a rejection makes the checker exit early.
