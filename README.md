@@ -639,7 +639,7 @@ Contribution
 
 Our contribution consists of adding support for proof format
 `DRAT-arbitrary-pivot` which requires multiple witnesses, and the usage
-of TOML[^toml].
+of TOML.
 
 6. Checker Implementation
 =========================
