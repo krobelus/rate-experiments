@@ -156,19 +156,21 @@ not considered useful enough, are regularly deleted from the formula.
 Unit Propagation
 ----------------
 
-A *unit clause* has only falsified literals except for its single non-falsified
-*unit literal*.
+Given an assignment, a *unit clause* contains only falsified literals except
+for a single non-falsified *unit literal*.
 
-If a formula contains a unit clause, any model must contain the unit literal.
-Then a solver can perform unit propagation add the unit to the trail, discard
-any clause containing it (because they will be satisfied by the unit),
-and remove any of its negations from the remaining clauses.  The last step
-may induce new unit clauses and thus trigger further propagation. A conflict
-arises as soon as two literals of opposing polarity are assigned which shows
-that the formula is unsatisfiable. A solver (or checker) records the clause that
-was unit for each literal in the trail as the *reason* for that literal.
+At any point during a solver's search, if formula contains a unit clause, any
+model extending the current trail must contain the unit literal, therefore it
+is added as a forced literal. Everytime a literal is added to the trail, the
+formula will be simplified by propagating that literal: any clause containing
+the literal is discarded because they will be satisfied by it, and any of the
+literal's negations are removed from the remaining clauses.  The latter step
+may spawn new unit clauses and thus trigger further propagation. 
 
-The two-watched-literal scheme [@Moskewicz:2001:CEE:378239.379017] is used
+As assumptions need to be undone, the implementation does not actually delete
+clauses and literals, but merely update the trail is updated and scan the
+formula for new units.  Used by virtually all competitve solvers and checkers,
+the two-watched-literal scheme [@Moskewicz:2001:CEE:378239.379017] is used
 to keep track of which clauses can trigger propagation . It consists of a
 watchlist for each literal, which is an sequence of clause references. All the
 clauses in the watchlist of some literal said to be *watched by* that literal.
@@ -178,6 +180,12 @@ look at the watches given Invariant 1 from [@RebolaCruz2018] is maintained.
 
 **Invariant 1.** If a clause is watched on literals $l$ and $k$, and the
 current trail $I$ falsifies $l$, then $I$ satisfies $k$.
+
+In particular, when literal $l$ is assigned, it is propagated by only
+scanning the watchlist of $\overline{l}$, i.e. clauses that are watched on
+$\overline{l}$. For each clause, the solver attempts to restore Invariant 1,
+if necessary after the falsification of watch $\overline{l}$.  If this is
+not possible then the clause is unit and will be propagated subsequently.
 
 Note that, as in [@RebolaCruz2018], clauses of size one are extended by a
 single literal $\overline{\top}$ to make the manipulations of watches work
@@ -471,12 +479,12 @@ do not require this workaround of ignoring unit deletions when checking.
 
 1. Do not remove locked clauses during simplification.
 
-2. Before to removing locked clauses, emit the corresponding propagated literal
-as addition in the DRAT proof.
-Suggested by Mate Soos[^suggestion-add-units], this option is also the
-preferred one to two other solver authors[^mergesat-pr] [^varisat-pr].
-Additionally, this is implemented in `CaDiCaL`[^cadical] for initial
-simplification of the formula.
+2. Before to removing locked clauses, emit the corresponding
+propagated literal as addition in the DRAT proof.  Suggested by Mate
+Soos[^suggestion-add-units], this option is also the preferred one to the
+authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].  Additionally,
+this is implemented in `CaDiCaL`[^cadical] for initial simplification of
+the formula.
 
 We provide patches implementing these for `MiniSat` version 2.2
 (1.  [^patch-MiniSat-keep-locked-clauses] and 2.[^patch-MiniSat]),
