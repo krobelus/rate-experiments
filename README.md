@@ -7,15 +7,15 @@ csl: ieee.csl
 
 ::: {.abstract}
 **Abstract:**
-Clausal proof format DRAT is the de facto standard way to certify SAT solvers'
-unsatisfiability results.  State-of-the-art DRAT checkers ignore deletions
-of unit clauses, which means that they are checking against a proof system
-that differs from the specification of DRAT.  We demonstrate that it is
-possible to implement a competitive checker that honors unit deletions at
-small runtime overhead compared to the total checking time.  Many SAT solvers
-produce proofs that are incorrect under the DRAT specification, because
-they contain spurious unit deletions. We present patches for competitive
-SAT solvers to produce correct proofs with respect to the specification.
+The clausal proof format DRAT is the de facto standard way to certify SAT
+solvers' unsatisfiability results.  State-of-the-art DRAT checkers ignore
+deletions of unit clauses, which means that they are checking against a
+proof system that differs from the specification of DRAT.  We demonstrate
+that it is possible to implement a competitive checker that honors unit
+deletions at small amortized costs.  Many SAT solvers produce proofs that
+are incorrect under the DRAT specification, because they contain spurious
+unit deletions. We present patches for competitive SAT solvers to produce
+correct proofs with respect to the specification.
 :::
 
 1. Introduction
@@ -31,13 +31,13 @@ certified with a proof of unsatisfiability given by the solver. A proof
 checker, a program independent of the solver, can verify such proofs.
 
 In SAT competitions, solvers are required to produce proofs in the DRAT
-format, A DRAT proof is a sequence of lemmas (clause introductions)
-and clause deletions.  One problem with such proofs is that they can
-grow very large.  In order to counteract this, the format is already as
-space-efficient as possible, at the cost of proof checking runtime. The
-latter is also heavily optimized by including clause deletions for example
-[@Heule_2013]. Nevertheless, checking a proof can still take a similar amount
-to solving the formula.
+format, A DRAT proof is a sequence of lemmas (clause introductions) and clause
+deletions.  One problem with such proofs is that they can grow very large.
+In order to counteract this, the format is already as space-efficient as
+possible, at the cost of proof checking runtime. A measure that was taken
+to decrease checking time was the includion of deletion information in
+proofs[@Heule_2013]. Nevertheless, checking a proof can still take a similar
+amount to solving the formula.
 
 Some solvers produce proofs containing some deletions of clauses even though
 the solver operates as though these clauses were not deleted.  To accomodate
@@ -57,7 +57,9 @@ Checking specified DRAT is quite a bit more complicated but there exists an
 efficient algorithm [@RebolaCruz2018].  Previous empirical results suggest
 that the class of proofs that today's solvers produce can be verified with a
 checker of either flavor exhibiting roughly the same time and memory usage. We
-provide more results to furhter solidify this hypothesis.
+provide more detailed results, showing that on average this is true and that
+a high number of unit deletions tends to increase (and sometimes decrease)
+checking costs for specified DRAT compared operational DRAT.
 
 To show the incorrectness of a proof, it suffices show that a single lemma in
 the proof cannot be inferred.  We use a modified version of the previously
@@ -66,13 +68,13 @@ why a lemma cannot be derived.  This certificate can be used to verify the
 incorrectness of the proof efficiently and help developers find bugs in
 proof generation procedures.
 
-There are three distinct contributions in this work:
+To sum up, there are three distinct contributions in this work:
 
 1. We indicate why checkers ignore certain deletions and provide patches
 for solvers to make them generate proofs without spurious deletions, that
 are therefore correct under either flavor of DRAT.
 
-2. Our extension to the SICK certificate format is present.
+2. Our extension to the SICK certificate format is introduced.
 
 3. We present the implementation of our checker for specified DRAT
 that includes the most important optimizations present in other checkers.
@@ -98,10 +100,10 @@ on [future work][9. Future Work] in the area of proof checking.
 Notation
 --------
 
-A literal is a variable like $x$, or a negation of a variable, denoted
-by $\overline{x}$. A conjunction of literals, or clause is denoted by
-juxtaposition of the conjuncts, e.g. we write $xy\overline{z}$ for $x \lor
-y \lor \overline{z}$.
+A literal is a propositional variable, like $x$, or a negation of a variable,
+denoted by $\overline{x}$. A clause is a disjunction of literals and is
+denoted by juxtaposition of the disjuncts, e.g. we write $xy\overline{z}$
+for $x \lor y \lor \overline{z}$.
 
 An assignment is a set of literals. All literals in an assignment are
 considered to be satisified by that assignment.  Conversely, the negations
@@ -113,28 +115,35 @@ this is a conflict, i.e., the assignment is inconsistent.
 SAT Solving
 -----------
 
-SAT solvers work on formulas in conjunctive normal form (CNF), conjunctions of
-clauses, where a clause is a disjunction of literals.  A clause is satisfied
-by $I$ if any one literal in the clause is satisfied by $I$.  A CNF formula
-is satisified by an assignment $I$ if each of its clauses is satisfied by $I$.
-An assignment that satisfies a formula is called a model for that formula.
+SAT solvers work on formulas in conjunctive normal form (CNF), conjunctions
+of clauses.  A clause is satisfied by an assignment $I$ if any one literal in
+the clause is satisfied by $I$.  A CNF formula is satisified by $I$ if each
+of its clauses is satisfied by $I$.  An assignment that satisfies a formula
+is called a model for that formula.
 
 A formula is satisfiable if there exists a model for it.  A SAT solver takes
 as input a formula and finds a single model if the formula is satisfiable.
 Otherwise, the solver can provide a proof that the formula is unsatisfiable.
 
-While searching for a model, a solver builds up a (partial) assignment which
-we usually call trail. Note that it includes the order in which the literals
-where added.
+While searching for a model, a solver builds up a (partial) assignment and
+records a order in which the literals where assigned and *reason clause*
+for each assigned literal.  We call this data structure the trail.
 
-DPLL-style SAT solvers alternate between simplifying the formula and adding
-assumptions to the assignment when the formula cannot be simplified further.
-For checking of proofs of unsatisfiability we need only consider the
-assignments at decision level zero, that is, literals that were assigned
-because of simplification of the formula without assumptions.
+DPLL-style SAT solvers search through the space all possible assignments.
+They make assumptions, adding literals to the trail that might be part of
+a satisfying assignment.  The search space is greatly reduced by formula
+simplification, such as unit propagation which will be introduced in the
+next subsection.  Such simplifications prune assignments that are definitely
+unsatisfiable, by adding literals to the trail. These literals are said to
+be forced, because they, unlike assumptions, are necessarily satisfied in
+any model that extends the current trail.  If simplifications are done on a
+trail without any assumptions, the assignment is the set of top-level forced
+literals, the set of literals that are part of any model.  These are essential
+for a checker as we will see later.
 
 Most modern SAT solvers implement Conflict Driven Clause Learning (CDCL) where
-they learn clauses based on conflicts stemming from unsuccessful assumptions.
+they learn clauses based on conflicts stemming from assumptions that render
+the formula unsatisfiable.
 These clauses are added to the formula until a top-level conflict (without
 any assumptions) is derived eventually if the formula is unsatisfiable.
 Clauses that are not used to derive conflicts are deleted regularly to avoid
@@ -457,8 +466,8 @@ and the winner of the main track of the 2018 SAT competition
 2.[^patch-MapleLCMDistChronoBT]).
 
 The same methods can be applied easily to other `MiniSat`-based solvers.
-To demonstrate its simplicity, the patch implementing the second variant
-for `MiniSat` is displayed below.
+As it is very small, the patch implementing the second variant for `MiniSat`
+is displayed below.
 
 ```diff
 From 15d7560d6c340a4e8d93cb7469fe976cc43690da Mon Sep 17 00:00:00 2001
