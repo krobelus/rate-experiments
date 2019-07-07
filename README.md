@@ -7,15 +7,14 @@ csl: ieee.csl
 
 ::: {.abstract}
 **Abstract:**
-The clausal proof format DRAT is the de facto standard way to certify SAT
-solvers' unsatisfiability results.  State-of-the-art DRAT checkers ignore
-deletions of unit clauses, which means that they are checking against a
-proof system that differs from the specification of DRAT.  We demonstrate
-that it is possible to implement a competitive checker that honors unit
-deletions at small amortized costs.  Many SAT solvers produce proofs that
-are incorrect under the DRAT specification, because they contain spurious
-unit deletions. We present patches for competitive SAT solvers to produce
-correct proofs with respect to the specification.
+Clausal proof format DRAT is the de facto standard way to certify SAT solvers'
+unsatisfiability results.  State-of-the-art DRAT checkers ignore deletions of
+unit clauses, which means that they are checking against a proof system that
+differs from the specification of DRAT.  We demonstrate that it is possible to
+implement a competitive checker that honors unit deletions.  Many SAT solvers
+produce proofs that are incorrect under the DRAT specification, because
+they contain spurious unit deletions. We present patches for competitive
+SAT solvers to produce correct proofs with respect to the specification.
 :::
 
 1. Introduction
@@ -196,7 +195,7 @@ Clausal Proofs
 
 A formula in CNF is modeled as a multiset of clauses.  Each step in a
 clausal proof adds a clause to the current formula, or deletes one from it.
-These steps should be exactly the clause additions and clause deletions that
+These steps should be exactly the clause introductions and clause deletions that
 a solver performs.  As a result, a checker can reproduce the formula as well
 as the set of top-level forced literals at each step, and finally encounter
 a top-level conflict just like the solver did.
@@ -207,38 +206,34 @@ Redundancy Properties
 A clause is redundant according to some criteria in Formula $F$ if it can
 be derived from the formula by a proof system associated with that criteria.
 
-We use three redundancy properties.
+Each lemma in a clausal proof must be redundant according to the proof's
+notion of redundancy.
+\iffalse
+not necessarily a logical consequence of the formula [@philipp_rebola_unsatproofs]
+\fi
 
-1. Subsumption
-
-    A clause $C$ is *subsumed* by $D$ if $D \subseteq C$.
-
-2. RUP:
-
-    A clause $C$ is RUP (reverse unit propagation) in formula $F$ if unit
-    propagation in $F \cup \{ \{\overline{l}\} \,|\, l \in C \}$ leads to
-    a conflict.
+**Redundancy Property RUP:** a clause $C$ is RUP (reverse unit propagation)
+in formula $F$ if unit propagation in $F \cup \{ \{\overline{l}\} \,|\,
+l \in C \}$ leads to a conflict.
 
 
-3. RAT:
+The resolution rule states that for literal $l$ and clauses $C$ and $D$
+where $l \in C$ and $\overline{l} \in D$, the conjunct of $C$ and $D$ implies
+$(C \setminus \{l\}) \cup (D \setminus \{\overline{l}\})$. The
+derived clause is called the *resolvent on $l$ of $C$ and $D$*. $D$ is called
+a *resolution candidate* for $C$.
 
-    The resolution rule states that for literal $l$ and clauses $C$ and $D$
-    where $l \in C$ and $\overline{l} \in D$, the conjunct of $C$ and $D$ implies
-    $(C \setminus \{l\}) \cup (D \setminus \{\overline{l}\})$. The
-    derived clause is called the *resolvent on $l$ of $C$ and $D$*. $D$ is called
-    a *resolution candidate* for $C$.
-
-    A clause $C$ is a *resolution asymmetric tautologies* (RAT)
-    [@inprocessingrules] on some literal $l \in C$ with respect to formula
-    $F$ whenever for all clauses $D \in F$ where $\overline{l} \in D$,
-    the resolvent on $l$ of $C$ and $D$ is RUP in $F$.
+**Redundancy Property RAT:** a clause $C$ is a *resolution asymmetric
+tautologies* (RAT) [@inprocessingrules] on some literal $l \in C$ with respect
+to formula $F$ whenever for all clauses $D \in F$ where $\overline{l} \in D$,
+the resolvent on $l$ of $C$ and $D$ is RUP in $F$.
 
 Deletions
 ---------
 
-DRAT proofs are exponential in the size of the formula.  To substantially
-reduce checking efforts, clause deletion information has been added to proof
-formats [@Heule_2014].
+Proofs based on the resolution rule are exponential in the size of the formula,
+as are ones based on RUP or RAT.  To substantially reduce checking efforts,
+clause deletion information has been added to proof formats [@Heule_2014].
 
 DRAT Proofs
 -----------
@@ -252,6 +247,10 @@ A DRAT (*delete resolution asymmetric tautology*) proof is a clausal proof
 with deletions where every lemma is RAT.  Given that a solver emits all
 learned clauses and clause deletions in the DRAT proof, the checker can
 reproduce the exact same formula that the solver was working on.
+
+While deletions were added to proofs to optimize checking runtime, they
+can have also be required to make an inference due to RAT non-monotonic
+[@philipp_rebola_unsatproofs].
 
 LRAT Proofs
 -----------
@@ -283,10 +282,10 @@ This requires two passes: a forward pass performing incremental prepropagation
 [@RebolaCruz2018] until the conflict clause is found, and a backward pass
 that actually checks each clause introduction.
 
-Doing this, a proof checker computes an unsatisfiable core, consisting of
-all checked lemmas plus the clauses in the original formula that were
-used to derive a conflict and thus make an inference at any point.
-
+An unsatisfiable core is an subset of an unsatisfiable formula.  By checking
+only lemmas that are used to derive some conflict, a proof checker computes
+an unsatisfiable core, consisting of those lemmas plus the clauses in the
+original formula that were used to derive some conflict.
 
 Core-first Unit Propagation
 ---------------------------
@@ -303,6 +302,7 @@ without a conflict.
 
 Which results in a local minimum of clauses being added to the conflict graph,
 and subsequently the core. Non-core lemmas do not have to be checked.
+
 
 Reason Deletions
 ----------------
@@ -776,7 +776,7 @@ Figure @fig:correlation-reason-deletions-time-delta suggests that a
 large number of reason deletions brings about some runtime overhead in
 `rate` when checking specified DRAT as opposed to operational DRAT.
 Curiously, a significant overhead in memory usage seems to occur only
-on proofs with comparably few reason deletions, as illustrated by figure
+on proofs with almost no reason deletions, as illustrated by figure
 @fig:correlation-reason-deletions-space-delta.
 
 Note that this overhead also occurs for proofs that only contain redundant
@@ -791,8 +791,9 @@ This class of proofs is the one implemented by the second patch variant from
 8. Conclusion
 =============
 
-We have provided some evidence to our hypothesis that checking specified DRAT is
-as expensive as checking operational DRAT.
+We have provided some evidence to our hypothesis that checking specified
+DRAT is as expensive as checking operational DRAT, but an excessive number
+of reason deletions can make it more costly.
 
 We encourage SAT solver developers to to apply our patch to their `MiniSat`-based
 solvers in order to create proofs that are correct under either flavor and
