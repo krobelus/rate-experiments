@@ -1,5 +1,5 @@
 ---
-title: Implementation of Complete and Efficient DRAT Proof Checking
+title: Complete and Competitive DRAT Proof Checking
 author: Johannes Altmanninger
 bibliography: references.bib
 csl: ieee.csl
@@ -249,7 +249,7 @@ learned clauses and clause deletions in the DRAT proof, the checker can
 reproduce the exact same formula that the solver was working on.
 
 While deletions were added to proofs to optimize checking runtime, they
-can have also be required to make an inference due to RAT non-monotonic
+can also be enable additional inferences due to RAT being non-monotonic
 [@philipp_rebola_unsatproofs].
 
 LRAT Proofs
