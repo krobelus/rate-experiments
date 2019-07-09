@@ -9,68 +9,80 @@ csl: ieee.csl
 **Abstract:**
 Clausal proof format DRAT is the de facto standard way to certify SAT solvers'
 unsatisfiability results.  State-of-the-art DRAT checkers ignore deletions of
-unit clauses, which means that they are checking against a proof system that
-differs from the specification of DRAT.  We demonstrate that it is possible to
-implement a competitive checker that honors unit deletions.  Many SAT solvers
-produce proofs that are incorrect under the DRAT specification, because
-they contain spurious unit deletions. We present patches for competitive
+reason clauses, which means that they are checking against a proof system that
+differs from the specification of DRAT.  We demonstrate that it is possible
+to implement a competitive checker that honors reason deletions.  Many SAT
+solvers produce proofs that are incorrect under the DRAT specification, because
+they contain spurious reason deletions. We present patches for competitive
 SAT solvers to produce correct proofs with respect to the specification.
 :::
 
 1. Introduction
 ===============
 
-In past decades, there has been significant progress in the area of SAT solver
-technology. As a result of the high complexity of SAT solvers, they have
-had documented bugs [@BrummayerBiere-SMT09; @BrummayerLonsingBiere-SAT10].
-To protect against these, there are checkers that verifiy a solver's
-result. The result *satisfiable* is given with a model which is trivial
-to validate in linear time.  The converse result, *unsatisfiable*, can be
-certified with a proof of unsatisfiability given by the solver. A proof
-checker, a program independent of the solver, can verify such proofs.
+In past decades, there has been significant progress in SAT solver
+technology. As a result of the high complexity of SAT solvers they have
+had documented bugs [@BrummayerBiere-SMT09] [@BrummayerLonsingBiere-SAT10].
+To protect against these, there are checker programs that verifiy a solver's
+result. The result *"satisfiable"* is given with a model which is trivial
+to validate in linear time.  The converse result, *"unsatisfiable"*, can be
+certified with a proof of unsatisfiability given by the solver. An independent
+proof checker can verify such proofs.
 
-In SAT competitions, solvers are required to produce proofs in the DRAT
-format, A DRAT proof is a sequence of lemmas (clause introductions) and clause
-deletions.  One problem with such proofs is that they can grow very large.
-In order to counteract this, the format is already as space-efficient as
-possible, at the cost of proof checking runtime. A measure that was taken
-to decrease checking time was the includion of deletion information in
-proofs[@Heule_2013]. Nevertheless, checking a proof can still take a similar
-amount to solving the formula.
+In SAT competitions, solvers are required to give a proof in the DRAT format
+alongside an unsatisfiability result.  This proof can be thought of as a
+trace of the solver's execution, containing information on which clauses
+(i.e. constraints) are added to and deleted from the solver's formula which
+acts as knowledge base. While deletions are not strictly necessary to produce
+the unsatisfiability result in either solver or checker, they are essential
+for doing that efficiently.
 
-Some solvers produce proofs containing some deletions of clauses even though
-the solver operates as though these clauses were not deleted.  To accomodate
-for this, state-of-the-art proof checkers ignore deletion instructions that
-might be one of them.  Consequently, the checkers are not faithful to the
-specification of DRAT proofs [@rebola2018two].
+A family of solvers produce proofs containing certain reason clause deletions,
+yet these solvers operate as if those clauses were not deleted.  To accomodate
+for this, state-of-the-art proof checkers ignore instructions of all reason
+clauses, which includes those spurious deletions. Consequently, the checkers
+are not faithful to the specification of DRAT proofs [@rebola2018two].
 
 We refer to the original definition of the proof format as *specified* DRAT
-and to the one that is actually implemented by state-of-the-art checkers
-as *operational* DRAT [@rebola2018two]. Merely checking operational DRAT is
-sufficient for current use cases, provided the solver produces a proof that
-coincides with what it does internally, however, checking specified DRAT
-can be required for verifying inprocessing steps that use unit deletions
-[@rebola2018two].
+and to the one that is actually implemented by state-of-the-art checkers as
+*operational* DRAT [@rebola2018two]. The classes of proofs accepted by these
+two flavors of DRAT are incomparable.  Merely checking operational DRAT is
+sufficient for current proofs of unsatisfiability, however, specified DRAT
+can be a requirement for verifying solvers' inprocessing steps which are
+employing reason deletions [@rebola2018two].
 
-Checking specified DRAT is quite a bit more complicated but there exists an
-efficient algorithm [@RebolaCruz2018].  Previous empirical results suggest
-that the class of proofs that today's solvers produce can be verified with a
-checker of either flavor exhibiting roughly the same time and memory usage. We
-provide more detailed results, showing that on average this is true and that
-a high number of unit deletions tends to increase (and sometimes decrease)
-checking costs for specified DRAT compared operational DRAT.
+As proof checking time is comparable to solving time [@Heule_2014] it can
+be important to optimize it for speed --- consider the problem of the Schur
+Number Five, where solving took just over 14 CPU years whereas running
+the DRAT checker on the resulting proof took 20.5 CPU years [@schur-5].
+There exists an efficient algorithm for specified DRAT [@RebolaCruz2018],
+adding quite some complexity on top of state-of-the art checking algorithms
+for operational DRAT.  Previous empirical results for that algorithm suggest
+that the class of proofs that today's solvers produce can be verified with
+a checker of either flavor with roughly the same runtime and memory usage.
+Those results were based on a checker that could not compete with other
+state-of-art checkers in terms of performance.
 
-To show the incorrectness of a proof, it suffices show that a single lemma in
-the proof cannot be inferred.  We use a modified version of the previously
-unpublished SICK incorrectness certificate format to give information on
-why a lemma cannot be derived.  This certificate can be used to verify the
-incorrectness of the proof efficiently and help developers find bugs in
-proof generation procedures.
+We have re-implemented the algorithm in combination with other necessary
+optimizations to roughly match the performance of the fastest checkers.
+Based on this implementation, we are able to provide more extensive results,
+supporting the hypothesis that specified and operational DRAT are equally
+expensive to check on an average real-world instance.  We also observe
+that a high number of reason deletions tends to have a significant, making
+specified DRAT more expensive and, to a lesser extent less expensive on
+certain instances.
+
+To show the incorrectness of a proof, it suffices show that a single clause
+introduction, or lemma in the proof cannot be inferred from the current
+formula.  We use a modified version of the previously unpublished SICK
+incorrectness certificate format to give information on why a lemma cannot
+be derived.  This certificate can be used to verify the incorrectness of the
+proof efficiently and help developers find bugs in proof generation procedures.
 
 To sum up, there are three distinct contributions in this work:
 
-1. We indicate why checkers ignore certain deletions and provide patches
-for solvers to make them generate proofs without spurious deletions, that
+1. We indicate why solvers generate those spurious deletions and provide
+patches for top solvers to make them generate proofs without them, which
 are therefore correct under either flavor of DRAT.
 
 2. Our extension to the SICK certificate format is introduced.
@@ -239,9 +251,9 @@ DRAT Proofs
 -----------
 
 Proof based on RUP alone are not expressive enough to cover all inprocessing
-techniques in modern SAT solvers. For this reason, more powerful
-property RAT is used today[@rat]. Clause deletion was introduced to make
-checking more efficient[@Wetzler_2014].
+techniques in modern SAT solvers. For this reason, more powerful property
+RAT is used today [@rat]. Clause deletion was introduced to make checking
+more efficient [@Wetzler_2014].
 
 A DRAT (*delete resolution asymmetric tautology*) proof is a clausal proof
 with deletions where every lemma is RAT.  Given that a solver emits all
@@ -314,11 +326,11 @@ phase, it is trivial to undo the propagations done after a lemma introduction
 by merely truncating the stack.
 
 However, when there are reason deletions it is not as simple.  During the
-forward pass, when a reason clause is deleted its associated unit is
-unassigned.  If this unit was necessary to propagate some other unit, this
-may be unassigned as well, and so on. All these literals form the cone of
-influence (see [@RebolaCruz2018]) of the first unit and are recorded in the
-checker, alongside their positions in the trail, and reasons clauses.
+forward pass, when a reason clause is deleted its associated unit literal is
+unassigned.  If this literal was necessary to propagate some other unit, that
+one may be unassigned as well, and so on. All these literals form the cone of
+influence (see [@RebolaCruz2018]) of the first unit literal and are recorded
+in the checker, alongside their positions in the trail, and reasons clauses.
 
 The recorded information can then be used in the backward pass to patch
 the trail at any step that is a reason deletion, in order for the trail to
@@ -368,7 +380,7 @@ optimized proof in LRAT format. We use their way of producing LRAT proofs and
 make sure that all our proofs are accepted by the verified checker [^acl2].
 This gives us confidence in the correctness of our implementation and allows
 for a comparison of our checker with `DRAT-trim` since they do roughly the
-same thing except for the unit deletions.
+same thing except for the reason deletions.
 
 GRAT Toolchain
 --------------
@@ -395,9 +407,9 @@ because the number of RAT introductions in our benchmarks is negligible when
 compared to the number of RUP introductions.
 
 We also implement GRAT generation in our tool which. However, it seems that
-the `gratchk` tool is not designed to handle unit deletions (apparently they
-are ignored) so it will fail to handle our GRAT certificates for proofs with
-unit deletions.
+the `gratchk` tool is not designed to handle reason deletions (apparently
+they are ignored) so it will fail to handle our GRAT certificates for proofs
+with reason deletions.
 
 `rupee` [^rupee]
 ----------------
@@ -475,7 +487,7 @@ unit clauses, which includes all reason clauses, which means they do not
 undo any assignments when deleting clauses.
 
 There are two obvious possible changes to `MiniSat` to produce proofs that
-do not require this workaround of ignoring unit deletions when checking.
+do not require this workaround of ignoring reason deletions when checking.
 
 1. Do not remove locked clauses during simplification.
 
@@ -650,13 +662,29 @@ Features
 --------
 
 - output core lemmas as DIMACS or LRAT for accepted proofs
-- output certificate of unsatisfiability for rejected proofs, see [SICK format]
+- output SICK certificate of unsatisfiability for rejected proofs
 - competitive performance due to backwards checking with core-first unit
 propagation
-- option to ignore unit deletions (flag `-d` or `--skip-unit-deletions`)
+- option to ignore reason deletions (flag `-d` or `--skip-unit-deletions`)
 - decompress input files (Gzip, Zstandard, Bzip2, XZ, LZ4)
 - The debug build comes with lots of assertions, including checks for
 arithmetic overflows and lossy narrowing conversions.
+
+Rust
+----
+
+We chose modern systems programming language Rust[^rust] as implementation
+language.  Amongst the respondents of the 2019 Stackoverflow Developer
+Survey[^so-survey] it is the most loved programming language and Rust
+developers have the highest rate of contributing to open source projects.
+
+Based on our successful implementation, we believe that, while there may be
+some inconveniences with the borrow checker[^partial-ref], it is a viable
+alternative to C and C++ for the domain of SAT solving.  The first serious
+solver written in Rust, `varisat`[^varisat] is a great example of this.
+
+Clause Identifiers
+------------------
 
 We initially reserved 62 bits to identify clauses while `DRAT-trim` uses 30.
 Unfortunately, this caused excess memory consumption because we need to encode
@@ -672,7 +700,7 @@ we also use 30 bits for clause hints in the LRAT output.
 
 To evaluate our tool, we performed experiments on proofs produced by
 solvers from the SAT competition 2018[^sc18]. The detailed set-up of our
-experiments is available [^rate-experiments].
+experiments is available[^rate-experiments].
 
 Our experimental procedure is as follows:
 
@@ -692,7 +720,7 @@ Our experimental procedure is as follows:
     the verified checker [^acl2].
 
 -   We used the same limits as in the SAT competition --- 5000 seconds CPU
-    time and 24 GB memory using runlim [^runlim]. For checking the timeout
+    time and 24 GB memory using runlim[^runlim]. For checking the timeout
     is 20000 seconds, which is also consistent with the competition.
 
 -   Since the machine we used for benchmarking has 32 cores, we used GNU
@@ -797,15 +825,15 @@ of reason deletions can make it more costly.
 
 We encourage SAT solver developers to to apply our patch to their `MiniSat`-based
 solvers in order to create proofs that are correct under either flavor and
-do not need the workaround of skipping unit deletions.
+do not need the workaround of skipping reason deletions.
 
 9. Future Work
 ==============
 
-While our checker for specified DRAT is not really any more useful than
-one for operational DRAT in terms of checking SAT solvers' unsatisfiability
-results, it might be useful for checking inprocessing steps with unit deletions
-[@rebola2018two]. Additionally it can be extended to support new proof formats.
+While our checker for specified DRAT is not really any more useful than one
+for operational DRAT in terms of checking SAT solvers' unsatisfiability
+results, it might be useful for checking inprocessing steps with reason
+deletions Additionally it can be extended to support new proof formats.
 
 Current DRAT checkers keep the entire input proof and the resulting LRAT
 certificate in memory. If the available memory is at premium, some changes
@@ -814,7 +842,7 @@ the LRAT output could be streamed with some postprocessing to fix the
 clause IDs.
 
 It might be possible to forego DRAT completely and directly generate LRAT
-in a solver which is done by the solver `varisat`[^varisat]. This removes
+in a solver which is done by the solver `varisat`. This removes
 the need for a complex checker at the cost of a larger proof artifact.
 
 
@@ -835,6 +863,9 @@ the need for a complex checker at the cost of a larger proof artifact.
 [^cadical]: <http://fmv.jku.at/cadical/>
 [^varisat]: <https://github.com/jix/varisat/>
 [^varisat-pr]: <https://github.com/jix/varisat/pull/66/>
+[^so-survey]: <https://insights.stackoverflow.com/survey/2019>
+[^rust]: <https://www.rust-lang.org/>
+[^partial-ref]: <https://jix.one/introducing-partial_ref/>
 
 References
 ==========
