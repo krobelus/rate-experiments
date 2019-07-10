@@ -11,7 +11,7 @@ SAT solvers' unsatisfiability results.  State-of-the-art DRAT checkers ignore
 deletions of reason clauses, which means that they are checking against a proof
 system that differs from the specification of DRAT.  We demonstrate that it
 is possible to implement a competitive checker that honors reason deletions.
-Many esteemed SAT solvers produce proofs that are incorrect under the DRAT
+Many reputable SAT solvers produce proofs that are incorrect under the DRAT
 specification, because they contain spurious reason deletions. We present
 patches for competitive SAT solvers to produce correct proofs with respect
 to the specification.
@@ -67,10 +67,10 @@ We have re-implemented the algorithm in combination with other necessary
 optimizations to roughly match the performance of the fastest checkers.
 Based on this implementation, we are able to provide more extensive results,
 supporting the hypothesis that specified and operational DRAT are equally
-expensive to check on an average real-world instance.  We also observe
-that a high number of reason deletions tends to have a significant, making
-specified DRAT more expensive and, to a lesser extent less expensive on
-certain instances.
+expensive to check on an average real-world instance.  We also observe that
+a high number of reason deletions tends to have a significant impact on
+checking performance, making specified DRAT more expensive, and sometimes
+less expensive too.
 
 To show the incorrectness of a proof, it suffices show that a single clause
 introduction, or lemma in the proof cannot be inferred from the current
@@ -93,17 +93,18 @@ This allows us to provide empirical evidence that checking specified DRAT
 is, on average, as expensive as operational DRAT, albeit more complicated.
 
 The rest of this paper is organized as follows: In [the following
-section][2. Preliminaries] we will introduce preliminary knowledge about SAT
-solving, proofs of unsatisfiability, proof checking techniques, the problem
-with the ignored deletions and existing checkers.  After establishing novel
-terminology in [the following section][3. Redundant Reason Deletions], our
-first contribution, proposal on how to change solvers to produce unambiguously
-correct proofs, can be found in [Section 4][4. Solvers].  The SICK format along
-our extension will be described in [Section 5][5. SICK Format].  The third
-contribution will be discussed in [Section 6][6. Checker Implementation] with
-experimental results being presented in [the following section][7. Experimental
-Evaluation].  Finally, we draw a [conclusion][8. Conclusion] and give outlook
-on [future work][9. Future Work] in the area of proof checking.
+section][2. Preliminaries] we will introduce preliminary knowledge about
+SAT solving, proofs of unsatisfiability, checking algorithms, the problem
+with reason deletions and existing checkers.  After establishing novel
+terminology in [the following section][3. Redundant Reason Deletions],
+our first contribution, a proposal on how to change solvers to produce
+unambiguously correct proofs, can be found in [Section 4][4. Solvers].
+The SICK format along our extension will be described in [Section
+5][5. SICK Format].  The third contribution will be discussed in [Section
+6][6. Checker Implementation] with experimental results being presented in
+[the following section][7. Experimental Evaluation].  Finally, we draw a
+[conclusion][8. Conclusion] and give outlook on [future work][9. Future Work]
+in the area of proof checking.
 
 2. Preliminaries
 ================
@@ -235,7 +236,7 @@ derived clause is called the *resolvent on $l$ of $C$ and $D$*. $D$ is called
 a *resolution candidate* for $C$.
 
 **Redundancy Property RAT:** a clause $C$ is a *resolution asymmetric
-tautologies* (RAT) [@inprocessingrules] on some literal $l \in C$ with respect
+tautology* (RAT) [@inprocessingrules] on some literal $l \in C$ with respect
 to formula $F$ whenever for all clauses $D \in F$ where $\overline{l} \in D$,
 the resolvent on $l$ of $C$ and $D$ is RUP in $F$.
 
@@ -405,10 +406,10 @@ and reuse it for all lemmas with the same pivot. We did not implement that
 because the number of RAT introductions in our benchmarks is negligible when
 compared to the number of RUP introductions.
 
-We also implement GRAT generation in our tool which. However, it seems that
-the `gratchk` tool is not designed to handle reason deletions (apparently
-they are ignored) so it will fail to handle our GRAT certificates for proofs
-with reason deletions.
+We also implement GRAT generation in our tool. However, it seems that the
+`gratchk` tool is not designed to handle reason deletions (apparently they
+are ignored) so it will fail to handle our GRAT certificates for proofs with
+reason deletions.
 
 `rupee` [^rupee]
 ----------------
@@ -681,6 +682,8 @@ Based on our successful implementation, we believe that, while there may be
 some inconveniences with the borrow checker[^partial-ref], it is a viable
 alternative to C and C++ for the domain of SAT solving.  The first serious
 solver written in Rust, `varisat`[^varisat] is a great example of this.
+
+Our experiments use this version: rustc 1.36.0 (a53f9df32 2019-07-03).
 
 Clause Identifiers
 ------------------
