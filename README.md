@@ -6,15 +6,15 @@ csl: ieee.csl
 ---
 
 ::: {.abstract}
-**Abstract:**
-Clausal proof format DRAT is the de facto standard way to certify SAT solvers'
-unsatisfiability results.  State-of-the-art DRAT checkers ignore deletions of
-reason clauses, which means that they are checking against a proof system that
-differs from the specification of DRAT.  We demonstrate that it is possible
-to implement a competitive checker that honors reason deletions.  Many SAT
-solvers produce proofs that are incorrect under the DRAT specification, because
-they contain spurious reason deletions. We present patches for competitive
-SAT solvers to produce correct proofs with respect to the specification.
+**Abstract:** Clausal proof format DRAT is the de facto standard way to certify
+SAT solvers' unsatisfiability results.  State-of-the-art DRAT checkers ignore
+deletions of reason clauses, which means that they are checking against a proof
+system that differs from the specification of DRAT.  We demonstrate that it
+is possible to implement a competitive checker that honors reason deletions.
+Many esteemed SAT solvers produce proofs that are incorrect under the DRAT
+specification, because they contain spurious reason deletions. We present
+patches for competitive SAT solvers to produce correct proofs with respect
+to the specification.
 :::
 
 1. Introduction
@@ -60,8 +60,8 @@ adding quite some complexity on top of state-of-the art checking algorithms
 for operational DRAT.  Previous empirical results for that algorithm suggest
 that the class of proofs that today's solvers produce can be verified with
 a checker of either flavor with roughly the same runtime and memory usage.
-Those results were based on a checker that could not compete with other
-state-of-art checkers in terms of performance.
+Those results, however, were based on a checker that could not compete with
+other state-of-art checkers in terms of performance.
 
 We have re-implemented the algorithm in combination with other necessary
 optimizations to roughly match the performance of the fastest checkers.
@@ -174,29 +174,28 @@ At any point during a solver's search, if formula contains a unit clause, any
 model extending the current trail must contain the unit literal, therefore it
 is added as a forced literal. Everytime a literal is added to the trail, the
 formula will be simplified by propagating that literal: any clause containing
-the literal is discarded because they will be satisfied by it, and any of the
+the literal is discarded because they will be satisfied by it, and all of the
 literal's negations are removed from the remaining clauses.  The latter step
 may spawn new unit clauses and thus trigger further propagation. 
 
-As assumptions need to be undone, the implementation does not actually delete
-clauses and literals, but merely update the trail is updated and scan the
-formula for new units.  Used by virtually all competitve solvers and checkers,
-the two-watched-literal scheme [@Moskewicz:2001:CEE:378239.379017] is used
-to keep track of which clauses can trigger propagation . It consists of a
-watchlist for each literal, which is an sequence of clause references. All the
-clauses in the watchlist of some literal said to be *watched by* that literal.
-As the name indicates, each clause is watched by two literals, these are
-also called the *watches*.  To check if a clause is unit, it suffices to
-look at the watches given Invariant 1 from [@RebolaCruz2018] is maintained.
+As assumptions need to be undone many times during search, the implementation
+does not actually delete clauses and literals, but merely updates the trail
+and scans the formula for new units.  In order to efficiently keep track
+of which clauses can become unit, competitve solvers and checkers use the
+two-watched-literal scheme [@Moskewicz:2001:CEE:378239.379017]. It consists of
+a watchlist for each literal, which is a sequence of clause references. All
+the clauses in the watchlist of some literal are said to be *watched by*
+that literal.  Each clause is watched by two literals, these are also called
+the *watches*.  To check if a clause is unit, it suffices to look at the
+watches given Invariant 1 from [@RebolaCruz2018] is maintained:
 
 **Invariant 1.** If a clause is watched on literals $l$ and $k$, and the
 current trail $I$ falsifies $l$, then $I$ satisfies $k$.
 
-In particular, when literal $l$ is assigned, it is propagated by only
-scanning the watchlist of $\overline{l}$, i.e. clauses that are watched on
-$\overline{l}$. For each clause, the solver attempts to restore Invariant 1,
-if necessary after the falsification of watch $\overline{l}$.  If this is
-not possible then the clause is unit and will be propagated subsequently.
+In particular, when literal $l$ is assigned, it is propagated by scanning
+the watchlist of $\overline{l}$, thus visiting only clauses that are watched
+on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant
+1 might need to be restored.
 
 Note that, as in [@RebolaCruz2018], clauses of size one are extended by a
 single literal $\overline{\top}$ to make the manipulations of watches work
