@@ -87,31 +87,24 @@ Complete and Competitive\\
             algorithm with a possible performance impact
         \end{itemize}
 
-	\begin{columns}[t]
+	\begin{columns}[T]
     	    \begin{column}{0.45\textwidth}
-		Clause deletion can remove vital information from a proof.
+        	    \vspace{1cm}
+		    \textbf{Example:} If clause $\overline{x} y$ is deleted,
+		    then $\square$ can no longer be derived.
     	    \end{column}
     	    \begin{column}{.45\textwidth}
                 \begin{tikzpicture}[
                         dep/.style={->,line width=1.5mm}
                     ]
-                  \matrix (m) [matrix of math nodes,row sep=3em,column sep=4em,minimum width=2em]
+                  \matrix (m) [matrix of math nodes,row sep=3em,column sep=2em,minimum width=2em]
                   {
-                     c_1 & \textcolor{red}{c_2}	& c_3 \\
-                     x   & \textcolor{red}{y}      	&     \\
+                     x & \textcolor{red}{\overline{x}y}	& \overline{x}\overline{y} \\
                          & \square 			&     \\
                      };
-                  \draw [dep] (m-1-1) -- (m-2-1) -- (m-3-2);
-                  \draw [dep,dash pattern=on 3mm off 3mm,red] (m-1-2) -- (m-2-2) -- (m-3-2);
-                  \draw [dep] (m-1-3) -- (m-3-2);
-                  \path[-stealth]
-                    % (m-1-1) edge node [left] {$\mathcal{B}_X$} (m-2-1)
-                    %         edge [double] node [below] {$\mathcal{B}_t$} (m-1-2)
-                    % (m-2-1.east|-m-2-2) edge node [below] {$\mathcal{B}_T$}
-                    %         node [above] {$\exists$} (m-2-2)
-                    % (m-1-2) edge node [right] {$\mathcal{B}_T$} (m-2-2)
-                    %         edge [dashed,-] (m-2-1)
-                            ;
+                  \draw [dep] (m-1-1) -- (m-2-2);
+                  \draw [dep,dash pattern=on 3mm off 3mm,red] (m-1-2) -- (m-2-2);
+                  \draw [dep] (m-1-3) -- (m-2-2);
                 \end{tikzpicture}
     	    \end{column}
 	\end{columns}
@@ -131,8 +124,8 @@ Complete and Competitive\\
 
     \begin{block}{Avoiding Reason Deletions in \texttt{MiniSat}}
 	\begin{itemize}
-            \item Correct proofs are produced by simply emtting a unit clause
-            before deleting a reason (\texttt{locked}) clause.
+            \item emit a unit clause before deleting a reason (\texttt{locked}) clause.
+            \item yields correct proofs matching the solver's behavior
 	\end{itemize}
 	\vspace{1cm}
         {\footnotesize
@@ -170,7 +163,7 @@ index ddc3801..5941449 100644
         \vspace{1cm}
         \begin{columns}[t]
             \begin{column}{.25\textwidth}
-                Formula\\
+                formula\\
                 \texttt{p cnf 2 2\\-1 -2 0\\ -1\ \ 2 0\\}
                 incorrect DRAT proof\\
                 \texttt{1 0\\0\\}
@@ -186,21 +179,6 @@ pivot          = 1\\
                 }
             \end{column}
         \end{columns}
-        % {\setlength{\tabcolsep}{40pt}
-        %     \begin{longtable}[]{ll}
-        %         Formula & SICK Certificate\tabularnewline
-        %         \texttt{p\ cnf\ 2\ 2} &
-        %         \texttt{proof\_format\ \ \ =\ "DRAT-arbitrary-pivot"}\tabularnewline
-        %         \texttt{-1\ -2\ 0} &
-        %         \texttt{proof\_step\ \ \ \ \ =\ 1}\tabularnewline
-        %         \texttt{-1\  2\ 0} &
-        %         \texttt{natural\_model\ \ =\ {[}-1,\ {]}}\tabularnewline
-        %         Incorrect DRAT Proof & \texttt{{[}{[}witness{]}{]}}\tabularnewline
-        %         \texttt{1\ 0} & \texttt{failing\_clause\ =\ {[}-2,\ -1,\ {]}}\tabularnewline
-        %         \texttt{0} & \texttt{failing\_model\ \ =\ {[}2,\ {]}}\tabularnewline
-        %         & \texttt{pivot\ \ \ \ \ \ \ \ \ \ =\ 1}\tabularnewline
-        %     \end{longtable}
-        % }
     \end{block}
     \begin{block}{Implementation}
         \begin{itemize}
@@ -217,8 +195,9 @@ pivot          = 1\\
     \end{figure}
 
     \textbf{Insight:} an excessive number of reason deletions
-    has a measurable impact on checking performance (figure
-    \ref{fig:correlation-reason-deletions-time-delta})
+    has a noticeable impact on checking runtime (figure
+    \ref{fig:correlation-reason-deletions-time-delta}), but not on memory usage.
+    \vspace{1cm}
 
     \begin{figure}
         \centering
