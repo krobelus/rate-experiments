@@ -73,11 +73,11 @@ checking performance, making specified DRAT more expensive, and sometimes
 less expensive too.
 
 To show the incorrectness of a proof, it suffices show that a single clause
-introduction, or lemma in the proof cannot be inferred from the current
-formula.  We use a modified version of the previously unpublished SICK
-incorrectness certificate format to give information on why a lemma cannot
-be derived.  This certificate can be used to verify the incorrectness of the
-proof efficiently and help developers find bugs in proof generation procedures.
+introduction, or lemma in the proof is incorrect.  We use a modified version
+of the previously unpublished SICK incorrectness certificate format to give
+information on why a lemma cannot be derived.  This certificate can be used
+to verify the incorrectness of the proof efficiently and help developers
+find bugs in proof generation procedures.
 
 To sum up, there are three distinct contributions in this work:
 
@@ -123,6 +123,7 @@ of those literals are falsified by that assignment.  Other literals are
 unassigned.  If there are some unassigned literals, then the assignment
 is partial.  If an assignment contains a literal in both polarities,
 this is a conflict, i.e., the assignment is inconsistent.
+TODO
 
 SAT Solving
 -----------
@@ -136,34 +137,38 @@ is called a model for that formula.
 A formula is satisfiable if there exists a model for it.  A SAT solver takes
 as input a formula and finds a single model if the formula is satisfiable.
 Otherwise, the solver can provide a proof that the formula is unsatisfiable.
+This proof needs to derive the unsatisfiable empty clause.
 
-While searching for a model, a solver builds up a (partial) assignment and
-records a order in which the literals where assigned and *reason clause*
-for each assigned literal.  We call this data structure the trail.
+While searching for a model, a solver builds up a (partial) assignment.
+Additionally it records the order in which the literals where assigned and
+the *reason clause*, if any for each assigned literal.  We call this data
+structure the trail.
 
-DPLL-style SAT solvers search through the space all possible assignments.
-They make assumptions, adding literals to the trail that might be part of
-a satisfying assignment.  The search space is greatly reduced by formula
-simplification, such as unit propagation which will be introduced in
-the next subsection.  Such simplifications prune assignments that are
-definitely unsatisfiable, by adding literals to the trail. These literals
-are said to be forced, because they, unlike assumptions, are necessarily
-satisfied in any model that extends the current trail.  If simplifications
-are done on a trail without any assumptions, the assignment is the set of
-top-level forced literals, the set of literals that are part of any model.
-These are essential for a checker as we will see later.  Once the set of
-top-level forced literals contains a conflict, the solver has determined
-unsatisfiability of the current formula and also the original formula
-given as input to the solver.
+SAT solvers search through the space all possible assignments.  They make
+assumptions, adding literals to the trail that might be part of a satisfying
+assignment.  The search space is greatly reduced by formula simplification,
+such as unit propagation which will be introduced in the next subsection.
+Simplification during search is called inprocessing, as opposed to
+preprocessing which precedes the first assumption.  Such simplifications
+prune assignments that are definitely unsatisfiable, by adding literals
+to the trail. These literals are said to be forced, because they, unlike
+assumptions, are necessarily satisfied in any model that extends the current
+trail.  If simplifications are done on a trail without any assumptions, the
+assignment is the set of top-level forced literals, the set of literals that
+are part of any model.  These are essential for a checker as we will see later.
+Once the set of top-level forced literals falsifies a clause the solver has
+derived the empty clause and therefore determined unsatisfiability of the
+current formula and also the input formula.
 
 Most modern SAT solvers implement Conflict Driven Clause Learning (CDCL).
-A conflict in the trail means that the current set of assumptions can not
-be part of any model. Therefore a subset of the assumptions is reverted
-and a *conflict clause* is added to the formula to prevent the solver from
-revisiting those ill-advised assumptions, effectively pruning the search space.
-As the number of clauses increases, so does the memory usage and the time
-spent on formula simplification. Because of this, learned clauses that are
-not considered useful enough, are regularly deleted from the formula.
+Whenever a clause clause in the formula is falsified, this means that the
+current set of assumptions can not be part of any model. Therefore a subset
+of the assumptions is reverted and a *conflict clause* is added to the
+formula to prevent the solver from revisiting those ill-advised assumptions,
+effectively pruning the search space.  As the number of clauses increases,
+so does memory usage and the time spent on formula simplification. Because
+of this, learned clauses that are not considered useful enough, are regularly
+deleted from the formula.
 
 Unit Propagation
 ----------------
@@ -172,12 +177,13 @@ Given an assignment, a *unit clause* contains only falsified literals except
 for a single non-falsified *unit literal*.
 
 At any point during a solver's search, if formula contains a unit clause, any
-model extending the current trail must contain the unit literal, therefore it
-is added as a forced literal. Everytime a literal is added to the trail, the
+model extending the current trail must contain the unit literal, therefore
+it is added as a forced literal. The unit clause is recorded as the reason
+clause for this literal.  Everytime a literal is added to the trail, the
 formula will be simplified by propagating that literal: any clause containing
-the literal is discarded because they will be satisfied by it, and all of the
-literal's negations are removed from the remaining clauses.  The latter step
-may spawn new unit clauses and thus trigger further propagation. 
+the literal is discarded because they will be satisfied by it, and all of
+the literal's negations are removed from the remaining clauses.  The latter
+step may spawn new unit clauses and thus trigger further propagation.
 
 As assumptions need to be undone many times during search, the implementation
 does not actually delete clauses and literals, but merely updates the trail
@@ -205,12 +211,12 @@ the same way for all clauses.
 Clausal Proofs
 --------------
 
-A formula in CNF is modeled as a multiset of clauses.  Each step in a
-clausal proof adds a clause to the current formula, or deletes one from it.
-These steps should be exactly the clause introductions and clause deletions that
-a solver performs.  As a result, a checker can reproduce the formula as well
-as the set of top-level forced literals at each step, and finally encounter
-a top-level conflict just like the solver did.
+A formula in CNF is a multiset of clauses.  Each step in a clausal proof
+adds a clause to the current formula, or deletes one from it.  These steps
+should be exactly the clause introductions and clause deletions that a
+solver performs.  As a result, a checker can reproduce the formula as well
+as the set of top-level forced literals at each step, and finally derive
+the empty clause just like the solver did.
 
 Redundancy Properties
 ---------------------
@@ -226,8 +232,7 @@ not necessarily a logical consequence of the formula [@philipp_rebola_unsatproof
 
 **Redundancy Property RUP:** a clause $C$ is RUP (reverse unit propagation)
 in formula $F$ if unit propagation in $F \cup \{ \{\overline{l}\} \,|\,
-l \in C \}$ leads to a conflict.
-
+l \in C \}$ can derive the empty clause.
 
 The resolution rule states that for literal $l$ and clauses $C$ and $D$
 where $l \in C$ and $\overline{l} \in D$, the conjunct of $C$ and $D$ implies
@@ -260,6 +265,9 @@ with deletions where every lemma is RAT.  Given that a solver emits all
 learned clauses and clause deletions in the DRAT proof, the checker can
 reproduce the exact same formula that the solver was working on.
 
+In practice, most lemmas in proofs are RUP, so a checker first computes for
+RUP and only if that fails, falls back to RAT.
+
 While deletions were added to proofs to optimize checking runtime, they
 can also be enable additional inferences due to RAT being non-monotonic
 [@philipp_rebola_unsatproofs].
@@ -277,27 +285,43 @@ available[^acl2].
 
 An LRAT proof is a clausal proof just like DRAT, but it includes clause hints
 for resolution candidates and all unit clauses that are necessary to derive
-a conflict to show that the resolvent is a RUP.
+a the empty clause to show that the resolvent is a RUP.
+
+Forward Checking
+----------------
+
+The obvious way to verify that a proof is correct consists of performing each
+instruction in the from the first to one last one, while checking each lemma.
 
 Backwards Checking
 ------------------
 
 While searching, SAT solvers can not know, which learned clauses are useful
 in a proof, so they simply add all of them as lemmas. This means that many
-lemmas may not be necessary in a refutation.
+lemmas might not be necessary in a proof of unsatisfiability.
 
-To avoid checking useless lemmas, the proof is checked backwards, starting
-from the empty clause, and only lemmas that are reasons for the conflict
-are checked [@Heule_2013].
+To avoid checking superfluous lemmas, the proof is checked backwards ---
+only lemmas that are transitively necessary to derive the empty clause are
+checked [@Heule_2013].
 
 This requires two passes: a forward pass performing incremental prepropagation
-[@RebolaCruz2018] until the conflict clause is found, and a backward pass
-that actually checks each clause introduction.
+[@RebolaCruz2018] until the empty clause is derived, and a backward pass
+that actually checks the necessary clause introductions.
 
-An unsatisfiable core is an subset of an unsatisfiable formula.  By checking
-only lemmas that are used to derive some conflict, a proof checker computes
-an unsatisfiable core, consisting of those lemmas plus the clauses in the
-original formula that were used to derive some conflict.
+In the forward pass, conflict analysis *marks* all clauses that were required
+to derive the empty clause.  This is done by a depth first search in the graph
+induced by the reason clauses: starting from the clause that was falsified,
+the clause is marked and for each of its literals $l$, the same is done
+recursively for the reason for $\overline{l}$.
+
+Subsequently during the backwards pass, only marked clauses are checked. During
+those RUP and RAT checks, more clauses may be marked --- they also use the
+conflict analysis described above.
+
+An *unsatisfiable core*, or core for short is a subset of an unsatisfiable
+formula.  Backwards checking computes a core, consisting of all marked
+clauses that were part of the original formula.  Additionally, a *trimmed
+proof* is computed, consisting of all marked lemmas.
 
 Core-first Unit Propagation
 ---------------------------
@@ -369,7 +393,7 @@ Existing Checkers
 -----------------
 
 Previous work has yielded checkers which we draw upon heavily. In fact,
-our current implementation contains almost no novelties but merely combines
+our implementation contains no algorithmic novelties but merely combines
 the ideas present in existing checkers.
 
 `DRAT-trim`
@@ -434,29 +458,28 @@ other checkers do. This is important for swift checking on some instances.
 3. Redundant Reason Deletions
 =============================
 
+Here we clarify which reason deletions are actually problematic.
+
 Deleting a reason clause generally shrinks the trail.  However, if, and only
 if there is another clause that can act as reason for the same literal at
 some point during unit propagation, then the set of literals in the trail
 does not change.  We call this special case a *redundant reason deletion*,
-and the other case a *non-redundant reason deletion* Note that the term *unit
-deletion* comprises deletions of any unit clause, that is, reason deletions
-and other deleted units that were not propagating.
+and the other case a *non-redundant reason deletion*.  An simple example
+for a redundant reason deletion would be the deletion of a size-one reason
+clause that occurs twice in the formula.
 
-An simple example for a redundant reason deletion would be the deletion of
-a size-one clause that occurs twice in the formula.
+Note that the term *unit deletion* comprises deletions of any unit clause,
+that is, reason deletions and other deleted units that were not propagating.
 
 A proof of unsatisfiability generated by a SAT solver should not contain
 any non-redundant reason deletions.  Other current checkers can report unit
-deletions and reason deletions but they do not distuingish between redundant
+deletions and reason deletions but they do not distinguish between redundant
 and non-redundant reason deletions.  Our tool also outputs the number of
 non-redundant reason deletions [^reason-deletions-shrinking-trail]. This
 might be useful to sanity-check SAT solvers' proof generation procedures.
 
-Given a proof without non-redunant reason deletions, checkers for *operational*
-and *specified* DRAT behave exactly the same way.
-
-[^reason-deletions-shrinking-trail]: The are called `reason deletions
-shrinking trail` in the output of `rate`.
+Given a proof without non-redundant reason deletions, checkers for
+*operational* and *specified* DRAT behave exactly the same way.
 
 4. Solvers
 ==========
@@ -544,55 +567,41 @@ index ddc3801..5941449 100644
 ==============
 
 When a proof is found to be incorrect, our tool outputs an incorrectness
-certificate in our modified SICK format. This certificate can be used by
-our tool `sick-check` to verify the incorrectness of the proof without doing
-any unit propagation.
+certificate in our modified SICK format. This certificate can be used by our
+tool `sick-check` to verify the incorrectness of the proof without doing any
+unit propagation. Furthermore, the size of the incorrectness certificate is
+in practice linear in the size of the formula, while proofs are exponential.
 
-Example
--------
+Let us give an  an example of a SICK certificate.  The first two columns show
+a satisfiable formula in DIMACS format and an incorrect DRAT proof for this
+formula.  The third column has the corresponding SICK certificate, stating
+that the RAT check failed for the first lemma in the proof.  The certificate
+format is using TOML[^toml].
 
-Here is an example of a SICK certificate in TOML[^toml] syntax, stating that
-a RAT check failed on all three possible pivots.
-
-```toml
-# Failed to prove lemma -768 -769 917 0
-proof_format   = "DRAT-arbitrary-pivot"
-proof_step     = 22452 # Failed line in the proof
-natural_model  = [2088, -692, -696, 673, 713, -416, 1940, 1960, 1932, 708,
-		  -702, 1039, -1964, -1967, 1938, 1937, -1828, 1975, -1985,
-		  1952, -437, -1936, -1977, 1833, -407, -1496, -1848, -1855,
-		  1131, -434, 1135, 1933, 1010, 1888, -1150, -1309, -1154,
-		  768, 769, -917, -1152, ]
-[[witness]]
-failing_clause = [-765, 768, 743, ]
-failing_model  = [765, -743, ]
-pivot          = -768
-[[witness]]
-failing_clause = [769, -1565, -824, ]
-failing_model  = [1565, 824, 1900, ]
-pivot          = -769
-[[witness]]
-failing_clause = [-917, 884, -891, ]
-failing_model  = [-884, 891, ]
-pivot          = 917
-```
+Formula     Proof   SICK Certificate
+----------- ------- ---------------------------------------------
+`p cnf 2 2` `1 0`   `proof_format   = "DRAT-arbitrary-pivot"`
+`-1 -2 0`   `0`     `proof_step     = 1`
+`-1 2 0`            `natural_model  = [-1, ]`
+                    `[[witness]]`
+                    `failing_clause = [-2, -1, ]`
+                    `failing_model  = [2, ]`
+                    `pivot          = 1`
 
 Grammar
 -------
 
 ```
-SICK := Intro Witness*
-Intro := ProofFormat ProofStep NaturalModel
-ProofFormat := 'proof_format' '='
-		( "DRAT-arbitrary-pivot"
-		| "DRAT-pivot-is-first-literal"
-		)
-ProofStep := 'proof_step' '=' Integer
-NaturalModel := 'natural_model' '=' ListOfLiterals
-Witness := FailingClause FailingModel [ Pivot ]
-FailingClause := 'failing_clause' '=' ListOfLiterals
-FailingModel := 'failing_model' '=' ListOfLiterals
-Pivot := 'pivot' '=' Literal
+SICK            := ProofFormat ProofStep NaturalModel Witness*
+ProofFormat     := 'proof_format' '=' ( "DRAT-arbitrary-pivot"
+                                      | "DRAT-pivot-is-first-literal")
+ProofStep       := 'proof_step' '=' Integer
+NaturalModel    := 'natural_model' '=' ListOfLiterals
+Witness         := FailingClause FailingModel Pivot
+FailingClause   := 'failing_clause' '=' ListOfLiterals
+FailingModel    := 'failing_model' '=' ListOfLiterals
+Pivot           := 'pivot' '=' Literal
+ListOfLiterals  := '[' (Literal ',')* ']'
 ```
 
 Explanation
@@ -600,7 +609,7 @@ Explanation
 
 - `proof_format` describes the proof format to use.
    - `DRAT-arbitrary-pivot`: DRAT checking where the pivot can any literal in
-   the lemma. This requires one witness (counter example) for each possible
+   the lemma. This requires one witness (counter-example) for each possible
    pivot in the failing lemma. The pivot has to be specified for each witness.
    - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
    The pivot needs to be the first literal in the lemma.
@@ -613,7 +622,7 @@ Explanation
   in the accumulated formula. This is included to avoid having to perform
   propagation in a checking tool.
 
-Each witness is a counterexample to some redundancy check.
+Each witness is a counter-example to some redundancy check.
 
 - `failing-clause`: A clause in the formula, which is a resolution candidate
   for the lemma.  This means that RUP of the resolvent on the pivot literal
@@ -661,14 +670,16 @@ The implementation (`rate`) is available [^rate].
 Features
 --------
 
-- output core lemmas as DIMACS or LRAT for accepted proofs
+- output core lemmas as DIMACS, LRAT or GRAT for accepted proofs
 - output SICK certificate of unsatisfiability for rejected proofs
 - competitive performance due to backwards checking with core-first unit
 propagation
-- option to ignore reason deletions (flag `-d` or `--skip-unit-deletions`)
+- option to ignore unit deletions, including reason deletions (flag `-d` or
+`--skip-unit-deletions`)
 - decompress input files (Gzip, Zstandard, Bzip2, XZ, LZ4)
-- The debug build comes with lots of assertions, including checks for
-arithmetic overflows and lossy narrowing conversions.
+
+The debug build comes with lots of assertions, including checks for arithmetic
+overflows and lossy narrowing conversions.
 
 Rust
 ----
@@ -683,19 +694,19 @@ some inconveniences with the borrow checker[^partial-ref], it is a viable
 alternative to C and C++ for the domain of SAT solving.  The first serious
 solver written in Rust, `varisat`[^varisat] is a great example of this.
 
-Our experiments use this version: rustc 1.36.0 (a53f9df32 2019-07-03).
-
 Clause Identifiers
 ------------------
 
-We initially reserved 62 bits to identify clauses while `DRAT-trim` uses 30.
-Unfortunately, this caused excess memory consumption because we need to encode
-clause hints in the LRAT proof, which is much larger than the input DRAT proof,
-and needs to be kept in memory until the proof checking is complete. Future
-proof formats should allow checking without keeping the entire proof in
-memory, although backwards checking might make this difficult.  In order
-to make `rate` comparable to `DRAT-trim` in terms of memory consumption,
-we also use 30 bits for clause hints in the LRAT output.
+Other DRAT checkers use 30 bits to for unique clause identifiers.  We use
+62 bits, mimicking a decision in `CaDiCaL`[^cadical-clauses].  This might
+be disadvantageous in terms of performance and could be changed in future.
+
+One problem with backards checking is that the LRAT proof has to be
+stored in memory until the verification is complete. Since LRAT proofs
+are even larger than DRAT proofs this can cause serious problems with
+memory consumption[^sc18-results].  In order to make `rate` comparable to
+`DRAT-trim` in terms of memory consumption, we also use 30 bits for clause
+hints in the LRAT proof.
 
 7. Experimental Evaluation
 ==========================
@@ -711,7 +722,6 @@ Our experimental procedure is as follows:
     several CPU years in the worst case. Taking a sample of reasonable size
     seems to give good results already. [Table 1](#summary_table) shows a
     summary of how much of the available data we have analyzed.
-
 
 -   If a solver had timed out for a particular instance during the
     competition, we skip that combination of solver + instance because we
@@ -825,9 +835,9 @@ We have provided some evidence to our hypothesis that checking specified
 DRAT is as expensive as checking operational DRAT, but an excessive number
 of reason deletions can make it more costly.
 
-We encourage SAT solver developers to to apply our patch to their `MiniSat`-based
-solvers in order to create proofs that are correct under either flavor and
-do not need the workaround of skipping reason deletions.
+We encourage SAT solver developers to to apply our patch to their
+`MiniSat`-based solvers in order to create proofs that are correct under
+either flavor and do not require the workaround of skipping reason deletions.
 
 9. Future Work
 ==============
@@ -837,11 +847,11 @@ for operational DRAT in terms of checking SAT solvers' unsatisfiability
 results, it might be useful for checking inprocessing steps with reason
 deletions Additionally it can be extended to support new proof formats.
 
-Current DRAT checkers keep the entire input proof and the resulting LRAT
-certificate in memory. If the available memory is at premium, some changes
-could be made to do backwards checking in a streaming fashion. Additionally,
-the LRAT output could be streamed with some postprocessing to fix the
-clause IDs.
+Current DRAT checkers are heavily optimized for speed but they keep the entire
+input proof and the resulting LRAT certificate in memory. If the available
+memory is at premium, some changes could be made to do backwards checking
+as the proof instructions are read.  Additionally, the LRAT proof could be
+output on-the-fly as well, with some postprocessing to fix the clause IDs.
 
 It might be possible to forego DRAT completely and directly generate LRAT
 in a solver which is done by the solver `varisat`. This removes
@@ -852,6 +862,7 @@ the need for a complex checker at the cost of a larger proof artifact.
 [^rupee]: <https://github.com/arpj-rebola/rupee>
 [^rate]: <https://github.com/krobelus/rate>
 [^sc18]: <http://sat2018.forsyte.tuwien.ac.at/>
+[^sc18-results]: <http://sat2018.forsyte.tuwien.ac.at/results/main.csv>
 [^rate-experiments]: <https://github.com/krobelus/rate-experiments>
 [^runlim]: <http://fmv.jku.at/runlim/>
 [^fix-revise-watches]: <https://github.com/arpj-rebola/rupee/compare/b00351cbd3173d329ea183e08c3283c6d86d18a1..b00351cbd3173d329ea183e08c3283c6d86d18a1~~~>
@@ -868,6 +879,9 @@ the need for a complex checker at the cost of a larger proof artifact.
 [^so-survey]: <https://insights.stackoverflow.com/survey/2019>
 [^rust]: <https://www.rust-lang.org/>
 [^partial-ref]: <https://jix.one/introducing-partial_ref/>
+[^cadical-clauses]: <https://github.com/arminbiere/cadical/blob/master/src/watch.hpp#L9>
+[^reason-deletions-shrinking-trail]: The are called `reason deletions
+shrinking trail` in the output of `rate`.
 
 References
 ==========
