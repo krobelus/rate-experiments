@@ -103,6 +103,8 @@ def summarize_checker_result(checker):
     # TODO FIXME
     if checker['status'] == 'segmentation fault':
         return 'segmentation fault'
+    if checker['status'] == 'signal(9)':
+        return 'signal(9)'
     assert False, 'unexpected runlim status: "%s"' % checker['status']
 
 
