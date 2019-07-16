@@ -196,8 +196,9 @@ def verified_by(checkers):
     def predicate(row):
         # return all(row.get(f'{checker}-solution') in ('VERIFIED', 'ACCEPTED')
         # for checker in checkers)
-        return all(row.get(f'{checker}-result') ==
-                   'verified' for checker in checkers)
+        return all(row.get(f'{checker}-result') in
+                   ('verified', 'lrat-check pending')
+                   for checker in checkers)
     return predicate
 
 

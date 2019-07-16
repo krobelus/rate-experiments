@@ -32,7 +32,7 @@ proof checker can verify such proofs.
 In SAT competitions, solvers are required to give a proof in the DRAT format
 alongside an unsatisfiability result.  This proof can be thought of as a
 trace of the solver's execution, containing information on which clauses
-(i.e. constraints) are added to and deleted from the solver's formula which
+(i.e., constraints) are added to and deleted from the solver's formula which
 acts as knowledge base. While deletions are not strictly necessary to produce
 the unsatisfiability result in either solver or checker, they are essential
 for doing that efficiently.
@@ -51,10 +51,10 @@ sufficient for current proofs of unsatisfiability, however, specified DRAT
 can be a requirement for verifying solvers' inprocessing steps which are
 employing reason deletions [@rebola2018two].
 
-As proof checking time is comparable to solving time [@Heule_2014] it can
-be important to optimize it for speed --- consider the problem of the Schur
-Number Five, where solving took just over 14 CPU years whereas running
-the DRAT checker on the resulting proof took 20.5 CPU years [@schur-5].
+As proof checking time is comparable to solving time [@Heule_2014] it is
+desirable to reduce the former as much as possible --- consider the problem
+of the Schur Number Five, where solving took just over 14 CPU years whereas
+running the DRAT checker on the resulting proof took 20.5 CPU years [@schur-5].
 There exists an efficient algorithm for specified DRAT [@RebolaCruz2018],
 adding quite some complexity on top of state-of-the art checking algorithms
 for operational DRAT.  Previous empirical results for that algorithm suggest
@@ -113,7 +113,7 @@ Notation
 --------
 
 A literal is a propositional variable, like $x$, or a negation of a variable,
-denoted by $\overline{x}$. A clause is a disjunction of literals and is
+denoted by $\overline{x}$. A clause is a disjunction of literals, usually
 denoted by juxtaposition of the disjuncts, e.g. we write $xy\overline{z}$
 for $x \lor y \lor \overline{z}$.
 
@@ -121,9 +121,8 @@ An assignment is a set of literals. All literals in an assignment are
 considered to be satisified by that assignment.  Conversely, the negations
 of those literals are falsified by that assignment.  Other literals are
 unassigned.  If there are some unassigned literals, then the assignment
-is partial.  If an assignment contains a literal in both polarities,
-this is a conflict, i.e., the assignment is inconsistent.
-TODO
+is partial.  We assume that an assignment never contains a literal in both
+polarities.
 
 SAT Solving
 -----------
@@ -131,44 +130,47 @@ SAT Solving
 SAT solvers work on formulas in conjunctive normal form (CNF), conjunctions
 of clauses.  A clause is satisfied by an assignment $I$ if any one literal in
 the clause is satisfied by $I$.  A CNF formula is satisified by $I$ if each
-of its clauses is satisfied by $I$.  An assignment that satisfies a formula
-is called a model for that formula.
+of its clauses is satisfied by $I$.  An assignment that satisfies a formula is
+called a model for that formula.  Two formulas $F$ and $G$ are *satisfiability
+equivalent* if $F$ is satisfiable if and only $G$ is satisfiable.
 
-A formula is satisfiable if there exists a model for it.  A SAT solver takes
-as input a formula and finds a single model if the formula is satisfiable.
+A formula is satisfiable if there exists a model for it.  A SAT solver
+takes as input a formula and finds a model if the formula is satisfiable.
 Otherwise, the solver can provide a proof that the formula is unsatisfiable.
 This proof needs to derive the unsatisfiable empty clause.
 
 While searching for a model, a solver builds up a (partial) assignment.
-Additionally it records the order in which the literals where assigned and
-the *reason clause*, if any for each assigned literal.  We call this data
-structure the trail.
+Additionally it records the order in which the literals where assigned.
+We call this data structure the *trail*.
 
 SAT solvers search through the space all possible assignments.  They make
 assumptions, adding literals to the trail that might be part of a satisfying
 assignment.  The search space is greatly reduced by formula simplification,
 such as unit propagation which will be introduced in the next subsection.
-Simplification during search is called inprocessing, as opposed to
-preprocessing which precedes the first assumption.  Such simplifications
-prune assignments that are definitely unsatisfiable, by adding literals
-to the trail. These literals are said to be forced, because they, unlike
-assumptions, are necessarily satisfied in any model that extends the current
-trail.  If simplifications are done on a trail without any assumptions, the
-assignment is the set of top-level forced literals, the set of literals that
-are part of any model.  These are essential for a checker as we will see later.
-Once the set of top-level forced literals falsifies a clause the solver has
-derived the empty clause and therefore determined unsatisfiability of the
-current formula and also the input formula.
+Simplification during search (interleaved with assumptions) is called
+inprocessing, as opposed to preprocessing which precedes the first assumption.
+Such simplifications can prune assignments that are definitely unsatisfiable,
+by adding literals to the trail. These literals are said to be forced,
+because they, unlike assumptions, are necessarily satisfied in any model that
+extends the current trail.  If simplifications are done on a trail without
+any assumptions, the trail is the set of top-level forced literals, the set
+of literals that are part of any model.  These are essential for a checker
+as we will see later.  Once the set of top-level forced literals falsifies a
+clause, then the solver has derived the empty clause and therefore established
+unsatisfiability of the current formula and also the input formula.
+
+CDCL
+----
 
 Most modern SAT solvers implement Conflict Driven Clause Learning (CDCL).
 Whenever a clause clause in the formula is falsified, this means that the
 current set of assumptions can not be part of any model. Therefore a subset
-of the assumptions is reverted and a *conflict clause* is added to the
-formula to prevent the solver from revisiting those ill-advised assumptions,
-effectively pruning the search space.  As the number of clauses increases,
-so does memory usage and the time spent on formula simplification. Because
-of this, learned clauses that are not considered useful enough, are regularly
-deleted from the formula.
+of the assumptions is reverted and a *conflict clause* is learned, and added
+to the formula to prevent the solver from revisiting those ill-advised
+assumptions, effectively pruning the search space.  As the number of
+clauses increases, so does memory usage and the time spent on formula
+simplification. Because of this, learned clauses that are not considered
+useful enough, are regularly deleted from the formula.
 
 Unit Propagation
 ----------------
@@ -176,18 +178,18 @@ Unit Propagation
 Given an assignment, a *unit clause* contains only falsified literals except
 for a single non-falsified *unit literal*.
 
-At any point during a solver's search, if formula contains a unit clause, any
-model extending the current trail must contain the unit literal, therefore
-it is added as a forced literal. The unit clause is recorded as the reason
-clause for this literal.  Everytime a literal is added to the trail, the
-formula will be simplified by propagating that literal: any clause containing
-the literal is discarded because they will be satisfied by it, and all of
-the literal's negations are removed from the remaining clauses.  The latter
-step may spawn new unit clauses and thus trigger further propagation.
+At any point during a solver's search, if the formula contains a unit clause,
+any model extending the current trail must contain the unit literal, therefore
+it is added as a forced literal. The unit clause is recorded as the *reason
+clause* for this literal.  Everytime a literal $l$ is added to the trail, the
+formula will be simplified by *propagating* $l$: any clause containing $l$ is
+discarded because it will be satisfied $l$, and occurrences of $\overline{l}$
+are removed from the remaining clauses. The latter step may spawn new unit
+clauses and thus trigger further propagation.
 
 As assumptions need to be undone many times during search, the implementation
-does not actually delete clauses and literals, but merely updates the trail
-and scans the formula for new units.  In order to efficiently keep track
+of unit propagation does not actually delete clauses and literals, but
+merely scans the formula for new units.  In order to efficiently keep track
 of which clauses can become unit, competitve solvers and checkers use the
 two-watched-literal scheme [@Moskewicz:2001:CEE:378239.379017]. It consists of
 a watchlist for each literal, which is a sequence of clause references. All
@@ -221,26 +223,25 @@ the empty clause just like the solver did.
 Redundancy Properties
 ---------------------
 
-A clause is redundant according to some criteria in Formula $F$ if it can
-be derived from the formula by a proof system associated with that criteria.
+A clause $C$ is redundant in $F$ if $F$ and $F \cup \{C\}$ are satisfiability
+equivalent [@Heule_2017].  Note that $C$ is not necessarily a
+ logical consequence of the formula [@philipp_rebola_unsatproofs].
 
-Each lemma in a clausal proof must be redundant according to the proof's
-notion of redundancy.
-\iffalse
-not necessarily a logical consequence of the formula [@philipp_rebola_unsatproofs]
-\fi
+There are various criteria of redundancy, with different levels of expressivity
+and computational costs.  Each lemma in a clausal proof must be redundant
+according to the proof's redundancy criteria.
 
-**Redundancy Property RUP:** a clause $C$ is RUP (reverse unit propagation)
+**Redundancy Criteria RUP:** a clause $C$ is RUP (reverse unit propagation)
 in formula $F$ if unit propagation in $F \cup \{ \{\overline{l}\} \,|\,
 l \in C \}$ can derive the empty clause.
 
-The resolution rule states that for literal $l$ and clauses $C$ and $D$
+The *resolution rule* states that for literal $l$ and clauses $C$ and $D$
 where $l \in C$ and $\overline{l} \in D$, the conjunct of $C$ and $D$ implies
-$(C \setminus \{l\}) \cup (D \setminus \{\overline{l}\})$. The
-derived clause is called the *resolvent on $l$ of $C$ and $D$*. $D$ is called
-a *resolution candidate* for $C$.
+$(C \setminus \{l\}) \cup (D \setminus \{\overline{l}\})$. The derived clause
+is called the *resolvent on $l$ of $C$ and $D$*. $D$ is called a *resolution
+candidate* for $C$.
 
-**Redundancy Property RAT:** a clause $C$ is a *resolution asymmetric
+**Redundancy Criteria RAT:** a clause $C$ is a *resolution asymmetric
 tautology* (RAT) [@inprocessingrules] on some literal $l \in C$ with respect
 to formula $F$ whenever for all clauses $D \in F$ where $\overline{l} \in D$,
 the resolvent on $l$ of $C$ and $D$ is RUP in $F$.
@@ -248,15 +249,18 @@ the resolvent on $l$ of $C$ and $D$ is RUP in $F$.
 Deletions
 ---------
 
-Proofs based on the resolution rule are exponential in the size of the formula,
-as are ones based on RUP or RAT.  To substantially reduce checking efforts,
-clause deletion information has been added to proof formats [@Heule_2014].
+Proofs based on the resolution rule are exponential in the size of the
+formula, as are ones based on RUP or RAT.  A proof solely consisting of
+clause introductions will result in the checker suffer from the huge number
+of clauses as described in [CDCL].  To counteract this, clause deletion
+information has been added to proof formats, making the proof checking time
+comparable to solving time [@Heule_2014].
 
 DRAT Proofs
 -----------
 
 Proof based on RUP alone are not expressive enough to cover all inprocessing
-techniques in modern SAT solvers. For this reason, more powerful property
+techniques in modern SAT solvers. For this reason, more powerful criteria
 RAT is used today [@rat]. Clause deletion was introduced to make checking
 more efficient [@Wetzler_2014].
 
@@ -284,8 +288,8 @@ proof does not require blind propagation and there are verified implementations
 available[^acl2].
 
 An LRAT proof is a clausal proof just like DRAT, but it includes clause hints
-for resolution candidates and all unit clauses that are necessary to derive
-a the empty clause to show that the resolvent is a RUP.
+for each resolution candidates and all unit clauses that are necessary to
+derive a the empty clause to show that the resolvent is a RUP.
 
 Forward Checking
 ----------------
@@ -304,41 +308,40 @@ To avoid checking superfluous lemmas, the proof is checked backwards ---
 only lemmas that are transitively necessary to derive the empty clause are
 checked [@Heule_2013].
 
-This requires two passes: a forward pass performing incremental prepropagation
+This requires two passes: a forward pass performing unit propagation
 [@RebolaCruz2018] until the empty clause is derived, and a backward pass
-that actually checks the necessary clause introductions.
+that actually checks each required clause introduction.
 
-In the forward pass, conflict analysis *marks* all clauses that were required
-to derive the empty clause.  This is done by a depth first search in the graph
-induced by the reason clauses: starting from the clause that was falsified,
-the clause is marked and for each of its literals $l$, the same is done
-recursively for the reason for $\overline{l}$.
+At the end of the forward pass, conflict analysis *marks* all clauses that
+were required to derive the empty clause.  This is done by a depth-first
+search in the graph induced by the reason clauses: starting from the clause
+that was falsified, the clause is marked and, for each of its literals $l$,
+the same is done recursively for the reason for $\overline{l}$.
 
 Subsequently during the backwards pass, only marked clauses are checked. During
-those RUP and RAT checks, more clauses may be marked --- they also use the
-conflict analysis described above.
+those RUP and RAT checks, after each derivation of an empty clause the same
+conflict analysis as described above takes place, which can mark more clauses.
 
 An *unsatisfiable core*, or core for short is a subset of an unsatisfiable
-formula.  Backwards checking computes a core, consisting of all marked
-clauses that were part of the original formula.  Additionally, a *trimmed
-proof* is computed, consisting of all marked lemmas.
+formula.  Backwards checking computes a core, consisting of all marked clauses
+that were part of the original formula.  Additionally, a *trimmed proof*
+is computed, consisting of all marked lemmas. The LRAT output is based on
+the trimmed proof, so it can even be smaller than then input.
 
 Core-first Unit Propagation
 ---------------------------
 
 In order to keep the core small and reduce checking costs, core-first unit
-propagation was introduced [@Heule_2013].  It works by doing unit
-propagation in two phases:
+propagation was introduced [@Heule_2013].  It works by doing unit propagation
+in two phases:
 
 1. Propagate exhaustively using all clauses that are already known to be in
 the core.
 2. Consider non-core clauses: propagate only the first unit found and go
 to 1.  If there is no unit found, the propagation has reached its fixed-point
-without a conflict.
+without deriving the empty clause.
 
-Which results in a local minimum of clauses being added to the conflict graph,
-and subsequently the core. Non-core lemmas do not have to be checked.
-
+Which results in a local minimum of clauses being added to the core.
 
 Reason Deletions
 ----------------
@@ -347,19 +350,31 @@ As explained in [@RebolaCruz2018] when checking a proof without deletions
 of reason clauses, the trail grows monotonically, that is, it never shrinks
 at any proof step during the forward phase. Therefore, during the backwards
 phase, it is trivial to undo the propagations done after a lemma introduction
-by merely truncating the stack.
+by merely truncating the stack. This also maintains Invariant 1, making sure
+the watchlists will always find all unit clauses.
 
-However, when there are reason deletions it is not as simple.  During the
-forward pass, when a reason clause is deleted its associated unit literal is
-unassigned.  If this literal was necessary to propagate some other unit, that
-one may be unassigned as well, and so on. All these literals form the cone of
-influence (see [@RebolaCruz2018]) of the first unit literal and are recorded
-in the checker, alongside their positions in the trail, and reasons clauses.
+When a proof with reason deletions is checked under specified DRAT, the
+algorithm from [@RebolaCruz2018] is required to restore Invariant 1 in the
+backwards pass. The rest of this subsection tries to explain this algorithm.
+An understanding of the latter is not required to understand the contributions
+in this paper but it is included for completeness.
 
-The recorded information can then be used in the backward pass to patch
-the trail at any step that is a reason deletion, in order for the trail to
-be exactly as it was during the forward phase. The tricky part here is to
-correctly restore the watch invariant in all affected clauses.
+Let us now consider a proof with reason deletions.  A reason deletion
+means that a clause will be deleted from the formula in the forward pass
+and re-introduced in the backwards pass.  This requires adding it to the
+watchlists and removing it respectively.
+
+During the forward pass, whenever a reason clause is deleted its associated
+unit literal is unassigned.  If this literal was necessary to propagate
+some other unit, that one may be unassigned as well, and so on. All these
+literals form the *cone of influence* (see [@RebolaCruz2018]) of the first
+unit literal and are recorded in the checker, alongside their positions in
+the trail, and reasons clauses.
+
+The recorded information can then be used in the backward pass to patch the
+trail at the reason deletions in order for the trail to be exactly as it
+was during the forward phase. The tricky part here is to correctly restore
+the watch invariant in all affected clauses.
 
 When a reason deletion is processed during the backwards phase, each literal in
 the cone will be reintroduced into the trail at the recorded position. This is
@@ -631,9 +646,9 @@ Each witness is a counter-example to some redundancy check.
   when performing the failed redundancy check.
 - `pivot`: This specifies the pivot literal.
 
-Note that if the lemma is the empty clause, no witness is needed.
-This corresponds to a proof claiming an empty clause when there is no
-top-level conflict.
+Note that if the lemma is the empty clause, no witness is needed.  This
+corresponds to a proof containing an empty clause that cannot be derived by
+unit propagation.
 
 Semantics
 ---------
@@ -711,9 +726,13 @@ hints in the LRAT proof.
 7. Experimental Evaluation
 ==========================
 
-To evaluate our tool, we performed experiments on proofs produced by
-solvers from the SAT competition 2018[^sc18]. The detailed set-up of our
-experiments is available[^rate-experiments].
+To evaluate our tool, we performed experiments, the detailed set-up is
+available[^rate-experiments].
+
+We work on proofs produced by solvers from the SAT competition 2018[^sc18].
+Note that since the proofs produced by `MiniSat`-derived are likely not
+meant to be interpreted as specified DRAT, the relevancy of our benchmarks
+is questionable.
 
 Our experimental procedure is as follows:
 
@@ -763,9 +782,11 @@ standing for the executions of `rate` checking operational DRAT.
 and memory usage in megabytes (2^20^ bytes).
 
 
-Overall, the performance of the four checkers we analyze is very similar,
-as can be seen by the boxplots for runtime (figure @fig:box-time) and memory
-usage (figure @fig:box-space).
+Overall, the performance of the four checkers we analyze is very similar, as
+can be seen by the boxplots for runtime (figure @fig:box-time).  The memory
+usage (figure @fig:box-space) is higher in `rate`, likely due to to the
+difference described in [Clause Identifiers], but there should be no
+asymptotical difference.
 
 ![Boxplot of checker runtimes across all proofs](p/box-time.svg){#fig:box-time}
 
@@ -812,12 +833,11 @@ DRAT.](p/correlation-reason-deletions-space-delta.svg){#fig:correlation-reason-d
 Overhead of Reason Deletions
 ----------------------------
 
-Figure @fig:correlation-reason-deletions-time-delta suggests that a
-large number of reason deletions brings about some runtime overhead in
-`rate` when checking specified DRAT as opposed to operational DRAT.
-Curiously, a significant overhead in memory usage seems to occur only
-on proofs with almost no reason deletions, as illustrated by figure
-@fig:correlation-reason-deletions-space-delta.
+Figure @fig:correlation-reason-deletions-time-delta suggests that a large
+number of reason deletions brings about some runtime overhead in `rate` when
+checking specified DRAT as opposed to operational DRAT.  A significant overhead
+in memory consumption occurs in only one instance, which also has a high number
+of reason deletions, see figure @fig:correlation-reason-deletions-space-delta.
 
 Note that this overhead also occurs for proofs that only contain redundant
 reason deletions. For this class of proofs, the overhead could be easily

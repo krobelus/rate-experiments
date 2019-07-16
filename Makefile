@@ -26,6 +26,7 @@ pandoc := pandoc --filter pandoc-fignos --filter pandoc-citeproc --filter pandoc
 
 README.markdown: README.md $(tables) $(plots)
 	$(pandoc) $< -o $@ -t gfm
+	sed -i '1i# Complete and Competitive DRAT Checking' $@
 README.html: README.md $(tables) $(plots)
 	$(pandoc) $< -o $@
 README.pdf: README.md $(tables) $(plots)
@@ -74,3 +75,4 @@ hash-solved-instances:
 benchmarks/.set-of-solved-instances:
 	touch $@
 
+	
