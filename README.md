@@ -96,7 +96,7 @@ The rest of this paper is organized as follows: In [the following
 section][2. Preliminaries] we will introduce preliminary knowledge about
 SAT solving, proofs of unsatisfiability, checking algorithms, the problem
 with reason deletions and existing checkers.  After establishing novel
-terminology in [the following section][3. Redundant Reason Deletions],
+terminology in [the following section][3. Two Kinds of Reason Deletions],
 our first contribution, a proposal on how to change solvers to produce
 unambiguously correct proofs, can be found in [Section 4][4. Solvers].
 The SICK format along our extension will be described in [Section
@@ -203,8 +203,7 @@ current trail $I$ falsifies $l$, then $I$ satisfies $k$.
 
 In particular, when literal $l$ is assigned, it is propagated by scanning
 the watchlist of $\overline{l}$, thus visiting only clauses that are watched
-on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant
-1 might need to be restored.
+on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant 1 might need to be restored.
 
 Note that, as in [@RebolaCruz2018], clauses of size one are extended by a
 single literal $\overline{\top}$ to make the manipulations of watches work
@@ -312,21 +311,22 @@ This requires two passes: a forward pass performing unit propagation
 [@RebolaCruz2018] until the empty clause is derived, and a backward pass
 that actually checks each required clause introduction.
 
-At the end of the forward pass, conflict analysis *marks* all clauses that
-were required to derive the empty clause.  This is done by a depth-first
-search in the graph induced by the reason clauses: starting from the clause
-that was falsified, the clause is marked and, for each of its literals $l$,
-the same is done recursively for the reason for $\overline{l}$.
+An *unsatisfiable core*, for short *core* is an unsatisfiable subset of
+an unsatisfiable formula. With backwards checking, a core is eventually
+computed and only core lemmas are checked.  At the end of the forward pass,
+conflict analysis adds to the core all clauses that were required to derive
+the empty clause.  This is done by a depth-first search in the graph induced
+by the reason clauses: starting from the clause that was falsified, the
+clause is added to the core and, for each of its literals $l$, the same is
+done recursively for the reason for $\overline{l}$.
 
-Subsequently during the backwards pass, only marked clauses are checked. During
+Subsequently during the backward pass, only core lemmas are checked. During
 those RUP and RAT checks, after each derivation of an empty clause the same
-conflict analysis as described above takes place, which can mark more clauses.
+conflict analysis as described above takes place, which can add more clauses
+to the core.
 
-An *unsatisfiable core*, or core for short is a subset of an unsatisfiable
-formula.  Backwards checking computes a core, consisting of all marked clauses
-that were part of the original formula.  Additionally, a *trimmed proof*
-is computed, consisting of all marked lemmas. The LRAT output is based on
-the trimmed proof, so it can even be smaller than then input.
+A side product of this core computation is a *trimmed proof*, consisting
+of all core lemmas. The LRAT output is based on the trimmed proof.
 
 Core-first Unit Propagation
 ---------------------------
@@ -355,13 +355,13 @@ the watchlists will always find all unit clauses.
 
 When a proof with reason deletions is checked under specified DRAT, the
 algorithm from [@RebolaCruz2018] is required to restore Invariant 1 in the
-backwards pass. The rest of this subsection tries to explain this algorithm.
+backward pass. The rest of this subsection tries to explain this algorithm.
 An understanding of the latter is not required to understand the contributions
 in this paper but it is included for completeness.
 
 Let us now consider a proof with reason deletions.  A reason deletion
 means that a clause will be deleted from the formula in the forward pass
-and re-introduced in the backwards pass.  This requires adding it to the
+and re-introduced in the backward pass.  This requires adding it to the
 watchlists and removing it respectively.
 
 During the forward pass, whenever a reason clause is deleted its associated
@@ -374,23 +374,24 @@ the trail, and reasons clauses.
 The recorded information can then be used in the backward pass to patch the
 trail at the reason deletions in order for the trail to be exactly as it
 was during the forward phase. The tricky part here is to correctly restore
-the watch invariant in all affected clauses.
+the Invariant 1 in all affected clauses.
 
-When a reason deletion is processed during the backwards phase, each literal in
-the cone will be reintroduced into the trail at the recorded position. This is
-fairly straightforward.  Consider literal $l$ in the cone. Before applying
-the backwards deletion it could have been satisfied or unassigned (but not
-falsified).  After reintroducing it, it is assigned. Therefore, a clause
-containing $\overline{l}$ might become unit without the checker noticing.
-Because of this, the watchlists of all reverse cone literals $\overline{l}$
-have to be traversed to restore the watch invariant.
-Each of those clause is watched on falsified literal $\overline{l}$, which
-needs to be replaced by a non-falsified literal.
-Possibly, both watches are falsified by the reintroductions, in that case
-both will be replaced by non-falsified literals.
+When a reason deletion is processed during the backwards phase, each
+literal in the cone will be reintroduced into the trail at the recorded
+position.  Consider literal $l$ in the cone. Before applying the backwards
+deletion it could have been satisfied or unassigned (but not falsified).
+After reintroducing it, it is assigned. Therefore, a clause containing
+$\overline{l}$ might become unit without the checker noticing.  Because of
+this, the watchlists of all reverse cone literals $\overline{l}$ have to be
+traversed to restore the watch invariant.  Each of those clause is watched
+on falsified literal $\overline{l}$. This watch and possibly the other watch,
+too, need to be swapped with other literals to restore Invariant 1.
+
+In case the clause has at least two non-falsified literals, the watches can 
+be set to any two out of those.
 
 However, if the clause has only one non-falsified literal (it is necessarily
-satisifed because of invariant 1), then the other watch must be the most
+satisifed because of Invariant 1), then the other watch must be the most
 recently falsified literal [@RebolaCruz2018; Example 5]. Let us illustrate
 the reason for this by means of an example. Imagine clause $xyz$ with $I =
 \{x, \overline{y}, \overline{z}\}$.  It is watched on the first two literals,
@@ -400,9 +401,9 @@ watches are not touched, hence Invariant 1 is violated.  In particular, during
 a RUP check, $\overline{z}$ could be assigned, making the clause unit which
 would go unnoticed, because $z$ is not watched.  To avoid such a situation,
 after performing a deletion instruction backwards, such a falsified watch must
-be set to the most recently falsified literal.  This ensures that, during any
-backwards introduction, if the satisfied watch (here $x$) is being unassigned,
-the other watch will also be unassigned, thus restoring invariant 1.
+be set to the most recently falsified literal.  This ensures that, during
+any backwards introduction, if the satisfied watch $x$ is being unassigned,
+the other watch will also be unassigned, thus restoring Invariant 1.
 
 Existing Checkers
 -----------------
@@ -470,18 +471,18 @@ which may explain most of the difference in performance.
 Additionally `rupee` does not use core-first unit propagation while the
 other checkers do. This is important for swift checking on some instances.
 
-3. Redundant Reason Deletions
+3. Two Kinds of Reason Deletions
 =============================
 
 Here we clarify which reason deletions are actually problematic.
 
 Deleting a reason clause generally shrinks the trail.  However, if, and only
 if there is another clause that can act as reason for the same literal at
-some point during unit propagation, then the set of literals in the trail
-does not change.  We call this special case a *redundant reason deletion*,
-and the other case a *non-redundant reason deletion*.  An simple example
-for a redundant reason deletion would be the deletion of a size-one reason
-clause that occurs twice in the formula.
+any point during unit propagation after removing the reason clause, then
+the set of literals in the trail does not change.  We call this special
+case a *redundant reason deletion*, and the other case a *non-redundant
+reason deletion*.  An simple example for a redundant reason deletion would
+be the deletion of a size-one reason clause that occurs twice in the formula.
 
 Note that the term *unit deletion* comprises deletions of any unit clause,
 that is, reason deletions and other deleted units that were not propagating.
@@ -514,15 +515,14 @@ takes a collection of clause references. Each of those clauses that is
 satisfied, is removed from the clause database and added as deletion to
 the DRAT proof output.  Note that it is only called at decision level zero,
 which means that those clauses will be satisfied indefinitely for the rest
-of the solving time.
+of the search.
 
 In `MiniSat`, *locked* clauses are reasons for some literal in the trail.
 Currently, `Solver::removeSatisfied` also deletes locked clauses, however,
-the (transitively) induced assignments are not undone.  This suggests that a
-locked clause is implicitly kept in the formula, even though it is deleted.
-To match this solver's behavior, current DRAT checkers ignore deletions of
-unit clauses, which includes all reason clauses, which means they do not
-undo any assignments when deleting clauses.
+the induced assignments are not undone.  This suggests that a locked clause
+is implicitly kept in the formula, even though it is deleted.  To match this
+solver's behavior, current DRAT checkers ignore deletions of reason clauses,
+which means they do not undo any assignments when deleting clauses.
 
 There are two obvious possible changes to `MiniSat` to produce proofs that
 do not require this workaround of ignoring reason deletions when checking.
@@ -533,8 +533,7 @@ do not require this workaround of ignoring reason deletions when checking.
 propagated literal as addition in the DRAT proof.  Suggested by Mate
 Soos[^suggestion-add-units], this option is also the preferred one to the
 authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].  Additionally,
-this is implemented in `CaDiCaL`[^cadical] for initial simplification of
-the formula.
+this is implemented in `CaDiCaL's`[^cadical] preprocessor.
 
 We provide patches implementing these for `MiniSat` version 2.2
 (1.  [^patch-MiniSat-keep-locked-clauses] and 2.[^patch-MiniSat]),
@@ -543,8 +542,7 @@ and the winner of the main track of the 2018 SAT competition
 2.[^patch-MapleLCMDistChronoBT]).
 
 The same methods can be applied easily to other `MiniSat`-based solvers.
-As it is very small, the patch implementing the second variant for `MiniSat`
-is displayed below.
+The patch implementing the second variant for `MiniSat` is displayed below.
 
 ```diff
 From 15d7560d6c340a4e8d93cb7469fe976cc43690da Mon Sep 17 00:00:00 2001
@@ -582,8 +580,8 @@ index ddc3801..5941449 100644
 ==============
 
 When a proof is found to be incorrect, our tool outputs an incorrectness
-certificate in our modified SICK format. This certificate can be used by our
-tool `sick-check` to verify the incorrectness of the proof without doing any
+certificate in our modified SICK format. This certificate can be used by
+our tool `sick-check` to verify incorrectness of the proof without doing any
 unit propagation. Furthermore, the size of the incorrectness certificate is
 in practice linear in the size of the formula, while proofs are exponential.
 
@@ -591,7 +589,7 @@ Let us give an  an example of a SICK certificate.  The first two columns show
 a satisfiable formula in DIMACS format and an incorrect DRAT proof for this
 formula.  The third column has the corresponding SICK certificate, stating
 that the RAT check failed for the first lemma in the proof.  The certificate
-format is using TOML[^toml].
+file format is using TOML[^toml] syntax.
 
 Formula     Proof   SICK Certificate
 ----------- ------- ---------------------------------------------
@@ -623,8 +621,8 @@ Explanation
 -----------
 
 - `proof_format` describes the proof format to use.
-   - `DRAT-arbitrary-pivot`: DRAT checking where the pivot can any literal in
-   the lemma. This requires one witness (counter-example) for each possible
+   - `DRAT-arbitrary-pivot`: DRAT checking where the pivot can be any literal
+   in the lemma. This requires one witness (counter-example) for each possible
    pivot in the failing lemma. The pivot has to be specified for each witness.
    - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
    The pivot needs to be the first literal in the lemma.
@@ -685,22 +683,24 @@ The implementation (`rate`) is available [^rate].
 Features
 --------
 
+- check DRAT proofs
 - output core lemmas as DIMACS, LRAT or GRAT for accepted proofs
 - output SICK certificate of unsatisfiability for rejected proofs
 - competitive performance due to backwards checking with core-first unit
 propagation
 - option to ignore unit deletions, including reason deletions (flag `-d` or
 `--skip-unit-deletions`)
-- decompress input files (Gzip, Zstandard, Bzip2, XZ, LZ4)
+- output several metrics regarding reason deletions
+- decompress input files on-the-fly (Gzip, Zstandard, Bzip2, XZ, LZ4)
 
 The debug build comes with lots of assertions, including checks for arithmetic
-overflows and lossy narrowing conversions.
+overflows and narrowing conversions that cause unintended changes of values.
 
 Rust
 ----
 
-We chose modern systems programming language Rust[^rust] as implementation
-language.  Amongst the respondents of the 2019 Stackoverflow Developer
+We chose modern systems programming language Rust[^rust] for our
+implementation.  Amongst the respondents of the 2019 Stackoverflow Developer
 Survey[^so-survey] it is the most loved programming language and Rust
 developers have the highest rate of contributing to open source projects.
 
@@ -729,10 +729,10 @@ hints in the LRAT proof.
 To evaluate our tool, we performed experiments, the detailed set-up is
 available[^rate-experiments].
 
-We work on proofs produced by solvers from the SAT competition 2018[^sc18].
-Note that since the proofs produced by `MiniSat`-derived are likely not
-meant to be interpreted as specified DRAT, the relevancy of our benchmarks
-is questionable.
+We work on proofs produced by solvers from the SAT competition 2018[^sc18].  As
+described in [Section 4][4. Solvers], the proofs produced by `MiniSat`-derived
+solvers are likely not meant to be interpreted as specified DRAT, so the
+relevancy of our benchmarks is questionable.
 
 Our experimental procedure is as follows:
 
@@ -752,7 +752,7 @@ Our experimental procedure is as follows:
 
 -   We used the same limits as in the SAT competition --- 5000 seconds CPU
     time and 24 GB memory using runlim[^runlim]. For checking the timeout
-    is 20000 seconds, which is also consistent with the competition.
+    is 20000 seconds, which is also in line with the competition.
 
 -   Since the machine we used for benchmarking has 32 cores, we used GNU
     parallel [@Tange2018] to run that many jobs simultaneously. Note that
@@ -795,7 +795,7 @@ asymptotical difference.
 
 In figure @fig:cactus-time and @fig:cactus-space we show the distribution of
 performances across the most difficult proof instances.  Those plot suggest
-that `gratgen` is slightly faster, and `DRAT-trim` is slightly slower than
+that `gratgen` is a bit faster, and `DRAT-trim` is slightly slower than
 `rate`. Moreover `rate`, and `rate --skip-unit-deletions` show roughly the
 same distribution of performance.
 
@@ -841,19 +841,19 @@ of reason deletions, see figure @fig:correlation-reason-deletions-space-delta.
 
 Note that this overhead also occurs for proofs that only contain redundant
 reason deletions. For this class of proofs, the overhead could be easily
-remedied with a small change to the algorithm.  However, it is not yet
-clear to us how this should be done ideally.  If solvers produced proofs
-with (redundant) reason deletions only after addition of the unit clause
-replacing other reason clauses, this would be trivial to optimize for.
-This class of proofs is the one implemented by the second patch variant from
+remedied with a small change to the checking algorithm.  However, it is not
+yet clear to us how this should be done ideally.  Assuming solvers produced
+proofs with (redundant) reason deletions only after addition of the unit
+clause replacing other reason clauses, this would be trivial.  This class
+of proofs is the one implemented by the second variant of the patches from
 [section 4][4. Solvers].
 
 8. Conclusion
 =============
 
-We have provided some evidence to our hypothesis that checking specified
-DRAT is as expensive as checking operational DRAT, but an excessive number
-of reason deletions can make it more costly.
+We have provided some evidence to our hypothesis that checking specified DRAT
+is, on average, as expensive as checking operational DRAT, but an excessive
+number of reason deletions can make it more costly.
 
 We encourage SAT solver developers to to apply our patch to their
 `MiniSat`-based solvers in order to create proofs that are correct under
@@ -867,6 +867,11 @@ for operational DRAT in terms of checking SAT solvers' unsatisfiability
 results, it might be useful for checking inprocessing steps with reason
 deletions Additionally it can be extended to support new proof formats.
 
+If a checker for specified DRAT were to be adopted, it might be beneficial
+to implement a way to handle redundant reason deletions more efficiently
+than `rate` does, ideas for doing so are described in [Overhead of Reason
+Deletions].
+
 Current DRAT checkers are heavily optimized for speed but they keep the entire
 input proof and the resulting LRAT certificate in memory. If the available
 memory is at premium, some changes could be made to do backwards checking
@@ -874,8 +879,8 @@ as the proof instructions are read.  Additionally, the LRAT proof could be
 output on-the-fly as well, with some postprocessing to fix the clause IDs.
 
 It might be possible to forego DRAT completely and directly generate LRAT
-in a solver which is done by the solver `varisat`. This removes
-the need for a complex checker at the cost of a larger proof artifact.
+in a solver which is done by `varisat`. This removes the need for a complex
+checker at the cost of a larger proof artifact.
 
 
 [^acl2]: <https://github.com/acl2/acl2/>
@@ -900,8 +905,8 @@ the need for a complex checker at the cost of a larger proof artifact.
 [^rust]: <https://www.rust-lang.org/>
 [^partial-ref]: <https://jix.one/introducing-partial_ref/>
 [^cadical-clauses]: <https://github.com/arminbiere/cadical/blob/master/src/watch.hpp#L9>
-[^reason-deletions-shrinking-trail]: The are called `reason deletions
-shrinking trail` in the output of `rate`.
+[^reason-deletions-shrinking-trail]: The non-redundant reason deletions are
+called `reason deletions shrinking trail` in the output of `rate`.
 
 References
 ==========

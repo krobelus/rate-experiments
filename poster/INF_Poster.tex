@@ -124,9 +124,14 @@ Complete and Competitive\\
 
     \begin{block}{Avoiding Reason Deletions in \texttt{MiniSat}}
 	\begin{itemize}
-            \item emit a unit clause before deleting a reason (\texttt{locked}) clause.
+	    \item \texttt{MiniSat} deletes reason clauses but acts as if
+	    they are not deleted
+            \item remedy: emit a unit clause before deleting a reason clause.
             \item yields correct proofs matching the solver's behavior
-            \item patch for 2018 SAT competition winner analoguous
+            \item patch for \texttt{MiniSat} below (reason clauses are
+            \texttt{locked})
+            \item similar patches for the 2018 SAT competition winner
+            and others
 	\end{itemize}
 	\vspace{1cm}
         {\footnotesize
@@ -181,7 +186,7 @@ pivot          = 1\\
             \end{column}
         \end{columns}
     \end{block}
-    \begin{block}{Implementation}
+    \begin{block}{Checker Implementation: \texttt{rate}}
         \begin{itemize}
             \item available at \url{https://github.com/krobelus/rate}
             \item written in Rust
@@ -197,7 +202,8 @@ pivot          = 1\\
 
     \textbf{Insight:} an excessive number of reason deletions
     has a noticeable impact on checking runtime (figure
-    \ref{fig:correlation-reason-deletions-time-delta}), but not on memory usage.
+    \ref{fig:correlation-reason-deletions-time-delta}), but barely any on
+    memory usage.
     \vspace{1cm}
 
     \begin{figure}
