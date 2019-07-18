@@ -82,8 +82,8 @@ Complete and Competitive\\
             \item SAT solvers produce DRAT proofs that are incorrect due to
             spurious deletions of \textbf{reason clauses}
             \item proof checkers remedy this by ignoring reason deletions
-            \item properly handling reason deletions requires a complex
-            algorithm with possible performance impact
+            \item handling reason deletions requires a complex algorithm
+            with possible performance impact
         \end{itemize}
     \end{block}
 
@@ -120,8 +120,8 @@ Complete and Competitive\\
 			\item clause $x$ is the \textbf{reason} for literals
 			$y$ and $\overline{y}$
             	    	\item deleting $x$ makes the proof incorrect
-			\item most SAT solvers produce such problematic
-			proofs, proof checkers ignore reason deletions
+			\item many SAT solvers produce such proofs $\rightarrow$
+			proof checkers ignore reason deletions
         	    \end{itemize}
     	    \end{column}
     	    \begin{column}{.6\textwidth}
@@ -213,12 +213,12 @@ Complete and Competitive\\
         \vspace{.5cm}
 	SICK certificate disproving RAT of clause $x$:
         \begin{align*}
-            \texttt{proof\_format}	&= \textbf{DRAT-arbitrary-pivot}		\\
+            \texttt{proof\_format}	&= \texttt{DRAT-arbitrary-pivot}		\\
 	    \texttt{proof\_step}	&= 2 \text{\quad (Failed line in the proof)}	\\
 	    \texttt{natural\_model}	&= \{\overline{x}, \overline{y}\}		\\
 	    \texttt{failing\_clause}	&= \overline{x} \lor y				\\
 	    \texttt{failing\_model}	&= \{\}						\\
-	    \texttt{pivot}		&= x						\\
+	    \texttt{pivot}		&= x						
         \end{align*}
     \end{block}
     \begin{block}{Checker Implementation: \texttt{rate}}
@@ -228,8 +228,6 @@ Complete and Competitive\\
             \item available at \url{https://github.com/krobelus/rate}
             \item written in Rust
         \end{itemize}
-    \end{block}
-
     \begin{figure}
         \centering
         \caption{Distribution of Proof Checkers' runtime\label{fig:cactus-time}}
@@ -240,7 +238,8 @@ Complete and Competitive\\
     has a noticeable impact on checking runtime (figure
     \ref{fig:correlation-reason-deletions-time-delta}), but barely any on
     memory usage.
-    \vspace{1cm}
+
+    \vspace{.5cm}
 
     \begin{figure}
         \centering
@@ -248,6 +247,11 @@ Complete and Competitive\\
         \includegraphics[scale=2]{../p/correlation-reason-deletions-time-delta.png}
     \end{figure}
 
+    {\footnotesize
+        More details at \url{https://github.com/krobelus/rate-experiments}
+    }
+
+    \end{block}
     \end{column}
   \end{columns}
 \end{frame}
