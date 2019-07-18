@@ -16,7 +16,6 @@
 
 \usepackage{TUINFPST}
 \usepackage{minted}
-% \usepackage{graphicx}
 \usepackage[export]{adjustbox}
 \usepackage{lipsum}
 \usepackage{longtable,booktabs}
@@ -51,7 +50,7 @@
 Complete and Competitive\\
   DRAT Proof Checking
 }
-\author[aclopte@gmail.com]{Johannes Altmanninger}
+\author[aclopte@gmail.com]{Johannes Altmanninger\\\today}
 \institute[]{%
   Technische Universit{\"a}t Wien\\[0.25\baselineskip]
   Institute of Logic and Computation\\[0.25\baselineskip]
@@ -81,30 +80,77 @@ Complete and Competitive\\
     \begin{block}{Motivation}
         \begin{itemize}
             \item SAT solvers produce DRAT proofs that are incorrect due to
-            spurious reason deletions
+            spurious deletions of \textbf{reason clauses}
             \item proof checkers remedy this by ignoring reason deletions
             \item properly handling reason deletions requires a complex
-            algorithm with a possible performance impact
+            algorithm with possible performance impact
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Problem}
+        \begin{itemize}
+                \item unsatisfiable propositional formula
+        	$ F =
+        	(x \lor y) \land
+            	(x \lor \overline{y}) \land
+            	(\overline{x} \lor y) \land
+            	(\overline{x} \lor \overline{y})
+        	$
+        	% \vspace{1cm}
+
+		\item redundant clauses (according to criteria RUP or RAT) \\
+			can be added without affecting satisfiability of
+			the formula
+		\item proof of unsatisfiability adds and deletes clause
+		until deriving the empty (unsatisfiable) clause $\square$
+
+		\begin{tabular}{lll}
+        		\texttt{1: add} & $x$			& \hspace{1cm} addition of redundant clause		\\
+        		\texttt{2: del} & $x \lor y$		& \hspace{1cm} deletion of subsumed clause (always fine)		\\
+        		\textcolor{red}{\texttt{3: del}} & \textcolor{red}{$x$}			& \hspace{1cm} \textcolor{red}{deletion of reason clause (loss of information)}		\\
+        		\texttt{4: add} & $\square$		& \hspace{1cm} addition of redundant conflict clause	\\
+		\end{tabular}
         \end{itemize}
 
+	\vspace{1cm}
+
 	\begin{columns}[T]
-    	    \begin{column}{0.45\textwidth}
-        	    \vspace{1cm}
-		    \textbf{Example:} If clause $\overline{x} y$ is deleted,
-		    then $\square$ can no longer be derived.
+    	    \begin{column}{.35\textwidth}
+        	    \begin{itemize}
+			\item clause $x$ is the \textbf{reason} for literals
+			$y$ and $\overline{y}$
+            	    	\item deleting $x$ makes the proof incorrect
+			\item most SAT solvers produce such problematic
+			proofs, proof checkers ignore reason deletions
+        	    \end{itemize}
     	    \end{column}
-    	    \begin{column}{.45\textwidth}
+    	    \begin{column}{.6\textwidth}
                 \begin{tikzpicture}[
-                        dep/.style={->,line width=1.5mm}
+                        dep/.style={->,line width=1.5mm},
+                        del/.style={dep,dash pattern=on 3mm off 3mm,red}
                     ]
-                  \matrix (m) [matrix of math nodes,row sep=3em,column sep=2em,minimum width=2em]
+                  \matrix (m) [matrix of math nodes,row sep=3em,column sep=1.5em,minimum width=1.5em]
                   {
-                     x & \textcolor{red}{\overline{x}y}	& \overline{x}\overline{y} \\
-                         & \square 			&     \\
-                     };
-                  \draw [dep] (m-1-1) -- (m-2-2);
-                  \draw [dep,dash pattern=on 3mm off 3mm,red] (m-1-2) -- (m-2-2);
-                  \draw [dep] (m-1-3) -- (m-2-2);
+                      \overline{x}\lor{}y	& x\lor{}y	&	  		& x\lor{}\overline{y} & \overline{x}\lor{}\overline{y}	\\
+                     			&	& \textcolor{red}{x}	&		& 				\\
+                     			& \textcolor{red}{y}	&	  		& \textcolor{red}{\overline{y}}  &   				\\
+                     			&	& \textcolor{red}{\square}		&		&				\\
+                  };
+                  \draw [dep] (m-1-2) -- (m-2-3);
+                  \draw [dep] (m-1-4) -- (m-2-3);
+
+                  \draw [dep] (m-1-1) -- (m-3-2);
+                  \draw [del] (m-2-3) -- (m-3-2);
+
+                  \draw [dep] (m-1-5) -- (m-3-4);
+                  \draw [del] (m-2-3) -- (m-3-4);
+
+                  \draw [del] (m-3-4) -- (m-4-3);
+                  \draw [del] (m-3-2) -- (m-4-3);
+
+                  % \draw [dep] (m-1-1) -- (m-2-2);
+                  % \draw [dep,dash pattern=on 3mm off 3mm,red] (m-1-2) -- (m-2-2);
+                  % \draw [dep] (m-1-3) -- (m-2-2);
                 \end{tikzpicture}
     	    \end{column}
 	\end{columns}
@@ -122,38 +168,27 @@ Complete and Competitive\\
     \end{block}
 
 
-    \begin{block}{Avoiding Reason Deletions in \texttt{MiniSat}}
+    \begin{block}{Avoiding Reason Deletions in Solvers}
 	\begin{itemize}
-	    \item \texttt{MiniSat} deletes reason clauses but acts as if
-	    they are not deleted
-            \item remedy: emit a unit clause before deleting a reason clause.
-            \item yields correct proofs matching the solver's behavior
-            \item patch for \texttt{MiniSat} below (reason clauses are
-            \texttt{locked})
-            \item similar patches for the 2018 SAT competition winner
-            and others
+	    \item Solver \texttt{MiniSat} deletes reason clauses \emph{but
+	    acts as if they were not deleted}
+            \item remedy: emit a unit clause before deleting a reason clause
+            --- yields correct proofs that match the solver's behavior
+            \item simple patch for \texttt{MiniSat}, see below (reason
+            clauses are \texttt{locked})
+            \item similar patch for the 2018 SAT competition winner
 	\end{itemize}
-	\vspace{1cm}
+	\vspace{0.5cm}
         {\footnotesize
             \begin{minted}[]{diff}
-diff --git a/minisat/core/Solver.cc b/minisat/core/Solver.cc
-index ddc3801..5941449 100644
---- a/minisat/core/Solver.cc
-+++ b/minisat/core/Solver.cc
 @@ -632,9 +632,13 @@ void Solver::removeSatisfied(vec<CRef>& cs)
-     int i, j;
-     for (i = j = 0; i < cs.size(); i++){
          Clause& c = ca[cs[i]];
--        if (satisfied(c))
-+        if (satisfied(c)) {
 +            if (output != NULL && locked(c)) {
 +                Lit unit = c[0];
 +                fprintf(output, "%i 0\n",
 +                        (var(unit) + 1) * (-2 * sign(unit) + 1));
 +            }
          removeClause(cs[i]);
--        else{
-+        } else{
             \end{minted}
         }
     \end{block}
@@ -164,33 +199,34 @@ index ddc3801..5941449 100644
         \begin{itemize}
             \item \emph{small} artifact to \emph{efficiently} certify
             incorrectness of a proof
-            \item can be verified by our tool \texttt{sick-check}
+            \item can be verified with our tool \texttt{sick-check}
         \end{itemize}
-        \vspace{1cm}
-        \begin{columns}[t]
-            \begin{column}{.25\textwidth}
-                formula\\
-                \texttt{p cnf 2 2\\-1 -2 0\\ -1\ \ 2 0\\}
-                incorrect DRAT proof\\
-                \texttt{1 0\\0\\}
-            \end{column}
-            \begin{column}{.8\textwidth}
-                \texttt{proof\_format = "DRAT-arbitrary-pivot"\\
-proof\_step     = 1\\
-natural\_model  = [-1, ]\\
-\lbrack\lbrack{}witness\rbrack\rbrack{}\\
-failing\_clause = [-2, -1, ]\\
-failing\_model  = [2, ]\\
-pivot          = 1\\
-                }
-            \end{column}
-        \end{columns}
+        \vspace{.5cm}
+        incorrect DRAT proof for $F$:
+
+	\begin{tabular}{lll}
+    		\texttt{1: del} & $x \lor y$		& \\
+    		\texttt{2: add} & $x$			& \\
+    		\texttt{3: add} & $\square$		& \\
+	\end{tabular}
+
+        \vspace{.5cm}
+	SICK certificate disproving RAT of clause $x$:
+        \begin{align*}
+            \texttt{proof\_format}	&= \textbf{DRAT-arbitrary-pivot}		\\
+	    \texttt{proof\_step}	&= 2 \text{\quad (Failed line in the proof)}	\\
+	    \texttt{natural\_model}	&= \{\overline{x}, \overline{y}\}		\\
+	    \texttt{failing\_clause}	&= \overline{x} \lor y				\\
+	    \texttt{failing\_model}	&= \{\}						\\
+	    \texttt{pivot}		&= x						\\
+        \end{align*}
     \end{block}
     \begin{block}{Checker Implementation: \texttt{rate}}
         \begin{itemize}
+            \item efficiently handles reason deletions
+            \item competitive performance (figure \ref{fig:cactus-time})
             \item available at \url{https://github.com/krobelus/rate}
             \item written in Rust
-            \item competitive performance (figure \ref{fig:cactus-time})
         \end{itemize}
     \end{block}
 

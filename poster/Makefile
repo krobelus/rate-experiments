@@ -1,6 +1,6 @@
-all: INF_Poster.pdf INF_Poster_example.pdf
+all: INF_Poster.pdf
 
-%.pdf: %.tex
+%.pdf: %.tex ../p
 	pdflatex -shell-escape -halt-on-error $<
 
 clean:

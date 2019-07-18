@@ -32,7 +32,7 @@ README.html: README.md $(tables) $(plots)
 README.pdf: README.md $(tables) $(plots)
 	$(pandoc) $< -o $@
 README.tex: README.md $(tables) $(plots)
-	$(pandoc) $< -o $@
+	$(pandoc) $< -o $@ --standalone
 
 results.csv: results.json csv.sh
 	./csv.sh < $< > $@

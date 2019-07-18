@@ -2,6 +2,7 @@
 title: Complete and Competitive DRAT Proof Checking
 author: Johannes Altmanninger
 bibliography: references.bib
+date: \today
 csl: ieee.csl
 ---
 
@@ -450,6 +451,9 @@ We also implement GRAT generation in our tool. However, it seems that the
 `gratchk` tool is not designed to handle reason deletions (apparently they
 are ignored) so it will fail to handle our GRAT certificates for proofs with
 reason deletions.
+
+Amongst state-of-the-art DRAT checkers, `gratgen` is arguably the easiest
+to understand, so we advise interested readers to study that.
 
 `rupee` [^rupee]
 ----------------
