@@ -1,11 +1,20 @@
 ---
-title: Complete and Competitive DRAT Proof Checking
 author: Johannes Altmanninger
 bibliography: references.bib
 date: \today
 csl: ieee.csl
+title: |
+        DRAT Proofs without Harmful Reason Clause Deletions 
+            &
+        Complete and Fast DRAT Proof Checking
 header-includes: |
         \usepackage{todonotes}
+        \title{
+            DRAT Proofs without Harmful \\ Reason Clause Deletions \\
+            \&\\
+            Complete and Fast \\ DRAT Proof Checking
+        }
+        \renewcommand{\title}[1]{}
 ---
 
 ::: {.abstract}
@@ -206,7 +215,8 @@ current trail $I$ falsifies $l$, then $I$ satisfies $k$.
 
 In particular, when literal $l$ is assigned, it is propagated by scanning
 the watchlist of $\overline{l}$, thus visiting only clauses that are watched
-on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant 1 might need to be restored.
+on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant
+1 might need to be restored.
 
 Note that, as in [@RebolaCruz2018], clauses of size one are extended by a
 single literal $\overline{\top}$ to make the manipulations of watches work
@@ -712,8 +722,9 @@ developers have the highest rate of contributing to open source projects.
 
 Based on our successful implementation, we believe that, while there may be
 some inconveniences with the borrow checker[^partial-ref], it is a viable
-alternative to C and C++ for the domain of SAT solving.  The first serious
-solver written in Rust, `varisat`[^varisat] is a great example of this.
+alternative to C and C++ for the domain of SAT solving. The first Rust-based
+solver to take part in competitions `varisat`[^varisat] is a great example
+of this.
 
 Clause Identifiers
 ------------------
@@ -911,8 +922,9 @@ checker at the cost of a larger proof artifact.
 [^rust]: <https://www.rust-lang.org/>
 [^partial-ref]: <https://jix.one/introducing-partial_ref/>
 [^cadical-clauses]: <https://github.com/arminbiere/cadical/blob/master/src/watch.hpp#L9>
-[^reason-deletions-shrinking-trail]: The non-redundant reason deletions are
-called `reason deletions shrinking trail` in the output of `rate`.
+[^reason-deletions-shrinking-trail]: The metric for the number of non-redundant
+reason deletions is called `reason deletions shrinking trail` in the output of
+`rate`.
 
 References
 ==========

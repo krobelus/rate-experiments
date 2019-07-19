@@ -20,6 +20,7 @@
 \usepackage{lipsum}
 \usepackage{longtable,booktabs}
 \usetikzlibrary{matrix}
+\usepackage{setspace}
 
 % block styling
 \setbeamercolor{block body}{fg=black,bg=white}
@@ -46,12 +47,13 @@
 % https://tex.stackexchange.com/questions/127145/beamer-presentation-figure-has-no-number
 \setbeamertemplate{caption}[numbered]
 
-\title[European Master's Program in Computational Logic]{
-Complete and Competitive\\
-  DRAT Proof Checking
+\title[Computational Logic] {
+    DRAT Proofs without Harmful \\ Reason Clause Deletions \\
+    \&\\
+    Complete and Fast \\ DRAT Proof Checking
 }
 \author[aclopte@gmail.com]{\texorpdfstring
-	{Johannes Altmanninger\\\today}
+	{Johannes Altmanninger, \today}
 	{Johannes Altmanninger}}
 \institute[]{%
   Technische Universit{\"a}t Wien\\[0.25\baselineskip]
@@ -81,8 +83,9 @@ Complete and Competitive\\
 
     \begin{block}{Motivation}
         \begin{itemize}
-            \item SAT solvers produce DRAT proofs that are incorrect due to
-            spurious deletions of \textbf{reason clauses}
+            \item SAT solvers produce DRAT proofs that are incorrect$^\texttt{a}$
+             due to spurious deletions
+            of \textbf{reason clauses}
             \item proof checkers remedy this by ignoring reason deletions
             \item handling reason deletions requires a complex algorithm
             with possible performance impact
@@ -129,7 +132,8 @@ Complete and Competitive\\
     	    \begin{column}{.6\textwidth}
                 \begin{tikzpicture}[
                         dep/.style={->,line width=1.5mm},
-                        del/.style={dep,dash pattern=on 3mm off 3mm,red}
+                        del/.style={dep,dash pattern=on 3mm off 3mm},
+                        bad/.style={red}
                     ]
                   \matrix (m) [matrix of math nodes,row sep=3em,column sep=1.5em,minimum width=1.5em]
                   {
@@ -138,17 +142,17 @@ Complete and Competitive\\
                      			& \textcolor{red}{y}	&	  		& \textcolor{red}{\overline{y}}  &   				\\
                      			&	& \textcolor{red}{\square}		&		&				\\
                   };
-                  \draw [dep] (m-1-2) -- (m-2-3);
-                  \draw [dep] (m-1-4) -- (m-2-3);
+                  \draw [del]     (m-1-2) -- (m-2-3);
+                  \draw [dep]     (m-1-4) -- (m-2-3);
 
-                  \draw [dep] (m-1-1) -- (m-3-2);
-                  \draw [del] (m-2-3) -- (m-3-2);
+                  \draw [dep]     (m-1-1) -- (m-3-2);
+                  \draw [del,bad] (m-2-3) -- (m-3-2);
 
-                  \draw [dep] (m-1-5) -- (m-3-4);
-                  \draw [del] (m-2-3) -- (m-3-4);
+                  \draw [dep]     (m-1-5) -- (m-3-4);
+                  \draw [del,bad] (m-2-3) -- (m-3-4);
 
-                  \draw [del] (m-3-4) -- (m-4-3);
-                  \draw [del] (m-3-2) -- (m-4-3);
+                  \draw [del,bad] (m-3-4) -- (m-4-3);
+                  \draw [del,bad] (m-3-2) -- (m-4-3);
 
                   % \draw [dep] (m-1-1) -- (m-2-2);
                   % \draw [dep,dash pattern=on 3mm off 3mm,red] (m-1-2) -- (m-2-2);
@@ -172,12 +176,12 @@ Complete and Competitive\\
 
     \begin{block}{Avoiding Reason Deletions in Solvers}
 	\begin{itemize}
-	    \item solver \texttt{MiniSat} deletes reason clauses \emph{but
-	    acts as if they were not deleted}
+	    \item \texttt{DRUPMiniSat}-based solvers delete reason clauses
+	    but do not undo corresponding assignments
             \item remedy: emit a unit clause before deleting a reason clause
             --- yields correct proofs that match the solver's behavior
-            \item simple patch for \texttt{MiniSat}, see below\\
-            	  reason clauses are called \texttt{locked}
+	    \item we implemented this in \texttt{DRUPMiniSat}\\
+		patch shown below --- reason clauses are called \texttt{locked}
             \item similar patch for the 2018 SAT competition winner
 	\end{itemize}
 	\vspace{0.5cm}
@@ -228,7 +232,7 @@ Complete and Competitive\\
             \item efficiently handles reason deletions
             \item competitive performance (Figure \ref{fig:cactus-time})
             \item available at \url{https://github.com/krobelus/rate}
-            \item written in memory-safe systems language Rust
+            \item written in Rust
         \end{itemize}
     \begin{figure}
         \centering
@@ -236,9 +240,10 @@ Complete and Competitive\\
         \includegraphics[scale=2]{../p/cactus-time.png}
     \end{figure}
 
-    \textbf{Insight:} an excessive number of reason deletions
-    has a noticeable impact on checking runtime (Figure
-    \ref{fig:correlation-reason-deletions-time-delta}).
+    \textbf{Insight:} an excessive number of reason
+    deletions may effect longer checking runtime (Figure
+    \ref{fig:correlation-reason-deletions-time-delta}).  Find more details
+    at \url{https://github.com/krobelus/rate-experiments}.
 
     \vspace{.5cm}
 
@@ -248,9 +253,13 @@ Complete and Competitive\\
         \includegraphics[scale=2]{../p/correlation-reason-deletions-time-delta.png}
     \end{figure}
 
-    % {\footnotesize
-        More details at \url{https://github.com/krobelus/rate-experiments}
-    % }
+    \begin{singlespace}
+        \footnotesize
+        $^\texttt{a}$ For simplicity and brevity, this poster assumes
+        correctness of a DRAT proof to be defined in terms of specified DRAT
+        as per \emph{A. Rebola-Pardo and A. Biere, ``Two Flavors of DRAT'',
+        Pragmatics of SAT, vol. 2018.}
+    \end{singlespace}
 
     \end{block}
     \end{column}
