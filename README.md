@@ -4,6 +4,8 @@ author: Johannes Altmanninger
 bibliography: references.bib
 date: \today
 csl: ieee.csl
+header-includes: |
+        \usepackage{todonotes}
 ---
 
 ::: {.abstract}
@@ -787,8 +789,8 @@ and memory usage in megabytes (2^20^ bytes).
 
 
 Overall, the performance of the four checkers we analyze is very similar, as
-can be seen by the boxplots for runtime (figure @fig:box-time).  The memory
-usage (figure @fig:box-space) is higher in `rate`, likely due to to the
+can be seen by the boxplots for runtime (Figure @fig:box-time).  The memory
+usage (Figure @fig:box-space) is higher in `rate`, likely due to to the
 difference described in [Clause Identifiers], but there should be no
 asymptotical difference.
 
