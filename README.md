@@ -6,13 +6,13 @@ csl: ieee.csl
 title: |
         DRAT Proofs without Harmful Reason Clause Deletions 
             &
-        Complete and Fast DRAT Proof Checking
+        Complete and Fast DRAT Proof-Checking
 header-includes: |
         \usepackage{todonotes}
         \title{
             DRAT Proofs without Harmful \\ Reason Clause Deletions \\
             \&\\
-            Complete and Fast \\ DRAT Proof Checking
+            Complete and Fast \\ DRAT Proof-Checking
         }
         \renewcommand{\title}[1]{}
 ---
@@ -34,13 +34,14 @@ to the specification.
 
 In past decades, there has been significant progress in SAT solving
 technology. Complex implementations of SAT solvers they have had documented
-bugs [@BrummayerBiere-SMT09] [@BrummayerLonsingBiere-SAT10].  To protect
-against these, there are checker programs that verify a solver's result.
-To do this, the solver outputs a witness. A checker program can reproduce
-the solver's result using that witness. If the checker succeeds at doing so,
-it *accepts* or *verifies* the witness.  Satisfiability witnesses, or models
-are trivial to check in linear time.  Unsatisfiability witnesses, or proofs
-of unsatisfiability on the other hand can be much more costly to check.
+bugs [@BrummayerBiere-SMT09] [@BrummayerLonsingBiere-SAT10]\todo{TODO: make
+citations clickable}.  To protect against these, there are checker programs
+that verify a solver's result.  To do this, the solver outputs a witness. A
+checker program can reproduce the solver's result using that witness. If
+the checker succeeds at doing so, it *accepts* or *verifies* the witness.
+Satisfiability witnesses, or models are trivial to check in linear time.
+Unsatisfiability witnesses, or proofs of unsatisfiability on the other hand
+can be much more costly to check.
 
 In SAT competitions, solvers are required to give proofs of unsatisfiability.
 The proof format that is being used today is called *delete resolution
@@ -53,10 +54,12 @@ information on which clauses are added and deleted.
 Deletions were introduced in solvers based on the *conflict-driven
 clause-learning* (CDCL) architecture to increase their performance.  However,
 in many proofs produced by current solvers there are deletions of reason
-clauses, yet these solvers do not actually delete those clauses internally.
-State-of-the-art proof checkers ignore deletions of reason clauses and thus
-match the solvers internal behavior.  As a result, the checkers are not
-faithful to the specification of DRAT proofs [@rebola2018two].
+clauses, yet these solvers do not actually undo assignments made by those
+clauses.  State-of-the-art proof checkers ignore deletions of reason clauses
+and thus match the solvers internal behavior.  As a result, the checkers
+are not faithful to the specification of DRAT proofs [@rebola2018two].
+We provide patches for top solvers to make them generate proofs without
+those spurious reason deletions.
 
 We refer to the original definition of the proof format as *specified* DRAT
 and to the one that is actually implemented by state-of-the-art checkers
@@ -65,7 +68,7 @@ checkers of these two flavors of DRAT are incomparable.  Specified DRAT is
 necessary to verify solvers' inprocessing steps which are employing reason
 deletions [@rebola2018two].
 
-DRAT proof checking is computationally expensive, so it is desirable to
+DRAT proof-checking is computationally expensive, so it is desirable to
 optimize checkers.  In theory, checking costs are comparable to solving
 [@Heule_2014] Consider the problem of the Schur Number Five, where solving
 took just over 14 CPU years whereas running the DRAT checker on the resulting
@@ -83,23 +86,11 @@ a high number of reason deletions tends to have a significant impact on
 checking performance.
 
 The majority of today's proofs are incorrect under specified DRAT.  In order
-to find possible bugs in proof generation and proof checking procedures, we
+to find possible bugs in proof generation and proof-checking procedures, we
 use the previously unpublished incorrectness certificate SICK.  It specifies
 the format for a small witness that can be efficiently checked to verify
-that a proof is indeed incorrect.
-
-To sum up, there are three distinct contributions in this work:
-
-1. We indicate why solvers generate those spurious deletions and provide
-patches for top solvers to make them generate proofs without reason deletions,
-which are therefore correct under either flavor of DRAT.
-
-2. Our extension to the SICK certificate format is introduced.
-
-3. We present the implementation of our checker for specified DRAT
-that includes the most important optimizations present in other checkers.
-This allows us to provide empirical evidence that checking specified DRAT
-is, on average, as expensive as operational DRAT, albeit more complicated.
+that a proof is indeed incorrect. We contribute a small modification to the
+SICK format.
 
 The rest of this paper is organized as follows: In [the following
 section][2. Preliminaries] we will introduce preliminary knowledge about
@@ -113,7 +104,7 @@ The SICK format along our extension will be described in [Section
 6][6. Checker Implementation] with experimental results being presented in
 [the following section][7. Experimental Evaluation].  Finally, we draw a
 [conclusion][8. Conclusion] and give outlook on [future work][9. Future Work]
-in the area of proof checking.
+in the area of proof-checking.
 
 2. Preliminaries
 ================
@@ -262,7 +253,7 @@ Proofs based on the resolution rule are exponential in the size of the
 formula, as are ones based on RUP or RAT.  A proof solely consisting of
 clause introductions will result in the checker suffer from the huge number
 of clauses as described in [CDCL].  To counteract this, clause deletion
-information has been added to proof formats, making the proof checking time
+information has been added to proof formats, making the proof-checking time
 comparable to solving time [@Heule_2014].
 
 DRAT Proofs
@@ -489,9 +480,9 @@ other checkers do. This is important for swift checking on some instances.
 
 Here we clarify which reason deletions are actually problematic.
 
-Deleting a reason clause generally shrinks the trail.  However, if, and only
-if there is another clause that can act as reason for the same literal at
-any point during unit propagation after removing the reason clause, then
+In general, deleting a reason clause shrinks the trail.  However, if, and
+only if there is another clause that can act as reason for the same literal
+at any point during unit propagation after removing the reason clause, then
 the set of literals in the trail does not change.  We call this special
 case a *redundant reason deletion*, and the other case a *non-redundant
 reason deletion*.  An simple example for a redundant reason deletion would
@@ -509,6 +500,28 @@ might be useful to sanity-check SAT solvers' proof generation procedures.
 
 Given a proof without non-redundant reason deletions, checkers for
 *operational* and *specified* DRAT behave exactly the same way.
+
+Due to different propagation orders, a clause that is a reason in the solver
+might not be in the checker and vice versa.  This happens if there exist
+two propagation orders such that a clause $C$ is a reason in one but not
+in the other. When deleting a non-redundant reason $C$, there exists no
+other reason for the propagated literal, and therefore $C$ is a reason in
+any propagation order. The takeaway here is that the different propagation
+orders in solver and checker do not matter, because non-redundant reasons
+are always reasons in both solver and checker. On the other hand, deletions
+of clauses that are a reason in one but not the other are always redundant
+and do not influence the trail, so it actually does not matter whether they
+are a reason in the checker or not.
+
+\if0
+Due to different propagation orders, a clause that is a reason in the solver
+might not be in the checker and vice versa.  This happens if there exist
+two propagation orders such that a clause $C$ is a reason in one but not in
+the other.  In particular, if $C$ is a reason in a checker, then a deletion
+of $C$ is a redundant reason deletion since there exists a propagation order
+with a different reason for the propagated literal.
+\fi
+
 
 4. Solvers
 ==========
