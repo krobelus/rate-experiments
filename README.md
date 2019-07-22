@@ -42,69 +42,57 @@ it *accepts* or *verifies* the witness.  Satisfiability witnesses, or models
 are trivial to check in linear time.  Unsatisfiability witnesses, or proofs
 of unsatisfiability on the other hand can be much more costly to check.
 
-In SAT competitions, solvers are required to give proofs of unsatisfiability
-in the *delete resolution asymmetric tautology* (DRAT) format.  A solver
-operates on a knowledge base,
-TODO
-that is satisfiability-equivalent to the input
-formula . The contains constraints that are called clauses. During solving,
-clauses are added and deleted from the formula.
+In SAT competitions, solvers are required to give proofs of unsatisfiability.
+The proof format that is being used today is called *delete resolution
+asymmetric tautology* (DRAT) [@Heule_2014].  A solver operates on a formula
+that acts as knowledge base.  It consists of constraints that are called
+clauses.  Starting from the input formula, clauses are added and deleted
+during solving.  A DRAT proof is a trace of the solver's execution, containing
+information on which clauses are added and deleted.
 
-alongside an unsatisfiability result.
-This proof can be thought of as a
-trace of the solver's execution, containing information on which clauses
-(i.\ e.\ constraints) are added to and deleted from the solver's formula which
-acts as knowledge base. While deletions are not strictly necessary to produce
-the unsatisfiability result in either solver or checker, they are essential
-for doing that efficiently.
-
-A family of solvers produce proofs containing certain reason clause deletions,
-yet these solvers operate as if those clauses were not deleted.  To accomodate
-for this, state-of-the-art proof checkers ignore instructions of all reason
-clauses, which includes those spurious deletions. Consequently, the checkers
-are not faithful to the specification of DRAT proofs [@rebola2018two].
+Deletions were introduced in solvers based on the *conflict-driven
+clause-learning* (CDCL) architecture to increase their performance.  However,
+in many proofs produced by current solvers there are deletions of reason
+clauses, yet these solvers do not actually delete those clauses internally.
+State-of-the-art proof checkers ignore deletions of reason clauses and thus
+match the solvers internal behavior.  As a result, the checkers are not
+faithful to the specification of DRAT proofs [@rebola2018two].
 
 We refer to the original definition of the proof format as *specified* DRAT
-and to the one that is actually implemented by state-of-the-art checkers as
-*operational* DRAT [@rebola2018two]. The classes of proofs accepted by these
-two flavors of DRAT are incomparable.  Merely checking operational DRAT is
-sufficient for current proofs of unsatisfiability, however, specified DRAT
-can be a requirement for verifying solvers' inprocessing steps which are
-employing reason deletions [@rebola2018two].
+and to the one that is actually implemented by state-of-the-art checkers
+as *operational* DRAT [@rebola2018two]. The classes of proofs accepted by
+checkers of these two flavors of DRAT are incomparable.  Specified DRAT is
+necessary to verify solvers' inprocessing steps which are employing reason
+deletions [@rebola2018two].
 
-As proof checking time is comparable to solving time [@Heule_2014] it is
-desirable to reduce the former as much as possible --- consider the problem
-of the Schur Number Five, where solving took just over 14 CPU years whereas
-running the DRAT checker on the resulting proof took 20.5 CPU years [@schur-5].
-There exists an efficient algorithm for specified DRAT [@RebolaCruz2018],
-adding quite some complexity on top of state-of-the art checking algorithms
-for operational DRAT.  Previous empirical results for that algorithm suggest
-that the class of proofs that today's solvers produce can be verified with
-a checker of either flavor with roughly the same runtime and memory usage.
-Those results, however, were based on a checker that could not compete with
-other state-of-art checkers in terms of performance.
+DRAT proof checking is computationally expensive, so it is desirable to
+optimize checkers.  In theory, checking costs are comparable to solving
+[@Heule_2014] Consider the problem of the Schur Number Five, where solving
+took just over 14 CPU years whereas running the DRAT checker on the resulting
+proof took 20.5 CPU years [@schur-5].  There exists an efficient algorithm
+for specified DRAT [@RebolaCruz2018]. We provide an optimized implementation
+which was missing.  Previous empirical results for that algorithm suggest
+that the computational costs of checking DRAT is the almost the same for
+either flavor of DRAT.
 
-We have re-implemented the algorithm in combination with other necessary
-optimizations to roughly match the performance of the fastest checkers.
-Based on this implementation, we are able to provide more extensive results,
-supporting the hypothesis that specified and operational DRAT are equally
+We have re-implemented the algorithm in combination with other optimizations
+to roughly match the performance of the fastest checkers.  We provide more
+extensive results, supporting that specified and operational DRAT are equally
 expensive to check on an average real-world instance.  We also observe that
 a high number of reason deletions tends to have a significant impact on
-checking performance, making specified DRAT more expensive, and sometimes
-less expensive too.
+checking performance.
 
-To show the incorrectness of a proof, it suffices show that a single clause
-introduction, or lemma in the proof is incorrect.  We use a modified version
-of the previously unpublished SICK incorrectness certificate format to give
-information on why a lemma cannot be derived.  This certificate can be used
-to verify the incorrectness of the proof efficiently and help developers
-find bugs in proof generation procedures.
+The majority of today's proofs are incorrect under specified DRAT.  In order
+to find possible bugs in proof generation and proof checking procedures, we
+use the previously unpublished incorrectness certificate SICK.  It specifies
+the format for a small witness that can be efficiently checked to verify
+that a proof is indeed incorrect.
 
 To sum up, there are three distinct contributions in this work:
 
 1. We indicate why solvers generate those spurious deletions and provide
-patches for top solvers to make them generate proofs without them, which
-are therefore correct under either flavor of DRAT.
+patches for top solvers to make them generate proofs without reason deletions,
+which are therefore correct under either flavor of DRAT.
 
 2. Our extension to the SICK certificate format is introduced.
 
