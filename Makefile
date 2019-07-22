@@ -1,8 +1,8 @@
-plots := p/plots
-tables := t/tables
+plots := p
+tables := t
 
-all: build-dependencies tools results.csv $(plots)  $(tables) \
-	 README.pdf README.markdown poster/poster.pdf
+all: build-dependencies tools results.csv $(plots) $(tables) \
+	 README.pdf README.markdown README.tex poster/poster.pdf
 
 error := "*** Error: please install"
 citeproc := $(error) pandoc-citeproc
@@ -33,19 +33,17 @@ results.csv: results.json csv.sh
 	./csv.sh < $< > $@
 
 $(plots): results.csv plots.ipynb
-	rm -rf p
-	mkdir p
+	rm -rf $@
+	mkdir $@
 	jupyter nbconvert --execute plots.ipynb --stdout >/dev/null
-	touch $@
 
 plots.html: plots.ipynb
 	jupyter nbconvert $<
 
 $(tables): results.csv table.py
-	rm -rf t
-	mkdir t
-	./table.py t < $<
-	touch $@
+	rm -rf $@
+	mkdir $@
+	./table.py $@ < $<
 
 poster/poster.pdf: poster/poster.tex $(plots)
 	cd poster && pdflatex -shell-escape -halt-on-error poster.tex
@@ -54,7 +52,7 @@ tools:
 	$(MAKE) -C $@
 
 clean: poster/clean
-	rm -rf p t _minted-*
+	rm -rf $(plots) t _minted-*
 	rm -f *.csv *.html *.pdf *.bbl *.tex *.blg *.fdb_latexmk *.fls *.toc
 	rm -f vgcore.* massif.out.* auto
 	
