@@ -32,19 +32,28 @@ to the specification.
 1. Introduction
 ===============
 
-In past decades, there has been significant progress in SAT solver
-technology. As a result of the high complexity of SAT solvers they have
-had documented bugs [@BrummayerBiere-SMT09] [@BrummayerLonsingBiere-SAT10].
-To protect against these, there are checker programs that verifiy a solver's
-result. The result *"satisfiable"* is given with a model which is trivial
-to validate in linear time.  The converse result, *"unsatisfiable"*, can be
-certified with a proof of unsatisfiability given by the solver. An independent
-proof checker can verify such proofs.
+In past decades, there has been significant progress in SAT solving
+technology. Complex implementations of SAT solvers they have had documented
+bugs [@BrummayerBiere-SMT09] [@BrummayerLonsingBiere-SAT10].  To protect
+against these, there are checker programs that verify a solver's result.
+To do this, the solver outputs a witness. A checker program can reproduce
+the solver's result using that witness. If the checker succeeds at doing so,
+it *accepts* or *verifies* the witness.  Satisfiability witnesses, or models
+are trivial to check in linear time.  Unsatisfiability witnesses, or proofs
+of unsatisfiability on the other hand can be much more costly to check.
 
-In SAT competitions, solvers are required to give a proof in the DRAT format
-alongside an unsatisfiability result.  This proof can be thought of as a
+In SAT competitions, solvers are required to give proofs of unsatisfiability
+in the *delete resolution asymmetric tautology* (DRAT) format.  A solver
+operates on a knowledge base,
+TODO
+that is satisfiability-equivalent to the input
+formula . The contains constraints that are called clauses. During solving,
+clauses are added and deleted from the formula.
+
+alongside an unsatisfiability result.
+This proof can be thought of as a
 trace of the solver's execution, containing information on which clauses
-(i.e., constraints) are added to and deleted from the solver's formula which
+(i.\ e.\ constraints) are added to and deleted from the solver's formula which
 acts as knowledge base. While deletions are not strictly necessary to produce
 the unsatisfiability result in either solver or checker, they are essential
 for doing that efficiently.
