@@ -48,7 +48,7 @@
 \setbeamertemplate{caption}[numbered]
 
 \title[Computational Logic] {
-    DRAT Proofs without Harmful \\ Reason Clause Deletions \\
+    DRAT Proofs without Non-Redundant \\ Reason Clause Deletions \\
     \&\\
     Complete and Fast \\ DRAT Proof Checking
 }
@@ -87,8 +87,7 @@
              due to spurious deletions
             of \textbf{reason clauses}
             \item proof checkers remedy this by ignoring reason deletions
-            \item handling reason deletions requires a complex algorithm
-            with possible performance impact
+            \item handling reason deletions requires a complicated algorithm
         \end{itemize}
     \end{block}
 
@@ -169,7 +168,7 @@
 		\item extension of SICK incorrectness certificate, giving
 		a counter-example for an incorrect proof
 		\item implement efficient checker to measure performance
-		impact of reason deletions
+		impact of handling reason deletions
         \end{itemize}
     \end{block}
 
@@ -230,7 +229,7 @@
     \begin{block}{Checker Implementation: \texttt{rate}}
         \begin{itemize}
             \item efficiently handles reason deletions
-            \item competitive performance (Figure \ref{fig:cactus-time})
+            \item performance similar to best checkers (Figure \ref{fig:cactus-time})
             \item available at \url{https://github.com/krobelus/rate}
             \item written in Rust
         \end{itemize}
