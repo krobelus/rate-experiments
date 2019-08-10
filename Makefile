@@ -19,6 +19,12 @@ TITLE += // Complete and Fast DRAT Proof Checking
 
 pandoc := pandoc --filter pandoc-fignos --filter pandoc-citeproc --filter pandoc-placetable
 
+# diff example
+# latexdiff (git show 1290044b6ce1285ce64ab9ce11075d0c01b7fc51:README.md
+# | pandoc --filter pandoc-fignos --filter pandoc-citepro c --filter \
+# pandoc-placetable --to latex --standalone | psub) README.tex | pandoc --from \
+# latex -o diff.pdf
+
 README.pdf: README.md $(tables) $(plots) Makefile
 	$(pandoc) $< -o $@
 README.markdown: README.md $(tables) $(plots) Makefile
