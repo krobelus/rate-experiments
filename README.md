@@ -475,7 +475,7 @@ and other implementation details.
 
 [^rupee-parsing]: Both `rupee` and `DRAT-trim` use a fixed-size hash table
 to locate deleted clauses but `rupee`'s is smaller by one order of magnitude,
-which may explain most of the difference in performance.
+which may explain parts of the difference in performance.
 
 Additionally `rupee` does not use core-first unit propagation while the
 other checkers do.
