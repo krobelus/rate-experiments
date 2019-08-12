@@ -5,13 +5,13 @@ date: \today
 csl: ieee.csl
 link-citations: true
 title: |
-        DRAT Proofs without Non-Redundant Reason Clause Deletions 
+        DRAT Proofs without Deletions of Unique Reason Clauses 
             &
         Complete and Fast DRAT Proof-Checking
 header-includes: |
         \usepackage{todonotes}
         \title{
-            DRAT Proofs without Non-Redundant \\ Reason Clause Deletions \\
+            DRAT Proofs without Deletions of \\ Unique Reason Clauses \\
             \&\\
             Complete and Fast \\ DRAT Proof-Checking
         }
@@ -25,9 +25,9 @@ deletions of unit clauses, which means that they are checking against a proof
 system that differs from the specification of DRAT.  We demonstrate that it
 is possible to implement a competitive checker that honors unit deletions.
 Many reputable SAT solvers produce proofs that are incorrect under the DRAT
-specification, because they contain spurious reason deletions. We present
-patches for competitive SAT solvers to produce correct proofs with respect
-to the specification.
+specification, because they contain spurious deletions of unique reason
+clauses. We present patches for competitive SAT solvers to produce correct
+proofs with respect to the specification.
 :::
 
 1. Introduction
@@ -55,19 +55,20 @@ are added and deleted.
 Deletions were introduced in solvers based on the *conflict-driven
 clause-learning* (CDCL) architecture to increase their performance.  However,
 in many proofs produced by current solvers there are some deletions of
-reason clauses, yet these solvers do not actually undo assignments that were
-caused by those clauses.  State-of-the-art proof checkers ignore deletions of
-unit clauses (including reason clauses) and thus match the solvers internal
-behavior.  As a result, the checkers are not faithful to the specification
-of DRAT proofs [@rebola2018two].  We provide patches for top-performing
-solvers to make them generate proofs without those spurious reason deletions.
+unique reason clauses, yet these solvers do not actually undo assignments
+that were caused by those clauses.  State-of-the-art proof checkers ignore
+deletions of unit clauses (including unique reason clauses) and thus match
+the solvers internal behavior.  As a result, the checkers are not faithful to
+the specification of DRAT proofs [@rebola2018two].  We provide patches for
+top-performing solvers to make them generate proofs without those spurious
+deletions of unique reasons.
 
 We refer to the original definition of the proof format as *specified* DRAT
 and to the one that is actually implemented by state-of-the-art checkers
 as *operational* DRAT [@rebola2018two]. The classes of proofs accepted by
 checkers of these two flavors of DRAT are incomparable.  Specified DRAT is
-necessary to verify solvers' inprocessing steps which are employing reason
-deletions [@rebola2018two].
+necessary to verify solvers' inprocessing steps which are employing deletions
+of unique reason clauses [@rebola2018two].
 
 DRAT proof-checking is computationally expensive, so it is desirable to
 optimize checkers.  In theory, checking costs are comparable to solving
@@ -83,8 +84,8 @@ We have re-implemented the algorithm in combination with other optimizations
 to roughly match the performance of the fastest checkers.  We provide more
 extensive results, supporting that specified and operational DRAT are equally
 expensive to check on an average real-world instance.  We also observe that
-a high number of reason deletions tends to have a significant impact on
-checking performance.
+a high number of concrete reason deletions tends to have a significant impact
+on checking performance.
 
 The majority of today's proofs are incorrect under specified DRAT.  In order
 to find possible bugs in proof generation and proof-checking procedures, we
@@ -96,16 +97,14 @@ SICK format.
 The rest of this paper is organized as follows: In [the following
 section][2. Preliminaries] we will introduce preliminary knowledge about
 SAT solving, proofs of unsatisfiability, checking algorithms, the problem
-with reason deletions and existing checkers.  After establishing novel
-terminology in [the following section][3. Two Kinds of Reason Deletions],
-our first contribution, a proposal on how to change solvers to produce
-unambiguously correct proofs, can be found in [Section 4][4. Solvers].
-The SICK format along our extension will be described in [Section
-5][5. SICK Format].  The third contribution will be discussed in [Section
-6][6. Checker Implementation] with experimental results being presented in
-[the following section][7. Experimental Evaluation].  Finally, we draw a
-[conclusion][8. Conclusion] and give outlook on [future work][9. Future Work]
-in the area of proof-checking.
+with unique reason deletions and existing checkers.  Our first contribution,
+a proposal on how to change solvers to produce unambiguously correct proofs,
+can be found in [Section 3][3. Solvers].  The SICK format along our extension
+will be described in [Section 4][4. SICK Format].  The third contribution
+will be discussed in [Section 5][5. Checker Implementation] with experimental
+results being presented in [the following section][6. Experimental Evaluation].
+Finally, we draw a [conclusion][7. Conclusion] and give outlook on [future
+work][8. Future Work] in the area of proof-checking.
 
 2. Preliminaries
 ================
@@ -146,15 +145,14 @@ structure the *trail*.
 
 SAT solvers search through the space of all possible assignments.  They make
 assumptions, adding literals to the trail that might be part of a satisfying
-assignment.  At each step, unit propagation, which will be introduced
-later, can add more literals to the trail, pruning assignments from the
-search space that are definitely unsatisfiable. These literals are said to
-be *forced*, because they, unlike assumptions, are necessarily satisfied in
-any model based on the given assumptions --- that is, any model that is
-a is a superset of the literals in the current trail.  If unit propagation
-is performed on a trail without assumptions, the trail contains the set of
-top-level forced literals which is a subset of any model.  Once the set of
-top-level forced literals falsifies a clause, then the solver has derived
+assignment.  At each step, unit propagation, which will be introduced later,
+can add more literals to the trail, pruning assignments from the search
+space that are definitely unsatisfiable. These literals are are necessarily
+satisfied in any model based on the given assumptions --- that is, any model
+that is a superset of the literals in the current trail.  If unit propagation
+is performed on a trail without assumptions, the set of literals in the trail
+is  the *shared UP-model* [@rebola2018two] which is a subset of any model.
+Once the shared UP-model falsifies a clause, then the solver has derived
 the empty clause and therefore established unsatisfiability of the current
 formula and also the input formula.
 
@@ -166,18 +164,23 @@ Unit Propagation
 Given an assignment, a *unit clause* contains only falsified literals except
 for a single non-falsified *unit literal*.
 
-At any point during a solver's search, if the formula contains a unit clause
-given the current assignment, the unit literal $l$ in that clause is forced
-and added to the trail.  The unit clause is recorded as the *reason clause*
-for $l$.  Everytime a literal $l$ is added to the trail, the formula will
-be simplified by *propagating* $l$: any clause containing $l$ is discarded
-because it will be satisfied by $l$, and occurrences of $\overline{l}$
-are removed from the remaining clauses. The latter step may spawn new unit
-clauses and thus trigger further propagation.
+At any point during a solver's search, if the formula contains a unit
+clause given the current assignment, the unit literal $l$ in that clause is
+necessarily satisified and therefore added to the trail.  The unit clause
+is recorded as the *reason clause* for $l$.  Everytime a literal $l$ is
+added to the trail, the formula will be simplified by *propagating* $l$:
+any clause containing $l$ is discarded because it will be satisfied by $l$,
+and occurrences of $\overline{l}$ are removed from the remaining clauses. The
+latter step may spawn new unit clauses and thus trigger further propagation.
 
-Note that there may be multiple potential reason clauses for some literal.
-Therefore reason clauses are specific to a concrete propagation sequence in
-a solver or checker.
+Given a formula where above unit propagation has been performed until fixpoint,
+we call a unit clause $C$ with unit literal $l \in C$ a *unique reason clause*
+if it was required to propagate $l$ in a formula --- that is, there can be
+no other reason clause for $l$ when performing the propagations. Note that a
+unique reason clause is defined with respect to a formula only, independent of
+a concrete propagation sequence. To avoid confusion with unique reason clauses,
+we refer to a reason clause that is specific to some propagation sequence
+as *concrete reason clauses*. Note that every reason clause is a unit clause.
 
 As assumptions need to be undone during search, the implementation of unit
 propagation does not actually delete clauses and literals, but merely scans the
@@ -250,8 +253,8 @@ A formula in CNF can be regarded as a multiset of clauses.  Each step in a
 clausal proof adds a clause to the current formula, or deletes one from it.
 These steps simulate the clause introductions and clause deletions that a
 solver performs.  As a result, a checker can reproduce the solver's formula
-as well as the set of top-level forced literals at each step, and finally
-derive the empty clause just like the solver did.
+as well as the shared UP-model at each step, and finally derive the empty
+clause just like the solver did.
 
 \paragraph{Deletions} A proof solely consisting of clause introductions
 will result in the checker's propagation routines slowing down due to
@@ -266,7 +269,7 @@ State-of-the-art SAT solvers use complex techniques to simplify the formula
 before search and during with search --- termed preprocessing and inprocessing
 respectively.  Proofs based on RUP alone are not expressive enough to
 simulate all preprocessing and inprocessing techniques in modern SAT solvers
-[@rat]. For this reason, the more powerful criteria RAT is used today [@rat].
+[@rat]. Because of this, the more powerful criteria RAT is used today [@rat].
 
 A DRAT (*delete resolution asymmetric tautology*) proof is a clausal proof
 with deletions where every lemma is RUP or RAT.  In practice, most lemmas
@@ -318,27 +321,27 @@ Thinking of formulas as sets of clauses, an *unsatisfiable core*, for short
 checking, a core is eventually computed and only core lemmas are checked.
 Whenever the empty clause is derived as part of some redundancy check,
 conflict analysis adds to the core all clauses that were required to do so.
-This is done by a depth-first search in the graph induced by the reason
-clauses: starting from the clause that was falsified, the clause is added
-to the core and, for each of its literals $l$, the same is done recursively
-for the reason for $\overline{l}$.
+This is done by a depth-first search in the graph induced by the concrete
+reason clauses: starting from the clause that was falsified, the clause
+is added to the core and, for each of its literals $l$, the same is done
+recursively for the reason for $\overline{l}$.
 
 A by-product of this core computation is a *trimmed proof*, consisting of all
 core lemmas. The LRAT output is the trimmed proof supplemented by clause hints.
 
 Checking a lemma requires finding one or more conflicts via unit propagation.
-The trail is a mutable data structure that maintains the set of top-level
-forced literals as well as literals assigned due to assumptions.  After adding
-or deleting a clause, the trail is modified accordingly which is arguably
-more efficient than computing it from scratch.  In the forward pass, an
-introduction instruction may cause propagation and a deletion instruction
-may cause some literals to be removed from the trail.  On the other hand the
-backward pass traverses the proof in reverse order and executes the inverse
-of each proof step, that is, a clause introduction in the backward pass
-deletes that clause from the formula while a clause deletion in the backward
-pass re-introduces the deleted clause. The trail is modified, reverting the
-modification done in the forward pass.  This ensures that when processing
-some lemma the trail is the same during forward and backward pass.
+The trail is a mutable data structure that maintains the shared UP-model
+as well as literals assigned due to assumptions.  After adding or deleting a
+clause, the trail is modified accordingly which is arguably more efficient than
+computing it from scratch.  In the forward pass, an introduction instruction
+may cause propagation and a deletion instruction may cause some literals to
+be removed from the trail.  On the other hand the backward pass traverses
+the proof in reverse order and executes the inverse of each proof step,
+that is, a clause introduction in the backward pass deletes that clause from
+the formula while a clause deletion in the backward pass re-introduces the
+deleted clause. The trail is modified, reverting the modification done in
+the forward pass.  This ensures that when processing some lemma the trail
+is the same during forward and backward pass.
 
 
 Core-first Unit Propagation
@@ -359,40 +362,34 @@ This results in a local minimum of clauses being added to the core.
 Reason Deletions
 ----------------
 
-As explained in [@RebolaCruz2018], when checking a proof without deletions of
-reason clauses, the trail grows monotonically, that is, it never shrinks at any
-proof step during the forward phase. Therefore, during the backwards phase it
-is trivial to revert the modifications to the trail by simply truncating it.
-This also maintains watch invariants, making sure that the watchlists can
-find all unit clauses.
+As explained in [@RebolaCruz2018], when checking a proof without deletions
+of unique reason clauses, the trail grows monotonically, that is, it never
+shrinks at any proof step during the forward phase. Therefore, during the
+backwards phase it is trivial to revert the modifications to the trail by
+simply truncating it.  This also maintains watch invariants, making sure
+that the watchlists can find all unit clauses.
 
-However, when a proof with reason deletions is checked under specified DRAT,
-the algorithm from [@RebolaCruz2018] is required to restore Invariant 1 in
-the backward pass. While an understanding of the algorithm is not required
-to understand the contributions in this paper, we explain parts of it nevertheless.
+However, when a proof with unique reason deletions is checked under specified
+DRAT, the algorithm from [@RebolaCruz2018] is required to restore Invariant
+1 in the backward pass. While an understanding of the algorithm is not
+required to understand the contributions in this paper, we explain parts of
+it nevertheless.
 
-Let us consider a proof with reason deletions.  A deletion instruction is
-performed by removing a clause from the formula in the forward pass and
-re-introducing it in the backward pass.  This is implemented by removing the
-clause from the watchlists and adding it respectively.
+Let us consider a proof with deletions of unique reasons.  A deletion
+instruction is performed by removing a clause from the formula in the forward
+pass and re-introducing it in the backward pass.  This is implemented by
+removing the clause from the watchlists and adding it respectively.
 
-During the forward pass, whenever the reason clause for some literal is
-deleted, this literal is unassigned.  If it was used to propagate some other
-unit, that one may be unassigned as well, and so on. All these literals
+During the forward pass, whenever the concrete reason clause for some literal
+is deleted, this literal is unassigned.  If it was used to propagate some
+other unit, that one may be unassigned as well, and so on. All these literals
 form the *cone of influence* (see [@RebolaCruz2018]) of the first literal
 and are recorded in the checker, alongside their positions in the trail,
-and reasons clauses. This allows the checker to re-introduce the literals
-from the cone later in the backward pass when the deletion is undone.
+and concrete reason clauses. This allows the checker to re-introduce the
+literals from the cone later in the backward pass when the deletion is undone.
 
-\if0
-The recorded information can then be used in the backward pass to patch the
-trail at the reason deletions in order for the trail to be exactly as it
-was during the forward phase. The tricky part here is to correctly restore
-the Invariant 1 in all affected clauses.
-\fi
-
-When a reason deletion is processed during the backwards phase, each
-literal in the cone will be reintroduced into the trail at the recorded
+When a deletion of a concrete reason is processed during the backwards phase,
+each literal in the cone will be reintroduced into the trail at the recorded
 position.  Consider literal $l$ in the cone. Before applying the backwards
 deletion $l$ could have been satisfied or unassigned (but not falsified).
 After reintroducing $l$, it is satisfied. Therefore, a clause containing
@@ -426,7 +423,7 @@ optimized proof in LRAT format. We use their way of producing LRAT proofs and
 make sure that all our proofs are accepted by the verified checker [^acl2].
 This gives us confidence in the correctness of our implementation and allows
 for a comparison of our checker with `DRAT-trim` since they do roughly the
-same thing except for the reason deletions.
+same thing except for unit deletions.
 
 GRAT Toolchain
 --------------
@@ -453,9 +450,9 @@ because the number of RAT introductions in our benchmarks is negligible when
 compared to the number of RUP introductions.
 
 We also implement GRAT generation in our tool. However, it seems that the
-`gratchk` tool is not designed to handle reason deletions (apparently they
+`gratchk` tool is not designed to handle unit deletions (apparently they
 are ignored) so it will fail to handle our GRAT certificates for proofs with
-reason deletions.
+unit deletions.
 
 Amongst state-of-the-art DRAT checkers, `gratgen` is arguably the easiest
 to understand, so we advise interested readers to study that.
@@ -463,9 +460,9 @@ to understand, so we advise interested readers to study that.
 `rupee` [^rupee]
 ----------------
 
-This is the original implementation of the algorithm to handle reason
-deletions. We use exactly the same algorithm.  During our research we
-found an issue in the implementation which was fixed [^fix-revise-watches].
+This is the original implementation of the algorithm to handle unique reason
+deletions. We use exactly the same algorithm.  During our research we found
+an issue in the implementation which was fixed [^fix-revise-watches].
 
 Previously, `rupee` appears to be an order of magnitude slower than
 `DRAT-trim` [@RebolaCruz2018].  However, we believe that this overhead
@@ -480,90 +477,37 @@ which may explain parts of the difference in performance.
 Additionally `rupee` does not use core-first unit propagation while the
 other checkers do.
 
-3. Two Kinds of Reason Deletions
-=============================
-
-Here we clarify which reason deletions are actually problematic.
-
-In general, deleting a reason clause shrinks the trail.  However, if, and
-only if there is another clause that can act as reason for the same literal
-at any point during unit propagation, then the set of literals in the trail
-does not change.  We call this special case a *redundant reason deletion*,
-and the other case a *non-redundant reason deletion*.
-
-Note that the term *unit deletion* comprises deletions of any unit clause,
-that is, reason deletions and other deleted units that were not propagating.
-State-of-the-art checkers ignore unit deletions.
-
-A proof of unsatisfiability generated by a SAT solver should not contain
-any non-redundant reason deletions.  Other current checkers can report unit
-deletions and reason deletions but they do not distinguish between redundant
-and non-redundant reason deletions.  Our tool also outputs the number of
-non-redundant reason deletions [^reason-deletions-shrinking-trail]. This
-might be useful to sanity-check SAT solvers' proof generation procedures.
-
-Given a proof without non-redundant reason deletions, checkers for
-*operational* and *specified* DRAT behave exactly the same way.
-
-Due to different propagation orders, a clause that is a reason in the solver
-might not be in the checker and vice versa.  This happens if there exist
-two propagation orders such that a clause $C$ is a reason in one but not
-in the other. When deleting a non-redundant reason $C$, there exists no
-other reason for the propagated literal, and therefore $C$ is a reason in
-any propagation order.
-
-\if0
-The takeaway here is that the different propagation
-orders in solver and checker do not matter, because non-redundant reasons
-are always reasons in both solver and checker. On the other hand, deletions
-of clauses that are a reason in one but not the other are always redundant
-and do not influence the trail, so it actually does not matter whether they
-are a reason in the checker or not.
-\fi
-\if0
-State-of-the-art checkers ignore deletions of reason clauses,
-including clauses that were not reasons in the solver.
-However, since deletions of the latter do not shrink the trail,
-\fi
-\if0
-Due to different propagation orders, a clause that is a reason in the solver
-might not be in the checker and vice versa.  This happens if there exist
-two propagation orders such that a clause $C$ is a reason in one but not in
-the other.  In particular, if $C$ is a reason in a checker, then a deletion
-of $C$ is a redundant reason deletion since there exists a propagation order
-with a different reason for the propagated literal.
-\fi
-
-
-4. Solvers
+3. Solvers
 ==========
 
 In this section we take a look at why the discrepant proofs are produced in
 the first place, and present patches to make solvers generate proofs without
-non-redundant reason deletions.
+unique reason deletions.  Since for the fragment of proofs without unique
+reason deletions, *operational* and *specified* DRAT coincide, these proofs
+can then be checked with a checker of either sort.
 
 As stated already in [@RebolaCruz2018], most solvers at competitions emit
-proofs with (non-redundant) reason deletions.  The overwhelming majority of
-solvers submitted to the main track of the 2018 SAT competition is based on
-`MiniSat` or `CryptoMiniSat`.  Only their proofs contain non-redundant reason
-deletions. We explain here why this is the case.
+proofs with deletions of unique reasons.  Out of the solvers submitted to
+the main track of the 2018 SAT competition, the ones based on `MiniSat`
+and `CryptoMiniSat` produce proofs with deletions of unique reasons while,
+to the best of our knowledge others do not.
 
-Used during the simplification phase, the method `Solver::removeSatisfied`
-takes a collection of clause references. Each of those clauses that is
-satisfied, is removed from the clause database and added as deletion to
-the DRAT proof output.  Note that it is only called at decision level zero,
-which means that those clauses will be satisfied indefinitely for the rest
-of the search.
+Let us explain how `DRUPMiniSat` emits unique reason deletions.  Used during
+the simplification phase, the method `Solver::removeSatisfied` looks for
+clauses that are satisified by the shared UP-model and removes them from
+the clause database and adds them as a deletion to the DRAT proof output.
+Note that those clauses remain satisfied indefinitely for the rest of the
+search, because the shared UP-model is a subset of any model.
 
-In `MiniSat`, *locked* clauses are reasons for some literal in the trail.
-Currently, `Solver::removeSatisfied` also deletes locked clauses, however,
-the induced assignments are not undone.  This suggests that a locked clause
-is implicitly kept in the formula, even though it is deleted.  To match this
-solver's behavior, current DRAT checkers ignore deletions of reason clauses,
-which means they do not undo any assignments when deleting clauses.
+In `MiniSat`, *locked* clauses are concrete reasons for some literal in the
+trail.  Currently, `Solver::removeSatisfied` also deletes locked clauses,
+however, the induced assignments are not undone.  This suggests that a
+locked clause is implicitly kept in the formula, even though it is deleted.
+Current DRAT checkers ignore deletions of unit clauses, which means they do
+not undo any assignments when deleting clauses, matching the solvers' behavior.
 
-There are two obvious possible changes to `MiniSat` to produce proofs that
-do not require this workaround of ignoring reason deletions when checking.
+There are two obvious possible changes to `DRUPMiniSat` to produce proofs
+that do not require this workaround of ignoring unit deletions when checking.
 
 1. Do not remove locked clauses during simplification.
 
@@ -572,15 +516,19 @@ propagated literal as addition in the DRAT proof.  Suggested by Mate
 Soos[^suggestion-add-units], this option is also the preferred one to the
 authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].  Additionally,
 this is implemented in `CaDiCaL's`[^cadical] preprocessor.
+\todo{explain soundness of future RAT}
 
 We provide patches implementing these for `MiniSat` version 2.2
 (1.  [^patch-MiniSat-keep-locked-clauses] and 2.[^patch-MiniSat]),
 and the winner of the main track of the 2018 SAT competition
 (1.[^patch-MapleLCMDistChronoBT-keep-locked-clauses] and
 2.[^patch-MapleLCMDistChronoBT]).
+Both patches are arguably rather simple and we do not expect significant
+impacts in terms of solver runtime, memory usage or proof size.  The same
+methods can be applied easily to other `DRUPMiniSat`-based solvers.
 
-The same methods can be applied easily to other `MiniSat`-based solvers.
-The patch implementing the second variant for `MiniSat` is displayed below.
+\if0
+The patch implementing the second variant for `DRUPMiniSat` is displayed below.
 
 ```diff
 From 15d7560d6c340a4e8d93cb7469fe976cc43690da Mon Sep 17 00:00:00 2001
@@ -613,15 +561,17 @@ index ddc3801..5941449 100644
              assert(value(c[0]) == l_Undef && value(c[1]) == l_Undef);
              for (int k = 2; k < c.size(); k++)
 ```
+\fi
 
-5. SICK Format
+4. SICK Format
 ==============
 
 When a proof is found to be incorrect, our tool outputs an incorrectness
-certificate in our modified SICK format. This certificate can be used by
-our tool `sick-check` to verify incorrectness of the proof without doing any
-unit propagation. Furthermore, the size of the incorrectness certificate is
-in practice linear in the size of the formula, while proofs are exponential.
+certificate in the previously unpublished SICK format. This certificate
+can be used by our tool `sick-check` to verify incorrectness of the proof
+without doing any unit propagation. Furthermore, the size of the incorrectness
+certificate is in practice linear in the size of the formula, while proofs
+are exponential.
 
 Let us give an  an example of a SICK certificate.  The first two columns show
 a satisfiable formula in DIMACS format and an incorrect DRAT proof for this
@@ -632,7 +582,7 @@ file format is using TOML[^toml] syntax.
 Formula     Proof   SICK Certificate
 ----------- ------- ---------------------------------------------
 `p cnf 2 2` `1 0`   `proof_format   = "DRAT-arbitrary-pivot"`
-`-1 -2 0`   `0`     `proof_step     = 1`
+`-1 -2 0`   `0`     `proof_step     = 1 # failed line (1-based) in the proof`
 `-1  2 0`            `natural_model  = [-1, ]`
                     `[[witness]]`
                     `failing_clause = [-2, -1, ]`
@@ -663,7 +613,9 @@ Explanation
    in the lemma. This requires one witness (counter-example) for each possible
    pivot in the failing lemma. The pivot has to be specified for each witness.
    - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
-   The pivot needs to be the first literal in the lemma.
+   The pivot needs to be the first literal in the lemma.  We added the
+   distinction between these two formats because it was not clear which one
+   should be universally used.
 - `proof_step` specifies the proof step that failed, starting at one.
   For the remainder of this section, let the lemma denote the clause that is
   introduced by the referenced proof step.  In case of a textual proof this
@@ -682,68 +634,98 @@ Each witness is a counter-example to some redundancy check.
   when performing the failed redundancy check.
 - `pivot`: This specifies the pivot literal.
 
-Note that if the lemma is the empty clause, no witness is needed.  This
-corresponds to a proof containing an empty clause that cannot be derived by
-unit propagation.
+The absence of a witness means that a RUP check failed.  Note that if the
+lemma is the empty clause, no witness is needed, since the empty clause
+cannot be RAT.
 
 Semantics
 ---------
 
 Our tool `sick-check` accepts SICK certificates that fulfil below properties.
 
-Let $m_n$ be the natural model.
+Let $m_n$ be the natural model.  Let $F$ be the accumulated formula up to
+and excluding the failing lemma.
 
-1. The proof contains the proof step.
+\if0
 2. $m_n$ is consistent.
 3. $m_n$ contains the reverse units from the failing lemma.
 4. The accumulated formula up to and excluding the failing lemma contains
 no clause that is unit under $m_n$ and is not already in $m_n$.
-5. For format `DRAT-arbitrary-pivot`, all pivots are specified and precisely
-match the literals in the failing lemma.
-6. For each witness, let the $m_f$ be the union of natural model and failing model.
+\fi
+
+1. The proof contains the proof step.
+2. $m_n$ is the shared UP-model of $F$
+3. For format `DRAT-arbitrary-pivot`, all pivots are specified and precisely
+   match the literals in the failing lemma.
+4. For each witness, let the $m_f$ be the union of natural model and failing model.
     1. The failing clause is in the formula.
+    2. $m_f$ is the UP-model of $F \cup \{\overline{l} \,|\, l \in r\}$ where $r$
+       is the resolvent of the lemma and the failing clause.
+        
+\if0
     2. $m_f$ is consistent.
     3. $m_f$ contains the reverse units from the resolvent of the lemma and the failing clause.
-    4. $m_f$ contains no clause that is unit under $m_f$ and not already in $m_f$.
+    4. The accumulated formula contains no clause that is unit under $m_f$ and not already in $m_f$.
+\fi
+
+Note that a SICK certificate is only useful for a checker of specified DRAT,
+because to compute the accumulated formula in an operational checker, one would
+need to do unit propagation which is avoided by design in the SICK checker.
 
 Contribution
 ------------
 
-Our contribution consists of adding support for proof format
-`DRAT-arbitrary-pivot` which requires multiple witnesses, and the usage
-of TOML.
+Our contribution is the design of a new syntax that takes into account the
+different versions of DRAT with fixed or arbitrary pivot.
 
-6. Checker Implementation
+5. Checker Implementation
 =========================
 
-The implementation (`rate`) is available [^rate].
+The implementation (`rate`) is available [^rate].  It is a drop-in replacement
+for a subset of `drat-trim`'s functionality --- namely the forward and
+backward unsatisfiability checks.  When a proof is accepted, `rate` can
+output core lemmas as DIMACS, LRAT or GRAT.  Otherwise, the rejection of
+a proof can be supplemented by a SICK certificate of unsatisfiability.
+Input files compressed in one of several popular formats (Gzip, Zstandard,
+Bzip2, XZ, LZ4) are transparently decompressed .
 
-Features
---------
+There are two options that alter the semantics of the checking:
 
-- check DRAT proofs
-- output core lemmas as DIMACS, LRAT or GRAT for accepted proofs
-- output SICK certificate of unsatisfiability for rejected proofs
-- competitive performance due to backwards checking with core-first unit
-propagation
-- option to ignore unit deletions, including reason deletions (flag `-d` or
-`--skip-unit-deletions`)
-- output several metrics regarding reason deletions
-- decompress input files on-the-fly (Gzip, Zstandard, Bzip2, XZ, LZ4)
+1. Unit deletions can be skipped with the flag `-d` or
+   `--skip-unit-deletions`. This makes `rate` check operational instead of
+   specified DRAT.
+   
+2. If the flag `--assume-pivot-is-first` is given, the pivot must be the first
+   literal in a RAT lemma, otherwise the proof will be rejected.
+
+In terms of performance, `rate` is comparable to other state-of-the-art
+checkers as it implements the same optimizations, mainly backwards checking
+with core-first unit propagation.
+
+Adding the flag `--noncore-rate-candidates` disables an optimization that was
+pioneered by `gratgen`: clauses that are not in the core can be disregarded
+as resolution candidates.
+
+Amongst other metrics, `rate` can output the number of concrete reason
+deletions and unique reason deletions[^reason-deletions-shrinking-trail]. Other
+checkers cannot provide the latter. This might be useful to sanity-check
+SAT solvers' proof generation procedures. 
 
 The debug build comes with lots of assertions, including checks for arithmetic
 overflows and narrowing conversions that cause unintended changes of values.
+These checks can also be enabled in the release build with purportedly
+minimal impact on performance.
 
 Rust
 ----
 
-We chose modern systems programming language Rust[^rust] for our
+We chose the modern systems programming language Rust[^rust] for our
 implementation.  Amongst the respondents of the 2019 Stackoverflow Developer
 Survey[^so-survey] it is the most loved programming language and Rust
-developers have the highest rate of contributing to open source projects.
+developers have the highest contribution rate to open source projects.
 
-Based on our successful implementation, we believe that, while there may be
-some inconveniences with the borrow checker[^partial-ref], it is a viable
+Based on our experience, we believe that, while there may be some
+inconveniences with the borrow checker[^partial-ref], it is a viable
 alternative to C and C++ for the domain of SAT solving. The first Rust-based
 solver to take part in competitions `varisat`[^varisat] is a great example
 of this.
@@ -751,9 +733,10 @@ of this.
 Clause Identifiers
 ------------------
 
-Other DRAT checkers use 30 bits to for unique clause identifiers.  We use
-62 bits, mimicking a decision in `CaDiCaL`[^cadical-clauses].  This might
-be disadvantageous in terms of performance and could be changed in future.
+Other DRAT checkers use 30 bits to for unique clause identifiers.  We use 62
+bits, mimicking a decision in `CaDiCaL`[^cadical-clauses] to not be limited to
+some million clauses.  This might be disadvantageous in terms of performance
+and could be changed in future.
 
 One problem with backwards checking is that the LRAT proof has to be
 kept in memory until the verification is complete. Since LRAT proofs are
@@ -762,14 +745,14 @@ consumption[^sc18-results].  In order to make `rate` comparable to `DRAT-trim`
 in terms of memory consumption, we also use 30 bits for clause hints in the
 LRAT proof.
 
-7. Experimental Evaluation
+6. Experimental Evaluation
 ==========================
 
 To evaluate our tool, we performed experiments, the detailed set-up is
 available[^rate-experiments].
 
 We work on proofs produced by solvers from the SAT competition 2018[^sc18].  As
-described in [Section 4][4. Solvers], the proofs produced by `MiniSat`-derived
+described in [Section 3][3. Solvers], the proofs produced by `MiniSat`-derived
 solvers are probably not meant to be interpreted as specified DRAT, so the
 relevancy of our benchmarks is questionable.
 
@@ -861,11 +844,11 @@ that `gratgen` is faster than `rate` on almost all instances.  Similarly,
 figure @fig:cross-rate-d-drat-trim shows that `rate` is faster than `DRAT-trim`
 on most instances.
 
-![Correlation of the number of reason deletions and
-the absolute runtime overhead of checking specified
+![Correlation of the number of concrete reason deletions
+and the absolute runtime overhead of checking specified
 DRAT.](p/correlation-reason-deletions-time-delta.svg){#fig:correlation-reason-deletions-time-delta}
 
-![Correlation of the number of reason deletions and the
+![Correlation of the number of concrete reason deletions and the
 absolute overhead in terms of memory usage of checking specified
 DRAT.](p/correlation-reason-deletions-space-delta.svg){#fig:correlation-reason-deletions-space-delta}
 
@@ -873,41 +856,42 @@ Overhead of Reason Deletions
 ----------------------------
 
 Figure @fig:correlation-reason-deletions-time-delta suggests that a large
-number of reason deletions brings about some runtime overhead in `rate` when
-checking specified DRAT as opposed to operational DRAT.  A significant overhead
-in memory consumption occurs in only one instance, which also has a high number
-of reason deletions, see figure @fig:correlation-reason-deletions-space-delta.
+number of (either concrete or unique) reason deletions brings about some
+runtime overhead in `rate` when checking specified DRAT as opposed to
+operational DRAT.  A significant overhead in memory consumption occurs in
+only one instance, which also has a high number of concrete reason deletions,
+see figure @fig:correlation-reason-deletions-space-delta.
 
-Note that this overhead also occurs for proofs that only contain redundant
-reason deletions. For this class of proofs, the overhead could be easily
-remedied with a small change to the checking algorithm.  However, it is not
-yet clear to us how this should be done ideally.  Assuming solvers produced
-proofs with (redundant) reason deletions only after addition of the unit
-clause replacing other reason clauses, this would be trivial.  This class
-of proofs is the one implemented by the second variant of the patches from
-[section 4][4. Solvers].
+Note that this overhead also occurs for proofs that contain no unique reason
+deletions. For this class of proofs, the overhead could be easily remedied with
+a small change to the checking algorithm.  However, it is not yet clear to us
+how this should be done ideally.  Assuming solvers produced proofs without
+unique reason deletions where non-unique reason deletions occur only after
+addition of the unit clause that would obsolete other potential reasons,
+this would be trivial.  This class of proofs is the one that is produced by
+solvers using the second variant of the patches from [section 3][3. Solvers].
 
-8. Conclusion
+7. Conclusion
 =============
 
 We have provided some evidence to our hypothesis that checking specified DRAT
 is, on average, as expensive as checking operational DRAT, but an excessive
-number of reason deletions can make it more costly.
+number of concrete or unique reason deletions can make it more costly.
 
 We encourage SAT solver developers to to apply our patch to their
 `MiniSat`-based solvers in order to create proofs that are correct under
-either flavor and do not require the workaround of skipping reason deletions.
+either flavor and do not require the workaround of skipping unit deletions.
 
-9. Future Work
+8. Future Work
 ==============
 
 While our checker for specified DRAT is not really any more useful than one
 for operational DRAT in terms of checking SAT solvers' unsatisfiability
-results, it might be useful for checking inprocessing steps with reason
-deletions Additionally it can be extended to support new proof formats.
+results, it might be useful for checking inprocessing steps with unique
+reason deletions Additionally it can be extended to support new proof formats.
 
 If a checker for specified DRAT were to be adopted, it might be beneficial
-to implement a way to handle redundant reason deletions more efficiently
+to implement a way to handle non-unique reason deletions more efficiently
 than `rate` does, ideas for doing so are described in [Overhead of Reason
 Deletions].
 
@@ -944,9 +928,9 @@ checker at the cost of a larger proof artifact.
 [^rust]: <https://www.rust-lang.org/>
 [^partial-ref]: <https://jix.one/introducing-partial_ref/>
 [^cadical-clauses]: <https://github.com/arminbiere/cadical/blob/master/src/watch.hpp#L9>
-[^reason-deletions-shrinking-trail]: The metric for the number of non-redundant
-reason deletions is called `reason deletions shrinking trail` in the output of
-`rate`.
+
+[^reason-deletions-shrinking-trail]: The metric for the number of unique reason
+deletions is called `reason deletions shrinking trail` in the output of `rate`.
 
 References
 ==========
