@@ -639,18 +639,19 @@ ListOfLiterals  := '[' (Literal ',')* ']'
 Explanation
 -----------
 
+- `proof_step` specifies the proof step that failed (by offset in the proof,
+  starting at one).  For the remainder of this section, let the *lemma*
+  denote the clause that is introduced by the referenced proof step.  In case
+  of a textual proof this corresponds to the line number of the introduction
+  instruction that failed.
 - `proof_format` describes the proof format to use.
    - `DRAT-arbitrary-pivot`: DRAT checking where the pivot can be any literal
    in the lemma. This requires one witness (counter-example) for each possible
-   pivot in the failing lemma. The pivot has to be specified for each witness.
+   pivot in the lemma. The pivot has to be specified for each witness.
    - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
    The pivot needs to be the first literal in the lemma.  We added the
    distinction between these two formats because it was not clear which one
    should be used universally.
-- `proof_step` specifies the proof step that failed, starting at one.
-  For the remainder of this section, let the lemma denote the clause that is
-  introduced by the referenced proof step.  In case of a textual proof this
-  corresponds to the line number of the introduction instruction that failed.
 - `natural_model` gives the shared UP-model before checking this proof
   step. This is included to avoid having to perform propagation in a
   checking tool.
@@ -658,14 +659,14 @@ Explanation
 Each witness is a counter-example to some redundancy check.
 
 - `failing-clause`: A clause in the formula, which is a resolution candidate
-  for the lemma.  This means that RUP of the resolvent on the pivot literal
-  of the lemma and the failing clause.
+  for the lemma.  This means that the RUP check failed for the resolvent on
+  the pivot literal of the lemma and the failing clause.
 - `failing-model`: The literals that were added to the natural model (trail)
   when performing the failed redundancy check.
 - `pivot`: This specifies the pivot literal.
 
 The absence of a witness means that a RUP check failed.  Note that if the
-lemma is the empty clause, no witness is needed, since the empty clause
+lemma is the empty clause, a witness is never needed, since the empty clause
 cannot be RAT.
 
 Semantics
@@ -673,31 +674,17 @@ Semantics
 
 Our tool `sick-check` accepts SICK certificates that fulfil below properties.
 
-Let $F$ be the accumulated formula up to
-and excluding the failing lemma.
+Let $F$ be the accumulated formula up to and excluding the lemma.
 
-\if0
-2. $m_n$ is consistent.
-3. $m_n$ contains the reverse units from the failing lemma.
-4. The accumulated formula up to and excluding the failing lemma contains
-no clause that is unit under $m_n$ and is not already in $m_n$.
-\fi
-
-1. The proof contains the proof step.
-2. The given `natural_model` is the shared UP-model of $F$
-3. For format `DRAT-arbitrary-pivot`, the pivots are identical to the literals
-   in the failing lemma.
-4. For each witness, let the $m_f$ be the union of natural model and failing model.
-    1. The failing clause is in the formula.
-    2. $m_f$ is the shared UP-model of $F \cup \{ \{\overline{l}\} \,|\, l \in r\}$
-       where $r$ is the resolvent on the witnesses' pivot of the lemma and the failing clause.
+1. The proof contains the `proof_step`.
+2. The given `natural_model` is the shared UP-model of $F$.
+3. For format `DRAT-arbitrary-pivot`, the pivots are identical to the literals in the lemma.
+4. For each witness, consisting of `failing_clause`, `failing_model` and `pivot`.
+    1. The `failing_clause` is in $F$.
+    2. The union of `natural_model` and `failing_model` is the shared UP-model of
+       $F \cup \{ \{\overline{l}\} \,|\, l \in r\}$
+       where $r$ is the resolvent on `pivot` of the lemma and the `failing_clause`.
         
-\if0
-    2. $m_f$ is consistent.
-    3. $m_f$ contains the reverse units from the resolvent of the lemma and the failing clause.
-    4. The accumulated formula contains no clause that is unit under $m_f$ and not already in $m_f$.
-\fi
-
 Note that a SICK certificate is only useful for a checker of specified DRAT,
 because to compute the accumulated formula in an operational checker, one would
 need to do unit propagation which is avoided by design in the SICK checker.
