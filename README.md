@@ -115,7 +115,8 @@ Notation
 A literal is a propositional variable, like $x$, or a negation of a variable,
 denoted by $\overline{x}$. A clause is a disjunction of literals, usually
 denoted by juxtaposition of the disjuncts, e.g. we write $xy\overline{z}$
-for $x \lor y \lor \overline{z}$.
+for $x \lor y \lor \overline{z}$. For clauses of size one we use $\{x\}$
+to avoid confusion with the literal $x$.
 
 An assignment is a finite, complement-free set of literals. All literals in an
 assignment are considered to be satisified by that assignment.  Conversely,
@@ -511,12 +512,42 @@ that do not require this workaround of ignoring unit deletions when checking.
 
 1. Do not remove locked clauses during simplification.
 
-2. Before to removing locked clauses, emit the corresponding
-propagated literal as addition in the DRAT proof.  Suggested by Mate
-Soos[^suggestion-add-units], this option is also the preferred one to the
-authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].  Additionally,
-this is implemented in `CaDiCaL's`[^cadical] preprocessor.
-\todo{explain soundness of future RAT}
+2. Before to removing locked clauses, emit the corresponding propagated
+literal as addition of a unit clause in the DRAT proof.  Suggested by
+Mate Soos[^suggestion-add-units], this option is also the preferred one
+to the authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].
+Additionally, this is implemented in `CaDiCaL's`[^cadical] preprocessor.
+
+Let us briefly explain why the second variant does not affect correctness of
+future RAT inferences. Given the accumulated formula $F$, a locked clause
+$D \in F$ has satisfied literal $l \in D$ and all other literals in $D$
+are falsified.  In the unpatched version, $D$ could be deleted.  Variant 1
+prevents this by not deleting $D$ while variant 2 modifies the formula to be
+$F' := (F \cup \{\{l\}\}) \setminus \{D\}$.  A clause $C$ is RAT in $F$ if and
+only it is RAT in $F'$ because resolving $C$ with either $D$ or $\{l\}$ yields
+two resolvents that are equivalent given the assignment of the shared UP-model.
+
+\if0
+To do so we show that
+it does not make a difference for a RAT inference whether $D$ or $\{l\}$
+is used as resolution candidate.  If a pivot different from $\overline{l}$
+is used, then the resolvent is tautological, so this does not prevent $C$
+from being RAT in $F$.  Otherwise, if $\overline{l}$ is used as pivot, the
+resolvents are actually equivalent with respect to the shared UP-model which
+falsifies all literals in $D$ save for $l$.
+
+\begin{align*}
+\text{resolvent of $C$ and $D$} & \equiv
+\text{resolvent of $C$ and $\{l\}$}
+\\
+(C \setminus \{\overline{l}\}) \cup (D \setminus \{l\}) &\equiv (C
+\setminus \{\overline{l}\}) \cup (\{l\} \setminus \{l\}) &\equiv(C \setminus
+\{\overline{l}\})
+\end{align*}
+
+Because the resolvents are equivalent with respect to the assignment
+the RUP checks in $F$ and $F'$ are, too.
+\fi
 
 We provide patches implementing these for `MiniSat` version 2.2
 (1.  [^patch-MiniSat-keep-locked-clauses] and 2.[^patch-MiniSat]),
@@ -615,15 +646,14 @@ Explanation
    - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
    The pivot needs to be the first literal in the lemma.  We added the
    distinction between these two formats because it was not clear which one
-   should be universally used.
+   should be used universally.
 - `proof_step` specifies the proof step that failed, starting at one.
   For the remainder of this section, let the lemma denote the clause that is
   introduced by the referenced proof step.  In case of a textual proof this
   corresponds to the line number of the introduction instruction that failed.
-- `natural_model` gives the partial model or trail before
-  checking this proof step, obtained by exhaustively propagating units
-  in the accumulated formula. This is included to avoid having to perform
-  propagation in a checking tool.
+- `natural_model` gives the shared UP-model before checking this proof
+  step. This is included to avoid having to perform propagation in a
+  checking tool.
 
 Each witness is a counter-example to some redundancy check.
 
@@ -643,7 +673,7 @@ Semantics
 
 Our tool `sick-check` accepts SICK certificates that fulfil below properties.
 
-Let $m_n$ be the natural model.  Let $F$ be the accumulated formula up to
+Let $F$ be the accumulated formula up to
 and excluding the failing lemma.
 
 \if0
@@ -654,13 +684,13 @@ no clause that is unit under $m_n$ and is not already in $m_n$.
 \fi
 
 1. The proof contains the proof step.
-2. $m_n$ is the shared UP-model of $F$
-3. For format `DRAT-arbitrary-pivot`, all pivots are specified and precisely
-   match the literals in the failing lemma.
+2. The given `natural_model` is the shared UP-model of $F$
+3. For format `DRAT-arbitrary-pivot`, the pivots are identical to the literals
+   in the failing lemma.
 4. For each witness, let the $m_f$ be the union of natural model and failing model.
     1. The failing clause is in the formula.
-    2. $m_f$ is the UP-model of $F \cup \{\overline{l} \,|\, l \in r\}$ where $r$
-       is the resolvent of the lemma and the failing clause.
+    2. $m_f$ is the shared UP-model of $F \cup \{ \{\overline{l}\} \,|\, l \in r\}$
+       where $r$ is the resolvent on the witnesses' pivot of the lemma and the failing clause.
         
 \if0
     2. $m_f$ is consistent.
@@ -682,12 +712,13 @@ different versions of DRAT with fixed or arbitrary pivot.
 =========================
 
 The implementation (`rate`) is available [^rate].  It is a drop-in replacement
-for a subset of `drat-trim`'s functionality --- namely the forward and
-backward unsatisfiability checks.  When a proof is accepted, `rate` can
-output core lemmas as DIMACS, LRAT or GRAT.  Otherwise, the rejection of
-a proof can be supplemented by a SICK certificate of unsatisfiability.
-Input files compressed in one of several popular formats (Gzip, Zstandard,
-Bzip2, XZ, LZ4) are transparently decompressed .
+for a subset of `drat-trim`'s functionality --- namely the forward and backward
+unsatisfiability checks.  When a proof is accepted, `rate` can output core
+lemmas as DIMACS, LRAT or GRAT.  Otherwise, the rejection of a proof can be
+supplemented by a SICK certificate of unsatisfiability.  The representation
+of the DRAT proof --- binary or textual -- is automatically detected the same
+way as `drat-trim`.  Additionally, compressed input files (Gzip, Zstandard,
+Bzip2, XZ, LZ4) are transparently deflated.
 
 There are two options that alter the semantics of the checking:
 
