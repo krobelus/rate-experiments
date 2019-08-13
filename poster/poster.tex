@@ -85,9 +85,9 @@
         \begin{itemize}
             \item SAT solvers produce DRAT proofs that are incorrect$^\texttt{a}$
              due to spurious deletions
-            of \textbf{reason clauses}
-            \item proof checkers remedy this by ignoring reason deletions
-            \item handling reason deletions requires a complicated algorithm
+            of \textbf{unique reason clauses}
+            \item proof checkers remedy this by ignoring unit deletions
+            \item handling unique reason deletions requires a complicated algorithm
         \end{itemize}
     \end{block}
 
@@ -111,7 +111,7 @@
 		\begin{tabular}{lll}
         		\texttt{1: add} & $x$			& \hspace{1cm} addition of redundant clause		\\
         		\texttt{2: del} & $x \lor y$		& \hspace{1cm} deletion of subsumed clause (always fine)		\\
-        		\textcolor{red}{\texttt{3: del}} & \textcolor{red}{$x$}			& \hspace{1cm} \textcolor{red}{deletion of reason clause (loss of information)}		\\
+        		\textcolor{red}{\texttt{3: del}} & \textcolor{red}{$x$}			& \hspace{1cm} \textcolor{red}{deletion of unique reason clause}		\\
         		\texttt{4: add} & $\square$		& \hspace{1cm} addition of redundant conflict clause	\\
 		\end{tabular}
         \end{itemize}
@@ -121,11 +121,12 @@
 	\begin{columns}[T]
     	    \begin{column}{.35\textwidth}
         	    \begin{itemize}
-			\item clause $x$ is the \textbf{reason} for $y$
-			and $\overline{y}$
-            	    	\item deleting $x$ makes the proof incorrect
+			\item clause $x$ is the \textbf{unique reason} for literal $x$
+			\item deleting $x$ removes derived clauses $y$,
+			$\overline{y}$ and $\square$, making the proof
+			incorrect
 			\item many SAT solvers produce such proofs $\rightarrow$
-			proof checkers ignore reason deletions
+			proof checkers ignore unit deletions
         	    \end{itemize}
     	    \end{column}
     	    \begin{column}{.6\textwidth}
@@ -168,12 +169,12 @@
 		\item extension of SICK incorrectness certificate, giving
 		a counter-example for an incorrect proof
 		\item implement efficient checker to measure performance
-		impact of handling reason deletions
+		impact of handling unique reason deletions
         \end{itemize}
     \end{block}
 
 
-    \begin{block}{Avoiding Reason Deletions in Solvers}
+    \begin{block}{Avoiding Unique Reason Deletions in Solvers}
 	\begin{itemize}
 	    \item \texttt{DRUPMiniSat}-based solvers delete reason clauses
 	    but do not undo corresponding assignments
@@ -216,7 +217,7 @@
 	\end{tabular}
 
         \vspace{.5cm}
-	SICK certificate disproving RAT of clause $x$:
+	SICK certificate refuting RAT of clause $x$:
         \begin{align*}
             \texttt{proof\_format}	&= \texttt{DRAT-arbitrary-pivot}		\\
 	    \texttt{proof\_step}	&= 2 \text{\quad (Failed line in the proof)}	\\
