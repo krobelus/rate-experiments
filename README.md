@@ -4,6 +4,7 @@ bibliography: references.bib
 date: \today
 csl: ieee.csl
 link-citations: true
+documentclass: report
 title: |
         DRAT Proofs without Deletions of Unique Reason Clauses 
             &
@@ -29,6 +30,8 @@ specification, because they contain spurious deletions of unique reason
 clauses. We present patches for competitive SAT solvers to produce correct
 proofs with respect to the specification.
 :::
+
+\tableofcontents
 
 1. Introduction
 ===============
@@ -94,6 +97,7 @@ the format for a small witness that can be efficiently checked to verify
 that a proof is indeed incorrect. We contribute a small modification to the
 SICK format.
 
+\todo{update}
 The rest of this paper is organized as follows: In [the following
 section][2. Preliminaries] we will introduce preliminary knowledge about
 SAT solving, proofs of unsatisfiability, checking algorithms, the problem
@@ -109,9 +113,6 @@ work][8. Future Work] in the area of proof-checking.
 2. Preliminaries
 ================
 
-Notation
---------
-
 A literal is a propositional variable, like $x$, or a negation of a variable,
 denoted by $\overline{x}$. A clause is a disjunction of literals, usually
 denoted by juxtaposition of the disjuncts, e.g. we write $xy\overline{z}$
@@ -124,8 +125,8 @@ the complements of those literals are falsified by that assignment.  Other
 literals are unassigned.  If there is some variable that is not assigned in
 either polarity, then the assignment is partial.
 
-SAT Solving
------------
+2.1 SAT Solving
+---------------
 
 SAT solvers work on formulas in conjunctive normal form (CNF), conjunctions
 of clauses.  A clause is satisfied by an assignment $I$ if any literal in the
@@ -157,14 +158,8 @@ Once the shared UP-model falsifies a clause, then the solver has derived
 the empty clause and therefore established unsatisfiability of the current
 formula and also the input formula.
 
-Unit Propagation
-----------------
-
-\todo{split in naive UP, and efficient version with watches}
-
-Given an assignment, a *unit clause* contains only falsified literals except
-for a single non-falsified *unit literal*.
-
+\paragraph{Unit Propagation} Given an assignment, a *unit clause* contains
+only falsified literals except for a single non-falsified *unit literal*.
 At any point during a solver's search, if the formula contains a unit
 clause given the current assignment, the unit literal $l$ in that clause is
 necessarily satisified and therefore added to the trail.  The unit clause
@@ -202,116 +197,92 @@ the watchlist of $\overline{l}$, thus visiting only clauses that are watched
 on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant
 1 might need to be restored.
 
-\if0 % implementation detail
-Note that, as in [@RebolaCruz2018], clauses of size one are extended by a
-single literal $\overline{\top}$ to make the manipulations of watches work
-the same way for all clauses.
-\fi
+\paragraph{CDCL} Predominant SAT solvers implement Conflict Driven Clause
+Learning (CDCL).  Whenever a clause in the formula is falsified, this means
+that the current set of assumptions can not be a subset of any model. Therefore
+a subset of the assumptions is reverted and a *conflict clause* is learned,
+and added to the formula to prevent the solver from revisiting those wrong
+assumptions.  As the number of clauses increases, so does memory usage, and
+the time spent on unit propagation. Because of this, redundant (introduced in
+\todo{update}[Redundancy Criteria]) learned clauses are regularly deleted from the formula
+if they are not considered useful.
 
-CDCL
-----
+2.2 Proofs of SAT Solvers' Unsatisfiability Results
+---------------------------------------------------
 
-Predominant SAT solvers implement Conflict Driven Clause Learning (CDCL).
-Whenever a clause in the formula is falsified, this means that the current
-set of assumptions can not be a subset of any model. Therefore a subset of
-the assumptions is reverted and a *conflict clause* is learned, and added to
-the formula to prevent the solver from revisiting those wrong assumptions.
-As the number of clauses increases, so does memory usage, and the time spent
-on unit propagation. Because of this, redundant (introduced in [Redundancy
-Criteria]) learned clauses are regularly deleted from the formula if they
-are not considered useful.
-
-Redundancy Criteria
--------------------
-
-A clause $C$ is redundant in formula $F$ if $F$ and $F \cup \{C\}$ are
-satisfiability equivalent [@Heule_2017].
-
+\paragraph{Redundancy Criteria} A clause $C$ is redundant in formula $F$
+if $F$ and $F \cup \{C\}$ are satisfiability equivalent [@Heule_2017].
 There are various criteria of redundancy, with different levels of expressivity
-and computational costs.  Each lemma in a clausal proof must be redundant
-according to the proof's redundancy criteria.
+and computational costs.
 
 **Redundancy Criteria RUP:** a clause $C$ is RUP (reverse unit propagation)
 in formula $F$ if unit propagation on $F' := F \cup \{ \{\overline{l}\}
-\,|\, l \in C \}$ derives the empty clause.  A subsequence of clauses in
-such a successful propagation sequence can then be used to derive $C$ using
-the resolution rule, which means that $C$ is a logical consequence of $F$.
-\todo{find a better way to explain soundness?} To compute whether some clause
-is RUP, the negated literals in clause are added as assumptions and propagated.
+\,|\, l \in C \}$ derives the empty clause.  To compute whether $C$ is RUP,
+the negated literals in $C$ are added as assumptions and propagated until
+the empty clause is derived.  A clause that is RUP is logical consequence
+of $F$.\todo{cite}
+
+State-of-the-art SAT solvers use complex techniques to simplify the
+formula before search and during with search --- termed *preprocessing* and
+*inprocessing* respectively.  Proofs based on RUP alone are not expressive
+enough to simulate all preprocessing and inprocessing techniques in modern
+SAT solvers [@rat]. Because of this, the more powerful criteria RAT is used
+today [@rat].
 
 **Redundancy Criteria RAT:** a clause $C$ is a *resolution asymmetric
 tautology* (RAT) [@inprocessingrules] on some literal $l \in C$ with respect
-to formula $F$ whenever for all clauses $D \in F$ where $\overline{l} \in D$,
-the resolvent on $l$ of $C$ and $D$, which is $(C \setminus \{l\}) \cup (D
-\setminus \{\overline{l}\})$ \todo{include $l$ in the resolvent?} is RUP in
-$F$. Clause $D$ is called a *resolution candidate* for $C$. Computing whether
-a clause is RAT can be done with one RUP check for each resolution candidate.
+to formula $F$ whenever for all clauses $D \in F$ where $\overline{l}
+\in D$, the resolvent on $l$ of $C$ and $D$, which is $(C \setminus \{l\})
+\cup (D \setminus \{\overline{l}\})$ is RUP in $F$. Clause $D$ is called
+a *resolution candidate* for $C$. Computing whether a clause is RAT can be
+done with one RUP check for each resolution candidate.
 
-Clausal Proofs
---------------
+\paragraph{DRAT Proofs} A formula in CNF can be regarded as a multiset
+of clauses.  A DRAT (*delete resolution asymmetric tautology*) proof is
+a sequence of lemmas (clause introductions) and deletions, which can be
+performed on a formula to simulate the clause introductions and deletions
+that the solver performed.  This way the cehcker can reproduce the solver's
+formula as well as the shared UP-model at each step, eventually deriving
+the empty clause just like the solver did. Every lemma in a correct DRAT
+proof is RUP or RAT with respect to the accumulated formula.  In practice,
+most lemmas are RUP, so a checker first tries to check RUP and only if that
+fails, falls back to RAT.
 
-A formula in CNF can be regarded as a multiset of clauses.  Each step in a
-clausal proof adds a clause to the current formula, or deletes one from it.
-These steps simulate the clause introductions and clause deletions that a
-solver performs.  As a result, a checker can reproduce the solver's formula
-as well as the shared UP-model at each step, and finally derive the empty
-clause just like the solver did.
-
-\paragraph{Deletions} A proof solely consisting of clause introductions
-will result in the checker's propagation routines slowing down due to
-the huge number of clauses as described in [CDCL].  To counteract this,
-clause deletion information has been added to proof formats, making the
-proof-checking time comparable to solving time [@Heule_2014] [@Wetzler_2014].
-
-DRAT Proofs
------------
-
-State-of-the-art SAT solvers use complex techniques to simplify the formula
-before search and during with search --- termed preprocessing and inprocessing
-respectively.  Proofs based on RUP alone are not expressive enough to
-simulate all preprocessing and inprocessing techniques in modern SAT solvers
-[@rat]. Because of this, the more powerful criteria RAT is used today [@rat].
-
-A DRAT (*delete resolution asymmetric tautology*) proof is a clausal proof
-with deletions where every lemma is RUP or RAT.  In practice, most lemmas
-are RUP, so a checker first tries to check RUP and only if that fails,
-falls back to RAT.
-
-While deletions were added to proofs to optimize checking runtime, they
-can also be enable additional inferences due to RAT being non-monotonic
+A proof solely consisting of clause introductions will result in the checker's
+propagation routines slowing down due to the huge number of clauses as
+described in \todo{update}[CDCL].  To counteract this, clause deletion information
+has been added, making the proof-checking time comparable to solving time
+[@Heule_2014] [@Wetzler_2014].  While deletions were added as an optimization,
+they can also enable additional inferences due to RAT being non-monotonic
 [@philipp_rebola_unsatproofs].
 
 As in [@rebola2018two], we refer to *operational DRAT* as the flavor of DRAT
 where deletions of unit clauses are ignored, as opposed to *specified DRAT*.
 
-LRAT Proofs
------------
+\paragraph{LRAT Proofs} The runtime and memory usage of DRAT checkers can
+exceed the ones of the solver that produced the proof. The resulting need
+for a DRAT checker to be as efficient as possible makes it difficult to
+implement a mechanically verified checker. This is remedied by making the
+DRAT checker output an optimized (i.\ e.\ small) and annotated proof in LRAT
+format [@cruz2017efficient]. Checking this proof does not require propagation
+and there are verified implementations available[^acl2].  An LRAT proof
+is a DRAT proof just like DRAT, but it includes clause hints for each
+resolution candidates and all unit clauses that are necessary to derive a
+the empty clause to show that the resolvent is a RUP.
 
-The runtime and memory usage of DRAT checkers can exceed the ones of the
-solver that produced the proof. The resulting need for a DRAT checker to be as
-efficient as possible makes it difficult to implement a mechanically verified
-checker. This is remedied by making the DRAT checker output an optimized (i.\
-e.\ small) and annotated proof in LRAT format [@cruz2017efficient]. Checking
-this proof does not require propagation and there are verified implementations
-available[^acl2].
-
-An LRAT proof is a clausal proof just like DRAT, but it includes clause hints
-for each resolution candidates and all unit clauses that are necessary to
-derive a the empty clause to show that the resolvent is a RUP.
-
-Backwards Checking
+2.3 Proof Checking
 ------------------
 
 The naïve way to verify that a proof is correct consists of performing
 each instruction in the proof from the first to one last one, while checking
 each lemma.
 
-During search, SAT solvers cannot know which learned clauses are useful in a
-proof, so they simply add all of them as lemmas. This means that many lemmas
-might not be necessary in a proof of unsatisfiability.  To avoid checking
-superfluous lemmas, the proof is checked backwards --- starting from the
-empty clause, only lemmas that are transitively necessary to derive that
-empty clause are checked [@Heule_2013].
+\paragraph{Backwards Checking} During search, SAT solvers cannot know
+which learned clauses are useful in a proof, so they simply add all of them
+as lemmas. This means that many lemmas might not be necessary in a proof
+of unsatisfiability.  To avoid checking superfluous lemmas, the proof is
+checked backwards --- starting from the empty clause, only lemmas that are
+transitively necessary to derive that empty clause are checked [@Heule_2013].
 
 This can be done using two passes over the proof: a forward pass performing
 unit propagation [@RebolaCruz2018] until the empty clause is derived, and
@@ -345,12 +316,9 @@ the forward pass.  This ensures that when processing some lemma the trail
 is the same during forward and backward pass.
 
 
-Core-first Unit Propagation
----------------------------
-
-In order to keep the core small and reduce checking costs, core-first unit
-propagation was introduced [@Heule_2013].  It works by doing unit propagation
-in two phases:
+\paragraph{Core-first Unit Propagation} In order to keep the core small
+and reduce checking costs, core-first unit propagation was introduced
+[@Heule_2013].  It works by doing unit propagation in two phases:
 
 1. Propagate using clauses already in the core.
 2. Examine non-core clauses:
@@ -360,15 +328,13 @@ in two phases:
 
 This results in a local minimum of clauses being added to the core.
 
-Reason Deletions
-----------------
-
-As explained in [@RebolaCruz2018], when checking a proof without deletions
-of unique reason clauses, the trail grows monotonically, that is, it never
-shrinks at any proof step during the forward phase. Therefore, during the
-backwards phase it is trivial to revert the modifications to the trail by
-simply truncating it.  This also maintains watch invariants, making sure
-that the watchlists can find all unit clauses.
+\todo{motivate w.r.t. next section}
+\paragraph{Reason Deletions} As explained in [@RebolaCruz2018], when
+checking a proof without deletions of unique reason clauses, the trail grows
+monotonically, that is, it never shrinks at any proof step during the forward
+phase. Therefore, during the backwards phase it is trivial to revert the
+modifications to the trail by simply truncating it.  This also maintains
+watch invariants, making sure that the watchlists can find all unit clauses.
 
 However, when a proof with unique reason deletions is checked under specified
 DRAT, the algorithm from [@RebolaCruz2018] is required to restore Invariant
@@ -409,77 +375,8 @@ Example 5].  The second watch may be set to the most recently falsified
 literal $l_r$, or any other literal that was falsified during the propagation
 that was done after adding the lemma that resulted in the propagation of $l_r$.
 
-Existing Checkers
------------------
-
-We heavily draw upon existing checkers. In fact, our implementation contains
-no algorithmic novelties but merely combines the ideas present in existing
-checkers.
-
-`DRAT-trim`
------------
-
-The seminal reference implementation; Marijn Heule's `DRAT-trim` can produce an
-optimized proof in LRAT format. We use their way of producing LRAT proofs and
-make sure that all our proofs are accepted by the verified checker [^acl2].
-This gives us confidence in the correctness of our implementation and allows
-for a comparison of our checker with `DRAT-trim` since they do roughly the
-same thing except for unit deletions.
-
-GRAT Toolchain
---------------
-
-More recently, Peter Lammich has published the GRAT toolchain
-[@lammich2017grat] that is able to outperform `DRAT-trim`
-[@lammich2017efficient].
-
-They first produce a GRAT certificate which is (similar to LRAT) with the
-`gratgen` tool, after which formally verified `gratchk` can be used to
-check the certificate, guaranteeing that the original formula is indeed
-unsatisfiable.
-
-They introduce some optimizations:
-
-- Separate watchlists for core and non-core clauses. This speeds up unit
-propagation, so we use it in our implementation.
-
-- Resolution candidate caching / RAT run heuristic [@lammich2017efficient]:
-DRAT proofs tend to contain sequences of RAT lemmas with the same pivot,
-in which case they only compute the list of RAT candidates once per sequence
-and reuse it for all lemmas with the same pivot. We did not implement that
-because the number of RAT introductions in our benchmarks is negligible when
-compared to the number of RUP introductions.
-
-We also implement GRAT generation in our tool. However, it seems that the
-`gratchk` tool is not designed to handle unit deletions (apparently they
-are ignored) so it will fail to handle our GRAT certificates for proofs with
-unit deletions.
-
-Amongst state-of-the-art DRAT checkers, `gratgen` is arguably the easiest
-to understand, so we advise interested readers to study that.
-
-`rupee` [^rupee]
-----------------
-
-This is the original implementation of the algorithm to handle unique reason
-deletions. We use exactly the same algorithm.  During our research we found
-an issue in the implementation which was fixed [^fix-revise-watches].
-
-Previously, `rupee` appears to be an order of magnitude slower than
-`DRAT-trim` [@RebolaCruz2018].  However, we believe that this overhead
-is primarily not a consequence of the algorithmic differences but exists
-mostly due to differences in the parsing implementation [^rupee-parsing]
-and other implementation details.
-
-[^rupee-parsing]: Both `rupee` and `DRAT-trim` use a fixed-size hash table
-to locate deleted clauses but `rupee`'s is smaller by one order of magnitude,
-which may explain parts of the difference in performance.
-
-Additionally `rupee` does not use core-first unit propagation while the
-other checkers do.
-
-3. Solvers
-==========
+3. DRAT Proofs without Deletions of Unique Reason Clauses
+=========================================================
 
 In this section we take a look at why the discrepant proofs are produced in
 the first place, and present patches to make solvers generate proofs without
@@ -558,145 +455,74 @@ Both patches are arguably rather simple and we do not expect significant
 impacts in terms of solver runtime, memory usage or proof size.  The same
 methods can be applied easily to other `DRUPMiniSat`-based solvers.
 
-\if0
-The patch implementing the second variant for `DRUPMiniSat` is displayed below.
+4. Complete and Fast DRAT Proof-Checking
+========================================
 
-```diff
-From 15d7560d6c340a4e8d93cb7469fe976cc43690da Mon Sep 17 00:00:00 2001
-From: Johannes Altmanninger <aclopte@gmail.com>
-Date: Tue, 28 May 2019 14:19:14 +0200
-Subject: [PATCH] emit unit in DRAT proof before deleting locked clauses
+roadmap
 
----
- minisat/core/Solver.cc | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+4.1 Existing Checkers
+---------------------
 
-diff --git a/minisat/core/Solver.cc b/minisat/core/Solver.cc
-index ddc3801..5941449 100644
---- a/minisat/core/Solver.cc
-+++ b/minisat/core/Solver.cc
-@@ -632,9 +632,13 @@ void Solver::removeSatisfied(vec<CRef>& cs)
-     int i, j;
-     for (i = j = 0; i < cs.size(); i++){
-         Clause& c = ca[cs[i]];
--        if (satisfied(c))
-+        if (satisfied(c)) {
-+            if (output != NULL && locked(c)) {
-+                Lit unit = c[0];
-+                fprintf(output, "%i 0\n", (var(unit) + 1) * (-2 * sign(unit) + 1));
-+            }
-             removeClause(cs[i]);
--        else{
-+        } else{
-             // Trim clause:
-             assert(value(c[0]) == l_Undef && value(c[1]) == l_Undef);
-             for (int k = 2; k < c.size(); k++)
-```
-\fi
+We heavily draw upon existing checkers. In fact, our implementation contains
+no algorithmic novelties but merely combines the ideas present in existing
+checkers.
 
-4. SICK Format
-==============
+\paragraph{\texttt{DRAT-trim}} The seminal reference implementation; Marijn
+Heule's `DRAT-trim` can produce an optimized proof in LRAT format. We use their
+way of producing LRAT proofs and make sure that all our proofs are accepted by
+the verified checker [^acl2].  This gives us confidence in the correctness of
+our implementation and allows for a comparison of our checker with `DRAT-trim`
+since they do roughly the same thing except for unit deletions.
 
-When a proof is found to be incorrect, our tool outputs an incorrectness
-certificate in the previously unpublished SICK format. This certificate
-can be used by our tool `sick-check` to verify incorrectness of the proof
-without doing any unit propagation. Furthermore, the size of the incorrectness
-certificate is in practice linear in the size of the formula, while proofs
-are exponential.
+\paragraph{GRAT Toolchain} More recently, Peter Lammich has published the
+GRAT toolchain [@lammich2017grat] that is able to outperform `DRAT-trim`
+[@lammich2017efficient].
 
-Let us give an  an example of a SICK certificate.  The first two columns show
-a satisfiable formula in DIMACS format and an incorrect DRAT proof for this
-formula.  The third column has the corresponding SICK certificate, stating
-that the RAT check failed for the first lemma in the proof.  The certificate
-file format is using TOML[^toml] syntax.
+They first produce a GRAT certificate which is (similar to LRAT) with the
+`gratgen` tool, after which formally verified `gratchk` can be used to
+check the certificate, guaranteeing that the original formula is indeed
+unsatisfiable.
 
-Formula     Proof   SICK Certificate
------------ ------- ---------------------------------------------
-`p cnf 2 2` `1 0`   `proof_format   = "DRAT-arbitrary-pivot"`
-`-1 -2 0`   `0`     `proof_step     = 1 # failed line (1-based) in the proof`
-`-1  2 0`            `natural_model  = [-1, ]`
-                    `[[witness]]`
-                    `failing_clause = [-2, -1, ]`
-                    `failing_model  = [2, ]`
-                    `pivot          = 1`
+They introduce some optimizations:
 
-Grammar
--------
+- Separate watchlists for core and non-core clauses. This speeds up unit
+propagation, so we use it in our implementation.
 
-```
-SICK            := ProofFormat ProofStep NaturalModel Witness*
-ProofFormat     := 'proof_format' '=' ( "DRAT-arbitrary-pivot"
-                                      | "DRAT-pivot-is-first-literal")
-ProofStep       := 'proof_step' '=' Integer
-NaturalModel    := 'natural_model' '=' ListOfLiterals
-Witness         := FailingClause FailingModel Pivot
-FailingClause   := 'failing_clause' '=' ListOfLiterals
-FailingModel    := 'failing_model' '=' ListOfLiterals
-Pivot           := 'pivot' '=' Literal
-ListOfLiterals  := '[' (Literal ',')* ']'
-```
+- Resolution candidate caching / RAT run heuristic [@lammich2017efficient]:
+DRAT proofs tend to contain sequences of RAT lemmas with the same pivot,
+in which case they only compute the list of RAT candidates once per sequence
+and reuse it for all lemmas with the same pivot. We did not implement that
+because the number of RAT introductions in our benchmarks is negligible when
+compared to the number of RUP introductions.
 
-Explanation
------------
+We also implement GRAT generation in our tool. However, it seems that the
+`gratchk` tool is not designed to handle unit deletions (apparently they
+are ignored) so it will fail to handle our GRAT certificates for proofs with
+unit deletions.
 
-- `proof_step` specifies the proof step that failed (by offset in the proof,
-  starting at one).  For the remainder of this section, let the *lemma*
-  denote the clause that is introduced by the referenced proof step.  In case
-  of a textual proof this corresponds to the line number of the introduction
-  instruction that failed.
-- `proof_format` describes the proof format to use.
-   - `DRAT-arbitrary-pivot`: DRAT checking where the pivot can be any literal
-   in the lemma. This requires one witness (counter-example) for each possible
-   pivot in the lemma. The pivot has to be specified for each witness.
-   - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
-   The pivot needs to be the first literal in the lemma.  We added the
-   distinction between these two formats because it was not clear which one
-   should be used universally.
-- `natural_model` gives the shared UP-model before checking this proof
-  step. This is included to avoid having to perform propagation in a
-  checking tool.
+Amongst state-of-the-art DRAT checkers, `gratgen` is arguably the easiest
+to understand, so we advise interested readers to study that.
 
-Each witness is a counter-example to some redundancy check.
+\paragraph{\texttt{rupee}}[^rupee] This is the original implementation of the
+algorithm to handle unique reason deletions. We use exactly the same algorithm.
+During our research we found an issue in the implementation which was fixed
+[^fix-revise-watches].
 
-- `failing-clause`: A clause in the formula, which is a resolution candidate
-  for the lemma.  This means that the RUP check failed for the resolvent on
-  the pivot literal of the lemma and the failing clause.
-- `failing-model`: The literals that were added to the natural model (trail)
-  when performing the failed redundancy check.
-- `pivot`: This specifies the pivot literal.
+Previously, `rupee` appears to be an order of magnitude slower than
+`DRAT-trim` [@RebolaCruz2018].  However, we believe that this overhead
+is primarily not a consequence of the algorithmic differences but exists
+mostly due to differences in the parsing implementation [^rupee-parsing]
+and other implementation details.
 
-The absence of a witness means that a RUP check failed.  Note that if the
-lemma is the empty clause, a witness is never needed, since the empty clause
-cannot be RAT.
+[^rupee-parsing]: Both `rupee` and `DRAT-trim` use a fixed-size hash table
+to locate deleted clauses but `rupee`'s is smaller by one order of magnitude,
+which may explain parts of the difference in performance.
 
-Semantics
----------
+Additionally `rupee` does not use core-first unit propagation while the
+other checkers do.
 
-Our tool `sick-check` accepts SICK certificates that fulfil below properties.
-
-Let $F$ be the accumulated formula up to and excluding the lemma.
-
-1. The proof contains the `proof_step`.
-2. The given `natural_model` is the shared UP-model of $F$.
-3. For format `DRAT-arbitrary-pivot`, the pivots are identical to the literals in the lemma.
-4. For each witness, consisting of `failing_clause`, `failing_model` and `pivot`.
-    1. The `failing_clause` is in $F$.
-    2. The union of `natural_model` and `failing_model` is the shared UP-model of
-       $F \cup \{ \{\overline{l}\} \,|\, l \in r\}$
-       where $r$ is the resolvent on `pivot` of the lemma and the `failing_clause`.
-        
-Note that a SICK certificate is only useful for a checker of specified DRAT,
-because to compute the accumulated formula in an operational checker, one would
-need to do unit propagation which is avoided by design in the SICK checker.
-
-Contribution
-------------
-
-Our contribution is the design of a new syntax that takes into account the
-different versions of DRAT with fixed or arbitrary pivot.
-
-5. Checker Implementation
-=========================
+4.2 Checker Implementation
+--------------------------
 
 The implementation (`rate`) is available [^rate].  It is a drop-in replacement
 for a subset of `drat-trim`'s functionality --- namely the forward and backward
@@ -734,13 +560,10 @@ overflows and narrowing conversions that cause unintended changes of values.
 These checks can also be enabled in the release build with purportedly
 minimal impact on performance.
 
-Rust
-----
-
-We chose the modern systems programming language Rust[^rust] for our
-implementation.  Amongst the respondents of the 2019 Stackoverflow Developer
-Survey[^so-survey] it is the most loved programming language and Rust
-developers have the highest contribution rate to open source projects.
+\paragraph{Rust} We chose the modern systems programming language Rust[^rust]
+for our implementation.  Amongst the respondents of the 2019 Stackoverflow
+Developer Survey[^so-survey] it is the most loved programming language and
+Rust developers have the highest contribution rate to open source projects.
 
 Based on our experience, we believe that, while there may be some
 inconveniences with the borrow checker[^partial-ref], it is a viable
@@ -748,13 +571,11 @@ alternative to C and C++ for the domain of SAT solving. The first Rust-based
 solver to take part in competitions `varisat`[^varisat] is a great example
 of this.
 
-Clause Identifiers
-------------------
-
-Other DRAT checkers use 30 bits to for unique clause identifiers.  We use 62
-bits, mimicking a decision in `CaDiCaL`[^cadical-clauses] to not be limited to
-some million clauses.  This might be disadvantageous in terms of performance
-and could be changed in future.
+\todo{remove this!} \paragraph{Clause Identifiers} Other DRAT checkers use 30
+bits to for unique clause identifiers.  We use 62 bits, mimicking a decision
+in `CaDiCaL`[^cadical-clauses] to not be limited to some million clauses.
+This might be disadvantageous in terms of performance and could be changed
+in future.
 
 One problem with backwards checking is that the LRAT proof has to be
 kept in memory until the verification is complete. Since LRAT proofs are
@@ -763,14 +584,109 @@ consumption[^sc18-results].  In order to make `rate` comparable to `DRAT-trim`
 in terms of memory consumption, we also use 30 bits for clause hints in the
 LRAT proof.
 
-6. Experimental Evaluation
+4.3. SICK Format
+----------------
+
+When a proof is found to be incorrect, our tool outputs an incorrectness
+certificate in the previously unpublished SICK format. This certificate
+can be used by our tool `sick-check` to verify incorrectness of the proof
+without doing any unit propagation. Furthermore, the size of the incorrectness
+certificate is in practice linear in the size of the formula, while proofs
+are exponential.
+
+Let us give an  an example of a SICK certificate.  The first two columns show
+a satisfiable formula in DIMACS format and an incorrect DRAT proof for this
+formula.  The third column has the corresponding SICK certificate, stating
+that the RAT check failed for the first lemma in the proof.  The certificate
+file format is using TOML[^toml] syntax.
+
+Formula     Proof   SICK Certificate
+----------- ------- ---------------------------------------------
+`p cnf 2 2` `1 0`   `proof_format   = "DRAT-arbitrary-pivot"`
+`-1 -2 0`   `0`     `proof_step     = 1 # failed line (1-based) in the proof`
+`-1  2 0`            `natural_model  = [-1, ]`
+                    `[[witness]]`
+                    `failing_clause = [-2, -1, ]`
+                    `failing_model  = [2, ]`
+                    `pivot          = 1`
+
+\paragraph{Grammar}
+```
+SICK            := ProofFormat ProofStep NaturalModel Witness*
+ProofFormat     := 'proof_format' '=' ( "DRAT-arbitrary-pivot"
+                                      | "DRAT-pivot-is-first-literal")
+ProofStep       := 'proof_step' '=' Integer
+NaturalModel    := 'natural_model' '=' ListOfLiterals
+Witness         := FailingClause FailingModel Pivot
+FailingClause   := 'failing_clause' '=' ListOfLiterals
+FailingModel    := 'failing_model' '=' ListOfLiterals
+Pivot           := 'pivot' '=' Literal
+ListOfLiterals  := '[' (Literal ',')* ']'
+```
+
+\paragraph{Explanation}
+
+- `proof_step` specifies the proof step that failed (by offset in the proof,
+  starting at one).  For the remainder of this section, let the *lemma*
+  denote the clause that is introduced by the referenced proof step.  In case
+  of a textual proof this corresponds to the line number of the introduction
+  instruction that failed.
+- `proof_format` describes the proof format to use.
+   - `DRAT-arbitrary-pivot`: DRAT checking where the pivot can be any literal
+   in the lemma. This requires one witness (counter-example) for each possible
+   pivot in the lemma. The pivot has to be specified for each witness.
+   - `DRAT-pivot-is-first-literal`: Similar, but there is only one witness.
+   The pivot needs to be the first literal in the lemma.  We added the
+   distinction between these two formats because it was not clear which one
+   should be used universally.
+- `natural_model` gives the shared UP-model before checking this proof
+  step. This is included to avoid having to perform propagation in a
+  checking tool.
+
+Each witness is a counter-example to some redundancy check.
+
+- `failing-clause`: A clause in the formula, which is a resolution candidate
+  for the lemma.  This means that the RUP check failed for the resolvent on
+  the pivot literal of the lemma and the failing clause.
+- `failing-model`: The literals that were added to the natural model (trail)
+  when performing the failed redundancy check.
+- `pivot`: This specifies the pivot literal.
+
+The absence of a witness means that a RUP check failed.  Note that if the
+lemma is the empty clause, a witness is never needed, since the empty clause
+cannot be RAT.
+
+\paragraph{Semantics} Our tool `sick-check` accepts SICK certificates that
+fulfil below properties.
+
+Let $F$ be the accumulated formula up to and excluding the lemma.
+
+1. The proof contains the `proof_step`.
+2. The given `natural_model` is the shared UP-model of $F$.
+3. For format `DRAT-arbitrary-pivot`, the pivots are identical to the literals in the lemma.
+4. For each witness, consisting of `failing_clause`, `failing_model` and `pivot`.
+    1. The `failing_clause` is in $F$.
+    2. The union of `natural_model` and `failing_model` is the shared UP-model of
+       $F \cup \{ \{\overline{l}\} \,|\, l \in r\}$
+       where $r$ is the resolvent on `pivot` of the lemma and the `failing_clause`.
+        
+Note that a SICK certificate is only useful for a checker of specified DRAT,
+because to compute the accumulated formula in an operational checker, one would
+need to do unit propagation which is avoided by design in the SICK checker.
+
+\paragraph{Contribution} Our contribution is the design of a new syntax that
+takes into account the different versions of DRAT with fixed or arbitrary
+pivot.
+
+
+5. Experimental Evaluation
 ==========================
 
-To evaluate our tool, we performed experiments, the detailed set-up is
-available[^rate-experiments].
+To evaluate our tool we performed experiments. This section describes our
+setup. Technical details are available[^rate-experiments].
 
 We work on proofs produced by solvers from the SAT competition 2018[^sc18].  As
-described in [Section 3][3. Solvers], the proofs produced by `MiniSat`-derived
+described in \todo{update}[Section 3][3. Solvers], the proofs produced by `MiniSat`-derived
 solvers are probably not meant to be interpreted as specified DRAT, so the
 relevancy of our benchmarks is questionable.
 
@@ -804,8 +720,8 @@ Our experimental procedure is as follows:
 ```{.table #summary_table file="t/summary.csv" caption="The extent of our analysis."}
 ```
 
-Comparison of Checkers
-----------------------
+5.1 Comparison of Checkers
+--------------------------
 
 As discovered previously [@RebolaCruz2018], many current proofs are being
 rejected under the semantics of specified DRAT. In our set of benchmarks
@@ -825,12 +741,12 @@ and memory usage in megabytes (2^20^ bytes).
 Overall, the performance of the four checkers we analyze is very similar, as
 can be seen by the boxplots for runtime (Figure @fig:box-time).  The memory
 usage (Figure @fig:box-space) is higher in `rate`, likely due to to the
-difference described in [Clause Identifiers], but there should be no
+difference described in \todo{update}[Clause Identifiers], but there should be no
 asymptotical difference.
 
-![Boxplot of checker runtimes across all proofs](p/box-time.svg){#fig:box-time}
+![Boxplot of checker runtimes across all proofs](p/box-time.pdf){#fig:box-time}
 
-![Boxplot of the checkers' memory usage across all proofs](p/box-space.svg){#fig:box-space}
+![Boxplot of the checkers' memory usage across all proofs](p/box-space.pdf){#fig:box-space}
 
 
 In figure @fig:cactus-time and @fig:cactus-space we show the distribution of
@@ -839,22 +755,22 @@ that `gratgen` is a bit faster, and `DRAT-trim` is slightly slower than
 `rate`. Moreover `rate`, and `rate --skip-unit-deletions` show roughly the
 same distribution of runtimes.
 
-![Cactus plot showing the distribution of checker runtimes](p/cactus-time.svg){#fig:cactus-time}
+![Cactus plot showing the distribution of checker runtimes](p/cactus-time.pdf){#fig:cactus-time}
 
-![Cactus plot showing the distribution of the checkers' memory usage](p/cactus-space.svg){#fig:cactus-space}
+![Cactus plot showing the distribution of the checkers' memory usage](p/cactus-space.pdf){#fig:cactus-space}
 
 We take a closer look, comparing the performance of two checkers on each
 instance, see figures @fig:cross-rate-d-rate, @fig:cross-rate-d-gratgen and
 @fig:cross-rate-d-drat-trim.
 
 ![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `rate`.
-Each marker represents a proof instance.](p/cross-rate-d-rate.svg){#fig:cross-rate-d-rate}
+Each marker represents a proof instance.](p/cross-rate-d-rate.pdf){#fig:cross-rate-d-rate}
 
 ![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `gratgen`.
-Each marker represents a proof instance.](p/cross-rate-d-gratgen.svg){#fig:cross-rate-d-gratgen}
+Each marker represents a proof instance.](p/cross-rate-d-gratgen.pdf){#fig:cross-rate-d-gratgen}
 
 ![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `DRAT-trim`.
-Each marker represents a proof instance.](p/cross-rate-d-drat-trim.svg){#fig:cross-rate-d-drat-trim}
+Each marker represents a proof instance.](p/cross-rate-d-drat-trim.pdf){#fig:cross-rate-d-drat-trim}
 
 In figure @fig:cross-rate-d-rate we see that `rate` exhibits small differences
 in specified and operational model.  Figure @fig:cross-rate-d-gratgen shows
@@ -864,14 +780,14 @@ on most instances.
 
 ![Correlation of the number of concrete reason deletions
 and the absolute runtime overhead of checking specified
-DRAT.](p/correlation-reason-deletions-time-delta.svg){#fig:correlation-reason-deletions-time-delta}
+DRAT.](p/correlation-reason-deletions-time-delta.pdf){#fig:correlation-reason-deletions-time-delta}
 
 ![Correlation of the number of concrete reason deletions and the
 absolute overhead in terms of memory usage of checking specified
-DRAT.](p/correlation-reason-deletions-space-delta.svg){#fig:correlation-reason-deletions-space-delta}
+DRAT.](p/correlation-reason-deletions-space-delta.pdf){#fig:correlation-reason-deletions-space-delta}
 
-Overhead of Reason Deletions
-----------------------------
+5.2 Overhead of Reason Deletions
+--------------------------------
 
 Figure @fig:correlation-reason-deletions-time-delta suggests that a large
 number of (either concrete or unique) reason deletions brings about some
@@ -887,9 +803,9 @@ how this should be done ideally.  Assuming solvers produced proofs without
 unique reason deletions where non-unique reason deletions occur only after
 addition of the unit clause that would obsolete other potential reasons,
 this would be trivial.  This class of proofs is the one that is produced by
-solvers using the second variant of the patches from [section 3][3. Solvers].
+solvers using the second variant of the patches from \todo{update}[section 3][3. Solvers].
 
-7. Conclusion
+6. Conclusion
 =============
 
 We have provided some evidence to our hypothesis that checking specified DRAT
@@ -900,7 +816,7 @@ We encourage SAT solver developers to to apply our patch to their
 `MiniSat`-based solvers in order to create proofs that are correct under
 either flavor and do not require the workaround of skipping unit deletions.
 
-8. Future Work
+7. Future Work
 ==============
 
 While our checker for specified DRAT is not really any more useful than one
@@ -910,7 +826,7 @@ reason deletions Additionally it can be extended to support new proof formats.
 
 If a checker for specified DRAT were to be adopted, it might be beneficial
 to implement a way to handle non-unique reason deletions more efficiently
-than `rate` does, ideas for doing so are described in [Overhead of Reason
+than `rate` does, ideas for doing so are described in \todo{update}[Overhead of Reason
 Deletions].
 
 Current DRAT checkers are heavily optimized for speed but they keep the entire
