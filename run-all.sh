@@ -23,8 +23,16 @@ if test -n "${RATE_EXPERIMENTS_TEST_ONLY+x}"; then
   exit 0
 fi
 
-# run on readily solved instances first, then all other combinations
 (
+    # interesting instances
+    cat <<EOF
+Nb51T6/smallsat@default
+cms-scheel-md5-families-r24-c5-p6-11-15-16-19/Minisat-v2.2.0-106-ge2dd095@simp_proof
+Problem14_label19_true-unreach-call.c/Sparrow2Riss-2018-fixfix@MAIN
+T129.2.0/Riss7.1-fix@BVE_DRAT
+EOF
+    # readily solved instances first
     ./combinations-instance-solver.sh | perl -aF/ -ne 'chomp $F[1]; print if -d "benchmarks/$F[0]/$F[1]"'
+    # all other instances
     ./combinations-instance-solver.sh | shuf
 ) | ./run-instance-solver-combinations.sh
