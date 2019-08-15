@@ -1,4 +1,4 @@
-TOOLS := tmux runlim parallel zstd gratgen drat-trim rate sickcheck sysstat
+TOOLS := tmux runlim parallel zstd gratgen drat-trim rate sick-check sysstat
 
 all: bin $(TOOLS) acl2-devel .emacs.d
 
@@ -62,8 +62,8 @@ rate: rust # TODO ?!
 	cd rate && cargo build --release
 	cd bin && ln -sf ../rate/target/release/rate .
 
-sickcheck: rate
-	cd bin && ln -sf ../rate/target/release/sickcheck .
+sick-check: rate
+	cd bin && ln -sf ../rate/target/release/sick-check .
 
 sbcl:
 	curl -O https://netcologne.dl.sourceforge.net/project/sbcl/sbcl/1.4.16/sbcl-1.4.16-x86-64-linux-binary.tar.bz2

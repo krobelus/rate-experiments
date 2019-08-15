@@ -76,7 +76,7 @@ if [ "$checker" != gratgen ]; then
     :
   else
     test -f "$tmp/witness.sick" && {
-        runlim --output-file="$tmp/sickcheck.runlim.out" tools/bin/sickcheck \
+        runlim --output-file="$tmp/sickcheck.runlim.out" tools/bin/sick-check \
           "$tmp/formula.cnf" "$tmp/proof.drat" "$tmp/witness.sick" \
     	| tee "$tmp"/sickcheck.out \
 	| grep -q '^s ACCEPTED' || echo "sickcheck failed for $tmp"
