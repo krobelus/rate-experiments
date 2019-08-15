@@ -96,7 +96,7 @@ significant impact on checking performance.
 
 The majority of solvers at SAT competitions produce proofs that are
 incorrect under specified DRAT.  For those proofs, our checker outputs a
-small, efficiently checkable incorrectness certificate in the previously
+small, efficiently check-able incorrectness certificate in the previously
 unpublished  SICK format.  The incorrectness certificate can be used to
 check the incorrectness of a proof independently of the checker, which
 helps developers debug proof-generation and proof-checking algorithms.
@@ -126,7 +126,7 @@ for $x \lor y \lor \overline{z}$. For clauses of size one we use $\{x\}$
 to avoid confusion with the literal $x$.
 
 An assignment is a finite, complement-free set of literals. All literals in an
-assignment are considered to be satisified by that assignment.  Conversely,
+assignment are considered to be satisfied by that assignment.  Conversely,
 the complements of those literals are falsified by that assignment.  Other
 literals are unassigned.  If there is some variable that is not assigned in
 either polarity, then the assignment is partial.
@@ -136,7 +136,7 @@ either polarity, then the assignment is partial.
 
 SAT solvers work on formulas in conjunctive normal form (CNF), conjunctions
 of clauses. A clause is satisfied by an assignment $I$ if any literal in the
-clause is satisfied by $I$. A formula in CNF is satisified by $I$ if each of
+clause is satisfied by $I$. A formula in CNF is satisfied by $I$ if each of
 its clauses is satisfied by $I$. An assignment that satisfies a formula is
 called a model for that formula. A formula is satisfiable if there exists
 a model for it. Two formulas $F$ and $G$ are *satisfiability-equivalent*
@@ -168,8 +168,8 @@ formula and also the input formula.
 only falsified literals except for a single non-falsified *unit literal*.
 At any point during a solver's search, if the formula contains a unit
 clause given the current assignment, the unit literal $l$ in that clause is
-necessarily satisified and therefore added to the trail.  The unit clause
-is recorded as the *reason clause* for $l$.  Everytime a literal $l$ is
+necessarily satisfied and therefore added to the trail.  The unit clause
+is recorded as the *reason clause* for $l$.  Every time a literal $l$ is
 added to the trail, the formula will be simplified by *propagating* $l$:
 any clause containing $l$ is discarded because it will be satisfied by $l$,
 and occurrences of $\overline{l}$ are removed from the remaining clauses. The
@@ -183,9 +183,9 @@ unique reason clause is defined with respect to a formula only, independent
 of a propagation sequence. Every reason clause is a unit clause.
 
 As assumptions need to be undone during search, the implementation of unit
-propagation does not actually delete clauses and literals, but merely scans the
-formula for new units.  In order to efficiently keep track of which clauses
-can become unit, competitve solvers and checkers use the two-watched-literal
+propagation does not actually delete clauses and literals, but merely scans
+the formula for new units.  In order to efficiently keep track of which clauses
+can become unit, competitive solvers and checkers use the two-watched-literal
 scheme [@Moskewicz:2001:CEE:378239.379017]. It consists of a watchlist
 for each literal in the formula, which is a list of clause references.
 Clauses in the watchlist of some literal are said to be *watched on* that
@@ -272,10 +272,11 @@ difficult to formally verify.  The lack of a formally verified DRAT checker
 is remedied by making the DRAT checker output an optimized (i.\ e.\ small)
 and annotated proof in LRAT format [@cruz2017efficient]. The LRAT proof can
 be checked by a formally verified checker[^acl2] without unit propagation,
-making sure that the formula formula is indeed unsatisfiable.  An LRAT proof
-is similar to a DRAT proof, but it includes clause hints for each resolution
-candidates and all unit clauses that are necessary to derive a the empty
-clause to show that each resolvent is a RUP.
+making sure that the formula formula is indeed unsatisfiable.  Most solvers can
+only generate an DRAT proofs but DRAT checkers can be used to produce an LRAT
+proof from a DRAT proof. The LRAT proof is similar to DRAT, but it includes
+clause hints for each resolution candidates and all unit clauses that are
+necessary to derive a the empty clause to show that each resolvent is a RUP.
 
 2.3 Proof Checking
 ------------------
@@ -308,7 +309,8 @@ the reason for $\overline{l}$.
 Starting from the empty clause that completes the proof, only lemmas that are
 already in the core are checked. Other clauses and lemmas do not influence the
 unsatisfiability result and are virtually dropped from the proof.  Tools like
-`drat-trim` can output the core in DIMACS, DRAT or LRAT format.
+`drat-trim` can output a *trimmed* proof that only contains core lemmas in
+DRAT or LRAT format.
 
 Checking a lemma requires finding one or more conflicts via unit propagation.
 The trail is a mutable data structure that maintains the shared UP-model
@@ -384,15 +386,14 @@ traversed to restore the watch invariant.  Each of those clause is watched
 on the now-falsified literal $\overline{l}$. Therefore the watches may need
 to be replaced in order to restore Invariant 1.
 
-If above clause has at least two non-falsified literals, the watches can be set
-to any two out of those.  However, if the clause has only one non-falsified
-literal --- which is necessarily satisifed because of Invariant 1 --- then
-the other watch cannot be choosen arbitrarily because this might provoke a
-violation of Invariant 1 at a later point as described in [@RebolaCruz2018;
-Example 5].  Instead, the second watch may be set to the most recently
-falsified literal $l_r$, or any other literal that was falsified during
-the propagation that was done after adding the lemma that resulted in the
-propagation of $l_r$.
+If above clause has at least two non-falsified literals, the watches can be
+set to any two out of those.  However, if the clause has only one non-falsified
+literal --- which is necessarily satisfied because of Invariant 1 --- then the
+other watch cannot be chosen arbitrarily because this might provoke a violation
+of Invariant 1 at a later point as described in [@RebolaCruz2018; Example 5].
+Instead, the second watch may be set to the most recently falsified literal
+$l_r$, or any other literal that was falsified during the propagation that
+was done after adding the lemma that resulted in the propagation of $l_r$.
 
 3. DRAT Proofs without Deletions of Unique Reason Clauses
 =========================================================
@@ -411,7 +412,7 @@ of unique reasons while, to the best of our knowledge others do not.
 
 Let us explain how `DRUPMiniSat`[^drupminisat] emits unique reason deletions.
 Used during the simplification phase, the method `Solver::removeSatisfied`
-looks for clauses that are satisified by the shared UP-model and removes them
+looks for clauses that are satisfied by the shared UP-model and removes them
 from the clause database and adds them as a deletion to the DRAT proof output.
 Note that those clauses remain satisfied indefinitely for the rest of the
 search, because the shared UP-model is a subset of any model.
@@ -475,17 +476,17 @@ no algorithmic novelties but merely combines the ideas present in existing
 checkers.
 
 \paragraph{\texttt{DRAT-trim}} The seminal reference implementation; Marijn
-Heule's `DRAT-trim` can produce a core in the LRAT format. We mimick their
-way of producing LRAT proofs and make sure that all our proofs are accepted
-by the formally verified checker [^acl2].  This gives us confidence in the
-correctness of our implementation and allows for a comparison of our checker
-with `DRAT-trim` since they perform the same task.
+Heule's `DRAT-trim` can produce a trimmed proof in the DRAT or LRAT format. We
+mimic their way of producing LRAT proofs and make sure that all our proofs are
+accepted by the formally verified checker[^acl2].  This gives us confidence
+in the correctness of our implementation and allows for a comparison of our
+checker with `DRAT-trim` since they perform the same task.
 
 `DRAT-trim` pioneered deletions, backwards checking add core-first propagation.
 Additionally it employs an optimization to which we also use: during RAT
 checks, resolution candidates that are not in the core are ignored, because
-the proof can be rewritten to delete them immediately after the current lemma
-[^gratgen-noncore-rat-candidates].
+the proof can be rewritten to delete them immediately after the current
+lemma[^gratgen-noncore-rat-candidates].
 
 \paragraph{GRAT Toolchain} More recently, Peter Lammich has published the
 GRAT toolchain [@lammich2017grat] that is able to outperform `DRAT-trim`
@@ -501,7 +502,7 @@ unit deletions.
 
 They introduce two notable optimizations:
 
-1. Separate watchlists for core and non-core clauses [^gratgen-cf]. This
+1. Separate watchlists for core and non-core clauses[^gratgen-cf]. This
    speeds up unit propagation, so we use it in our implementation.
 
 2. Resolution candidate caching / RAT run heuristic [@lammich2017efficient]:
@@ -511,20 +512,19 @@ They introduce two notable optimizations:
    implement that because the number of RAT introductions in our benchmarks
    is negligible when compared to the number of RUP introductions.
 
-Amongst state-of-the-art DRAT checkers, `gratgen` is arguably the easiest to
+Among state-of-the-art DRAT checkers, `gratgen` is arguably the easiest to
 understand (despite implementing a parallel mode), so we advise interested
 readers to study that.
 
-\paragraph{\texttt{rupee}}[^rupee] This is the original implementation of the
+\paragraph{\texttt{rupee}} This is the original implementation[^rupee] of the
 algorithm to handle unique reason deletions. We use exactly the same algorithm.
-During our research we found an issue in the implementation which was fixed
-[^fix-revise-watches].
+During our research we found one issue in the implementation which was
+fixed[^fix-revise-watches].
 
-Previously, `rupee` appears to be an order of magnitude slower than
-`DRAT-trim` [@RebolaCruz2018].  However, we believe that this overhead
-is primarily not a consequence of the algorithmic differences but exists
-mostly due to differences in the parsing implementation [^rupee-parsing]
-and other implementation details.
+In previous experiments, `rupee` appeared to be an order of magnitude
+slower than `DRAT-trim` [@RebolaCruz2018].  We believe that this overhead
+is primarily not a consequence of algorithmic differences but exists mostly
+due to implementation details such as parsing[^rupee-parsing].
 
 [^rupee-parsing]: Both `rupee` and `DRAT-trim` use a fixed-size hash table
 to locate deleted clauses but `rupee`'s is smaller by one order of magnitude,
@@ -536,9 +536,10 @@ other checkers do.
 4.2 Checker Implementation
 --------------------------
 
-The implementation (`rate`) is available [^rate].  It is a drop-in replacement
-for a subset of `drat-trim`'s functionality --- namely the forward and backward
-unsatisfiability checks.  When a proof is accepted, `rate` can output core
+Our checker implementation is called `rate`[^rate].  It is a drop-in
+replacement for a subset of `drat-trim`'s functionality --- namely the forward
+and backward unsatisfiability checks --- with the important difference that
+it checks specified DRAT.  When a proof is accepted, `rate` can output core
 lemmas as DIMACS, LRAT or GRAT.  Otherwise, the rejection of a proof can be
 supplemented by a SICK certificate of unsatisfiability.  The representation
 of the DRAT proof --- binary or textual -- is automatically detected the same
@@ -557,7 +558,7 @@ In terms of performance, `rate` is comparable to other state-of-the-art
 checkers as it implements the same optimizations, most importantly backwards
 checking with core-first unit propagation.
 
-Amongst other metrics, `rate` can output the number of reason deletions and
+Among other metrics, `rate` can output the number of reason deletions and
 unique reason deletions[^reason-deletions-shrinking-trail]. Other checkers
 cannot provide the latter. This might be useful to sanity-check SAT solvers'
 proof generation procedures.
@@ -571,7 +572,7 @@ These checks can also be enabled in the release build with purportedly
 minimal impact on performance.
 
 \paragraph{Rust} We chose the modern systems programming language Rust[^rust]
-for our implementation.  Amongst the respondents of the 2019 Stackoverflow
+for our implementation.  Among the respondents of the 2019 Stack Overflow
 Developer Survey[^so-survey] it is the most loved programming language and
 Rust developers have the highest contribution rate to open source projects.
 
@@ -585,11 +586,11 @@ of this.
 ----------------
 
 When a proof is found to be incorrect, our tool outputs an
-incorrectness certificate in the previously unpublished SICK format
-[^sick-reference-implementation]. This certificate can be used by our tool
-`sick-check` to verify incorrectness of the proof without doing any unit
-propagation. Furthermore, the size of the incorrectness certificate is in
-practice linear in the size of the formula, while proofs are exponential.
+incorrectness certificate in the previously unpublished SICK
+format[^sick-reference-implementation]. This certificate can be used by our
+tool `sick-check` to verify incorrectness of the proof without doing any
+unit propagation. Furthermore, the size of the incorrectness certificate is
+in practice linear in the size of the formula, while proofs are exponential.
 
 Let us give an  an example of a SICK certificate.  The first two columns show
 a satisfiable formula in DIMACS format and an incorrect DRAT proof for this
@@ -654,7 +655,7 @@ lemma is the empty clause, a witness is never needed, since the empty clause
 cannot be RAT.
 
 \paragraph{Semantics} Our tool `sick-check` accepts SICK certificates that
-fulfil below properties.
+fulfill below properties.
 
 Let $F$ be the accumulated formula up to and excluding the lemma.
 
@@ -705,7 +706,7 @@ and instance) where the solver timed out for the instance in the competition
 results because these combinations will likely time out in our experiments
 as well.  Running the checkers on the remaining benchmarks would still
 have taken several CPU years. We take a random sample of around one third
-of the remaining benchmarks and explicitely select a few interesting ones
+of the remaining benchmarks and explicitly select a few interesting ones
 too. For these benchmarks we have have run the solver to generate the proof.
 Some solvers would time out, failing to generate a complete proof.  If the
 solver succeeded, we ran the four checkers on the proof.
@@ -715,7 +716,7 @@ When `rate` rejects a proof it exits as soon an incorrect instruction is
 encountered in the backward pass. This means that it processed only a fraction
 of the proof while other checkers would process the entire proof. Hence it
 is not useful for benchmarking checker performance to runtimes for proofs
-that are rejected under specified DRAT. For the performance comparision we
+that are rejected under specified DRAT. For the performance comparison we
 discard benchmarks with such proofs.
 
 In total we analyze 39 solvers and 120 unsatisfiable instances, making for
@@ -724,11 +725,11 @@ the sampling and above steps discarding benchmarks that are not relevant
 for us, we are left with merely 373 benchmarks where the proof is accepted
 by all checkers.
 
-\paragraph{Parameters} For each benchmark, first of all, the solver is
-run to create a proof, then all checkers are run. For `rate`, `rate -d`
-`DRAT-trim`, we ensure that the LRAT proof is accepted by the LRAT checker
-[^acl2].  For proofs rejected by `rate`, we run `sick-check` to increase
-confidence that the proof is really incorrect under specified DRAT.
+\paragraph{Parameters} For each benchmark, first of all, the solver is run to
+create a proof, then all checkers are run. For `rate`, `rate -d` `DRAT-trim`,
+we ensure that the LRAT proof is accepted by the LRAT checker[^acl2].
+For proofs rejected by `rate`, we run `sick-check` to increase confidence
+that the proof is really incorrect under specified DRAT.
 
 For running the solvers we used the same limits as in the SAT competition ---
 5000 seconds CPU time and 24 GB memory using runlim[^runlim]. Similarly for
@@ -819,7 +820,7 @@ employ deletions of unique reason clauses [@rebola2018two].  We implement an
 efficient checker, `rate`, that supports both specified and operational DRAT.
 Furthermore specified DRAT comes with the advantage that the accumulated
 formula is easy to compute without performing unit propagation.  This enables
-us to produce SICK certificates which are small, efficiently checkable
+us to produce SICK certificates which are small, efficiently check-able
 witnesses of a proof's incorrectness and check them with an independent tool.
 They report which proof step failed, which can be used to trace back bugs
 in solvers and checkers.
