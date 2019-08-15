@@ -72,9 +72,10 @@ as *operational* DRAT [@rebola2018two]. The classes of proofs accepted by
 checkers of these two flavors of DRAT are incomparable.
 
 State-of-the-art SAT solvers employ complex inprocessing techniques to simplify
-a formula. Such a simplification must be logged in the proof as well.  If it
-uses deletions of unique reason clauses, then a checker for specified DRAT
-is necessary to verify the inprocessing technique [@rebola2018two].
+a formula. To support proof checking, such a simplification must be backed
+by an appropriate fragment that will be added to the proof.  If the proof
+fragment uses deletions of unique reason clauses, then a checker for specified
+DRAT is necessary to verify the inprocessing technique [@rebola2018two].
 
 DRAT proof-checking is computationally expensive, so it is desirable to
 optimize checkers.  In theory, checking costs are comparable to solving
@@ -811,7 +812,7 @@ In [Section 3][3. DRAT Proofs without Deletions of Unique Reason Clauses] we
 have explained why operational DRAT is required to verify `DRUPMiniSat`-based
 solvers' proofs.  We have proposed a patch for these solvers in order to
 create proofs that are correct under either flavor and do not require the
-workaround of skipping unit deletions.
+workaround of ignoring unit deletions.
 
 Specified DRAT is necessary to verify solvers' inprocessing steps that
 employ deletions of unique reason clauses [@rebola2018two].  We implement an
