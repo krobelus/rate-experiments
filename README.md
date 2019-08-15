@@ -546,9 +546,8 @@ Bzip2, XZ, LZ4) are transparently uncompressed.
 
 There are two notable options that alter the semantics of the checking:
 
-1. Unit deletions can be skipped with the flag `-d` or
-   `--skip-unit-deletions`. This makes `rate` check operational DRAT instead
-   of specified DRAT.
+1. Unit deletions can be skipped with the flag `-d`.
+   This makes `rate` check operational DRAT instead of specified DRAT.
    
 2. If the flag `--assume-pivot-is-first` is given, the pivot must be the first
    literal in a RAT lemma, otherwise the proof will be rejected.
@@ -688,7 +687,7 @@ are available[^rate-experiments].
 We compare the performance of four checkers:
 
 1. `rate`
-2. `rate -d` \hfill (configuration that skips unit deletions)
+2. `rate -d` \hfill (`-d` means *"skip unit deletions"*)
 3. `drat-trim`
 4. `gratgen`
 
@@ -785,12 +784,12 @@ that `gratgen` is faster than `rate` on almost all instances.  Similarly,
 figure @fig:cross-rate-d-drat-trim shows that `rate` is faster than `DRAT-trim`
 on most instances.
 
-![Juxtaposition of the number of reason deletions and
-the absolute runtime overhead of checking specified
+![Juxtaposition of the number of reason deletions and the relative
+runtime overhead of checking specified DRAT over operational
 DRAT.](p/correlation-reason-deletions-time-delta-percent.pdf){#fig:correlation-reason-deletions-time-delta-percent}
 
-![Juxtaposition of the number of reason deletions and the
-absolute overhead in terms of memory usage of checking specified
+![Juxtaposition of the number of reason deletions and the relative overhead
+in terms of memory usage of checking specified DRAT over operational
 DRAT.](p/correlation-reason-deletions-space-delta-percent.pdf){#fig:correlation-reason-deletions-space-delta-percent}
 
 5.2 Overhead of Reason Deletions
@@ -860,13 +859,19 @@ checker at the cost of a larger proof artifact.
 [^sc18-results]: <http://sat2018.forsyte.tuwien.ac.at/results/main.csv>
 [^rate-experiments]: <https://github.com/krobelus/rate-experiments>
 [^runlim]: <http://fmv.jku.at/runlim/>
-[^fix-revise-watches]: <https://github.com/arpj-rebola/rupee/compare/b00351cbd3173d329ea183e08c3283c6d86d18a1..b00351cbd3173d329ea183e08c3283c6d86d18a1~~~>
+[^fix-revise-watches]:
+<https://github.com/arpj-rebola/rupee/compare/b00351cbd3173d329ea183e08c3283c6d86d18a1..b00351cbd3173d329ea183e08c3283c6d86d18a1~~~>
 [^toml]: <https://github.com/toml-lang/toml>
-[^patch-MapleLCMDistChronoBT]: <https://github.com/krobelus/MapleLCMDistChronoBT/commit/add-unit-before-deleting-locked-clause/>
-[^patch-MapleLCMDistChronoBT-keep-locked-clauses]: <https://github.com/krobelus/MapleLCMDistChronoBT/commit/keep-locked-clauses/>
-[^patch-MiniSat]: <https://github.com/krobelus/minisat/commit/add-unit-before-deleting-locked-clause/>
-[^patch-MiniSat-keep-locked-clauses]: <https://github.com/krobelus/minisat/commit/keep-locked-clauses/>
-[^suggestion-add-units]: <https://github.com/msoos/cryptominisat/issues/554#issuecomment-496292652>
+[^patch-MapleLCMDistChronoBT]:
+<https://github.com/krobelus/MapleLCMDistChronoBT/commit/add-unit-before-deleting-locked-clause/>
+[^patch-MapleLCMDistChronoBT-keep-locked-clauses]:
+<https://github.com/krobelus/MapleLCMDistChronoBT/commit/keep-locked-clauses/>
+[^patch-MiniSat]:
+<https://github.com/krobelus/minisat/commit/add-unit-before-deleting-locked-clause/>
+[^patch-MiniSat-keep-locked-clauses]:
+<https://github.com/krobelus/minisat/commit/keep-locked-clauses/>
+[^suggestion-add-units]:
+<https://github.com/msoos/cryptominisat/issues/554#issuecomment-496292652>
 [^mergesat-pr]: <https://github.com/conp-solutions/mergesat/pull/22/>
 [^cadical]: <http://fmv.jku.at/cadical/>
 [^varisat]: <https://github.com/jix/varisat/>
@@ -878,9 +883,12 @@ checker at the cost of a larger proof artifact.
 deletions is called `reason deletions shrinking trail` in the output of `rate`.
 [^drupminisat]: The original patch to `MiniSat` to produce DRUP/DRAT proofs on
 which others seem to be based.  See <https://www.cs.utexas.edu/~marijn/drup/>
-[^gratgen-cf]: <http://www21.in.tum.de/~lammich/grat/gratgen-doc/Core_First_Unit_Propagation.html>
-[^gratgen-noncore-rat-candidates]: <http://www21.in.tum.de/~lammich/grat/gratgen-doc/Unmarked_RAT_Candidates.html>
-[^sick-reference-implementation]: The original implementation is at <https://github.com/arpj-rebola/rupee>
+[^gratgen-cf]:
+<http://www21.in.tum.de/~lammich/grat/gratgen-doc/Core_First_Unit_Propagation.html>
+[^gratgen-noncore-rat-candidates]:
+<http://www21.in.tum.de/~lammich/grat/gratgen-doc/Unmarked_RAT_Candidates.html>
+[^sick-reference-implementation]: The original implementation is at
+<https://github.com/arpj-rebola/rupee>
 
 References
 ==========
