@@ -48,7 +48,7 @@
 \setbeamertemplate{caption}[numbered]
 
 \title[Computational Logic] {
-    DRAT Proofs without Deletions of \\ Unique Reason Clauses \\
+    DRAT Proofs Without Deletions of \\ Unique Reason Clauses \\
     \&\\
     Complete and Fast \\ DRAT Proof Checking
 }
@@ -181,7 +181,7 @@
             \item remedy: emit a unit clause before deleting a reason clause
             --- yields correct proofs that match the solver's behavior
 	    \item we implemented this in \texttt{DRUPMiniSat}\\
-		patch shown below --- reason clauses are called \texttt{locked}
+		patch shown below (reason clauses are called \texttt{locked})
             \item similar patch for the 2018 SAT competition winner
 	\end{itemize}
 	\vspace{0.5cm}
@@ -230,14 +230,14 @@
     \begin{block}{Checker Implementation: \texttt{rate}}
         \begin{itemize}
             \item efficiently handles reason deletions
-            \item performance similar to best checkers (Figure \ref{fig:cactus-time})
+            \item performance similar to best checkers (Figure \ref{fig:cactus-time3})
             \item available at \url{https://github.com/krobelus/rate}
             \item written in Rust
         \end{itemize}
     \begin{figure}
         \centering
-        \caption{Distribution of Proof Checkers' runtime\label{fig:cactus-time}}
-        \includegraphics[scale=2]{../p/cactus-time.png}
+        \caption{Distribution of Proof Checkers' runtime\label{fig:cactus-time3}}
+        \includegraphics[scale=2]{../p/cactus-time3.pdf}
     \end{figure}
 
     \textbf{Insight:} an excessive number of reason
@@ -250,15 +250,15 @@
     \begin{figure}
         \centering
         \caption{Overhead in seconds of handling reason deletions\label{fig:correlation-reason-deletions-time-delta}}
-        \includegraphics[scale=2]{../p/correlation-reason-deletions-time-delta.png}
+        \includegraphics[scale=2]{../p/correlation-reason-deletions-time-delta-percent.pdf}
     \end{figure}
 
     \begin{singlespace}
         \footnotesize
-        $^\texttt{a}$ For simplicity and brevity, this poster assumes
-        correctness of a DRAT proof to be defined in terms of specified DRAT
-        as per \emph{A. Rebola-Pardo and A. Biere, ``Two Flavors of DRAT'',
-        Pragmatics of SAT, vol. 2018.}
+        $^\texttt{a}$ Due to space constraints, this poster assumes
+        \emph{``correctness''} of a DRAT proof to be defined in terms of
+        specified DRAT as per \emph{A. Rebola-Pardo and A. Biere, ``Two
+        Flavors of DRAT'', Pragmatics of SAT, vol. 2018.}
     \end{singlespace}
 
     \end{block}
