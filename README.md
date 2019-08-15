@@ -536,15 +536,15 @@ other checkers do.
 4.2 Checker Implementation
 --------------------------
 
-Our checker implementation is called `rate`[^rate].  It is a drop-in
-replacement for a subset of `drat-trim`'s functionality --- namely the forward
-and backward unsatisfiability checks --- with the important difference that
-it checks specified DRAT.  When a proof is accepted, `rate` can output core
-lemmas as DIMACS, LRAT or GRAT.  Otherwise, the rejection of a proof can be
-supplemented by a SICK certificate of unsatisfiability.  The representation
-of the DRAT proof --- binary or textual -- is automatically detected the same
-way as `drat-trim`.  Additionally, compressed input files (Gzip, Zstandard,
-Bzip2, XZ, LZ4) are transparently uncompressed.
+Our checker is called `rate`[^rate].  It is a drop-in replacement for a
+subset of `drat-trim`'s functionality --- namely the forward and backward
+unsatisfiability checks --- with the important difference that it checks
+specified DRAT.  When a proof is accepted, `rate` can output core lemmas as
+DIMACS, LRAT or GRAT.  Otherwise, the rejection of a proof can be supplemented
+by a SICK certificate of unsatisfiability.  The representation of the DRAT
+proof --- binary or textual -- is automatically detected the same way as
+`drat-trim`.  Additionally, compressed input files (Gzip, Zstandard, Bzip2,
+XZ, LZ4) are transparently uncompressed.
 
 There are two notable options that alter the semantics of the checking:
 
