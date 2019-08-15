@@ -24,7 +24,10 @@ test -f "$s"/proof.out.zst || {
   # echo "Error: proof not found: '$s/proof.out.zst'"
   exit 0
 }
-test -f "$s"/proof.out.zst || exit 0
+if test -f "$s/rate/stdout"; then
+	# proof not verified by rate
+	grep '^s NOT VERIFIED$' "$s/rate/stdout" && exit 0
+fi
 
 staging="$(realpath staging)"
 mkdir -p "$staging"
