@@ -27,8 +27,8 @@ system that differs from the specification of DRAT.  We demonstrate that it
 is possible to implement a competitive checker that honors unit deletions.
 Many reputable SAT solvers produce proofs that are incorrect under the DRAT
 specification, because they contain spurious deletions of unique reason
-clauses. We present patches for competitive SAT solvers to produce correct
-proofs with respect to the specification.
+clauses. We present patches for top SAT solvers to produce correct proofs
+with respect to the specification.
 :::
 
 \tableofcontents
@@ -38,59 +38,57 @@ proofs with respect to the specification.
 
 In past decades, there has been significant progress in SAT solving
 technology. SAT solvers have had documented bugs [@BrummayerBiere-SMT09]
-[@BrummayerLonsingBiere-SAT10].  To protect against these, there are
-checker programs that verify a solver's result.  To do this, the solver
-outputs a witness alongside its result. A checker program can reproduce the
-solver's result using that witness. If the checker succeeds at doing so,
-it *accepts* or *verifies* the witness.  Satisfiability witnesses, or models
-are trivial to check in linear time.  Unsatisfiability witnesses, or proofs
-of unsatisfiability on the other hand can be much more costly to check.
-In SAT competitions, solvers are required to give proofs of unsatisfiability.
-The proof format that is being used today is called *delete resolution
-asymmetric tautology* (DRAT) [@Heule_2014].
+[@BrummayerLonsingBiere-SAT10].  As a measure to detect incorrect results,
+there are *checker* programs that *verify* a solver's result based on a witness
+given by the solver. Satisfiability witnesses, or models are trivial to check
+in linear time.  Unsatisfiability witnesses, or proofs of unsatisfiability
+on the other hand can be much more costly to check.  In SAT competitions,
+solvers are required to give proofs of unsatisfiability in the DRAT proof
+format [@Heule_2014].
 
-A solver operates on a formula that acts as knowledge base.  It contains
+A SAT solver operates on a formula that acts as knowledge base.  It contains
 constraints that are called clauses.  Starting from the input formula, clauses
-are added and deleted while solving.  A DRAT proof is a trace of the solver's
+are added and deleted by the solver.  A DRAT proof is a trace of a solver
 execution, containing information on which clauses are added and deleted.
 
 Deletions were introduced in solvers based on the *conflict-driven
-clause-learning* (CDCL) architecture to increase their performance [@cdcl].
-However, in many proofs produced by current solvers there are some deletions
-of unique reason clauses, yet these solvers do not undo assignments that
-were caused by those clauses. Perhaps because of this, state-of-the-art
-proof checkers ignore deletions of unit clauses [@rebola2018two] (including
-unique reason clauses) and thus match the solvers internal behavior.  As a
-result, the checkers are not faithful to the specification of DRAT proofs
-[@rebola2018two].  We provide patches for top-performing solvers to make
-them generate proofs without those spurious deletions of unique reasons,
-eliminating the need to ignore deletions of unit clauses.
+clause-learning* (CDCL) architecture to improve performance [@cdcl].  Many
+state-of-the-art CDCL solvers emit deletions of unique reason clauses, yet
+these solvers do not undo inferences made using those clauses.  Perhaps because
+of this inconsistency, state-of-the-art proof checkers ignore deletions of
+unit clauses [@rebola2018two] (including unique reason clauses), matching the
+solvers' internal behavior.  As a result, the checkers are not faithful to
+the specification of DRAT proofs [@rebola2018two].  We provide patches for
+award-winning solvers to make them generate proofs without those spurious
+deletions of unique reasons, eliminating the need to ignore some deletion
+instructions.
 
 We refer to the original definition of the proof format as *specified* DRAT and
 to the one that is implemented by state-of-the-art checkers as *operational*
-DRAT [@rebola2018two]. The classes of proofs accepted by checkers of these
+DRAT [@rebola2018two]. The classes of proofs verified by checkers of these
 two flavors of DRAT are incomparable.
 
-State-of-the-art SAT solvers employ complex inprocessing techniques to simplify
-a formula. To support proof checking, such a simplification must be backed
-by an appropriate fragment that will be added to the proof.  If the proof
-fragment uses deletions of unique reason clauses, then a checker for specified
-DRAT is necessary to verify the inprocessing technique [@rebola2018two].
+State-of-the-art SAT solvers use complex inprocessing techniques to simplify a
+formula. To support proof logging, such a simplification must be backed by an
+appropriate fragment that will be added to the proof.  If the proof fragment
+uses deletions of unique reason clauses, then a checker for specified DRAT is
+necessary to verify the inprocessing step [@rebola2018two].  The absence of
+an efficient checker for specified DRAT prevents solvers from using such
+techniques in competitions. We provide the first optimized checker for
+specified DRAT.
 
-DRAT proof-checking is computationally expensive, so it is desirable to
-optimize checkers.  In theory, checking costs are comparable to solving
-[@Heule_2014]. Consider the problem of the Schur Number Five, where solving
-took just over 14 CPU years whereas running the DRAT checker on the resulting
-proof took 20.5 CPU years [@schur-5].  There is an efficient algorithm
-for specified DRAT [@RebolaCruz2018] of which we provide the first optimized
-implementation.  Previous empirical results for that algorithm suggest that
-the computational costs of checking DRAT is the almost the same for either
-flavor of DRAT.
-
-We have re-implemented the algorithm in combination with other optimizations
-to roughly match the performance of the fastest checkers.  We provide more
+DRAT proofs are space-efficient but checking them is computationally expensive.
+In theory, checking costs are comparable to solving [@Heule_2014]. Consider
+the problem of the Schur Number Five, where solving took just over 14 CPU
+years whereas running the DRAT checker on the resulting proof took 20.5
+CPU years [@schur-5].  We implemented an algorithm that was published in
+[@RebolaCruz2018] to efficiently check specified DRAT.  Previous empirical
+results for that algorithm suggest that the computational costs of checking
+DRAT are the practically the same for both flavors of DRAT but those results
+were produced with a checker that was not competitive in terms of performance.
+Our implementation has state-of-the-art performance.  We provide more
 extensive results, providing more evidence that specified and operational
-DRAT are equally expensive to check on an average real-world instance.
+DRAT are equally expensive to check on the average real-world instance.
 We also observe that a high number of reason deletions tends to have a
 significant impact on checking performance.
 
@@ -99,8 +97,11 @@ incorrect under specified DRAT.  For those proofs, our checker outputs a
 small, efficiently check-able incorrectness certificate in the previously
 unpublished  SICK format.  The incorrectness certificate can be used to
 check the incorrectness of a proof independently of the checker, which
-helps developers debug proof-generation and proof-checking algorithms.
-We contribute a modification to the SICK format.
+helps developers debug proof-generation and proof-checking algorithms.  While
+checking operational DRAT efficiently is arguably easier (than specified DRAT),
+the straighforward semantics of specified DRAT facilitates reasoning about a
+proof, e.g.\ it allows the definition of the SICK format to be much simpler.
+We contribute an extension to the SICK format.
 
 The rest of this paper is organized as follows: In [the following
 section][2. Preliminaries] we will introduce preliminary knowledge about
@@ -478,7 +479,7 @@ checkers.
 \paragraph{\texttt{DRAT-trim}} The seminal reference implementation; Marijn
 Heule's `DRAT-trim` can produce a trimmed proof in the DRAT or LRAT format. We
 mimic their way of producing LRAT proofs and ensure that all our proofs are
-accepted by the formally verified checker[^acl2].  This gives us confidence
+verified by the formally verified checker[^acl2].  This gives us confidence
 in the correctness of our implementation and allows for a comparison of our
 checker with `DRAT-trim` since both have the same input and output formats.
 
@@ -537,7 +538,7 @@ other checkers do.
 Our checker is called `rate`[^rate].  It is a drop-in replacement for a
 subset of `drat-trim`'s functionality --- namely the forward and backward
 unsatisfiability checks --- with the important difference that it checks
-specified DRAT.  When a proof is accepted, `rate` can output core lemmas as
+specified DRAT.  When a proof is verified, `rate` can output core lemmas as
 DIMACS, LRAT or GRAT.  Otherwise, the rejection of a proof can be supplemented
 by a SICK certificate of unsatisfiability.  The representation of the DRAT
 proof --- binary or textual -- is automatically detected the same way as
@@ -650,7 +651,7 @@ Each witness is a counter-example to some redundancy check.
 The absence of a witness means that a RUP check failed.  If the lemma is the
 empty clause, a witness is never needed, since the empty clause cannot be RAT.
 
-\paragraph{Semantics} Our tool `sick-check` accepts SICK certificates that
+\paragraph{Semantics} Our tool `sick-check` verifies SICK certificates that
 fulfill below properties.
 
 Let $F$ be the accumulated formula up to and excluding the lemma.
@@ -684,7 +685,7 @@ are available[^rate-experiments].
 We compare the performance of four checkers:
 
 1. `rate`
-2. `rate -d` \hfill (`-d` means *"skip unit deletions"*)
+2. `rate-d` \hfill (the flag `-d` means *"skip unit deletions"*)
 3. `drat-trim`
 4. `gratgen`
 
@@ -717,14 +718,15 @@ discard benchmarks with such proofs.
 In total we analyze 39 solvers and 120 unsatisfiable instances, making for
 over 4000 potential solver-instances pairs as benchmarks. However, after
 the sampling and above steps discarding benchmarks that are not relevant
-for us, we are left with merely 373 benchmarks where the proof is accepted
+for us, we are left with merely 373 benchmarks where the proof is verified
 by all checkers.
 
-\paragraph{Parameters} For each benchmark, first the solver is run to create
-a proof, then all checkers are run. For `rate`, `rate -d` `DRAT-trim`,
-we ensure that the LRAT proof is accepted by the LRAT checker[^acl2].
-For proofs rejected by `rate`, we run `sick-check`, double-checking that
-the proof is incorrect under to the semantics of specified DRAT.
+\paragraph{Execution} For each benchmark, first the solver is run to
+create a proof, then all checkers are run on that proof. For `rate`,
+`rate-d` `DRAT-trim`, we ensure that the LRAT proof is verified by the
+LRAT checker[^acl2].  For proofs rejected by `rate`, we run `sick-check`,
+to double-check that the proof is incorrect under to the semantics of
+specified DRAT.
 
 For running the solvers we used the same limits as in the SAT competition ---
 5000 seconds CPU time and 24 GB memory using runlim[^runlim]. Similarly for
@@ -816,11 +818,11 @@ efficient checker, `rate`, that supports both specified and operational DRAT.
 Furthermore specified DRAT comes with the advantage that the accumulated
 formula is easy to compute without performing unit propagation.  This enables
 us to produce SICK certificates which are small, efficiently check-able
-witnesses of a proof's incorrectness and check them with an independent tool.
-They report which proof step failed, which can be used to trace back bugs
-in solvers and checkers.
+witnesses of a proof's incorrectness.  They report which proof step failed,
+which can be used to trace back bugs in solvers and checkers.  We provide
+a tool, `sick-check` to check SICK witnesses.
 
-One of the research questions was whether specified DRAT can be checked
+Our initial research question was whether specified DRAT can be checked
 as efficiently as operational DRAT.  Based on our benchmarks we provided
 evidence that the cost for specified DRAT is, on average, the same but an
 excessive number of reason deletions can make it significantly more costly.

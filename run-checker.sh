@@ -16,17 +16,17 @@ s="$(realpath ./benchmarks/$instance/$solver_with_config)"
 destination="$s/$checker"
 
 test -d "$destination" && {
-  # echo Note: "$instance.$solver_with_config" already checked with "$checker"
+  # echo Skipping: "$instance.$solver_with_config" already checked with "$checker"
   exit 0
 }
 
 test -f "$s"/proof.out.zst || {
-  # echo "Error: proof not found: '$s/proof.out.zst'"
+  # echo "Skipping: proof not found: '$s/proof.out.zst'"
   exit 0
 }
-if test -f "$s/rate/stdout"; then
-	# proof not verified by rate
-	grep '^s NOT VERIFIED$' "$s/rate/stdout" && exit 0
+if [ "$checker" != rate ]; then
+  # echo Skipping: proof not verified by rate
+  grep '^s NOT VERIFIED$' "$s/rate/stdout" && exit 0 ||:
 fi
 
 staging="$(realpath staging)"
@@ -87,5 +87,9 @@ trap : INT TERM
 rm "$tmp/formula.cnf"
 rm "$tmp/proof.drat"
 rm -f "$tmp/proof.lrat"
-mkdir -p "$(dirname "$destination")"
-mv "$tmp" "$destination"
+if [ "$DISCARD" = 1 ]; then
+	rm -rf "$tmp"
+else
+	mkdir -p "$(dirname "$destination")"
+	mv "$tmp" "$destination"
+fi

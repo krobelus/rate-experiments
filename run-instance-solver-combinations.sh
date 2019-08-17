@@ -3,7 +3,7 @@
 set -e -u
 cd "$(dirname "$0")"
 
-checkers="$(grep -v old checkers.txt)"
+checkers="${CHECKERS:-"$(grep -v old checkers.txt)"}"
 
 # Each job is granted 24 GB of memory, just like in the SAT competiton.
 # Machine uranus has 240 GB and 32 cores, so we want to run 32 jobs at a

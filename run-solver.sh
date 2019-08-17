@@ -57,4 +57,8 @@ grep -qE '^(s | UNSATISFIABLE)' "$tmp"/stdout && {
     rm -f "$tmp"/proof.out
 }
 mkdir -p "$(dirname "$destination")"
-mv "$tmp" "$destination"
+if [ "$DISCARD" = 1 ]; then
+	rm -rf "$tmp"
+else
+	mv "$tmp" "$destination"
+fi
