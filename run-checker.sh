@@ -44,7 +44,7 @@ if [ "$checker" = gratgen ]; then
   fi
 else
   # params="-L $tmp/proof.lrat"
-  if [ "${checker%%-*}" = rate ]; then
+  if [ "$checker" = rate ]; then
     params="$params -i $tmp/witness.sick"
   fi
 fi
@@ -57,7 +57,7 @@ runlim --output-file="$tmp/runlim.out" \
   2>"$tmp"/stderr \
   || : # "out of memory" and "out of time" are fine
 # segfaults are not
-test `awk '/^.runlim. status:/ {printf $3}' "$tmp"/runlim.out` = 'signal(6)' && exit 1
+test "$(awk '/^.runlim. status:/ {printf $3}' "$tmp"/runlim.out)" = 'signal(6)' && exit 1
 # awk '/^.runlim..time:/ {printf "drat check: %.2f seconds\n", $3}' "$tmp"/runlim.out
 # TODO we should run gratchk
 if [ "$checker" != gratgen ]; then
@@ -76,10 +76,10 @@ if [ "$checker" != gratgen ]; then
     :
   else
     test -f "$tmp/witness.sick" && {
-        runlim --output-file="$tmp/sickcheck.runlim.out" tools/bin/sick-check \
+        runlim --output-file="$tmp/sick-check.runlim.out" tools/bin/sick-check \
           "$tmp/formula.cnf" "$tmp/proof.drat" "$tmp/witness.sick" \
-    	| tee "$tmp"/sickcheck.out \
-	| grep -q '^s ACCEPTED' || echo "sickcheck failed for $tmp"
+    	| tee "$tmp"/sick-check.out \
+	| grep -q '^s ACCEPTED' || echo "sick-check failed for $tmp"
     }
   fi
 fi
