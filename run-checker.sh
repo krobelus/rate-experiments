@@ -26,7 +26,8 @@ test -f "$s"/proof.out.zst || {
 }
 if [ "$checker" != rate ]; then
   # echo Skipping: proof not verified by rate
-  grep '^s NOT VERIFIED$' "$s/rate/stdout" && exit 0 ||:
+  test -d "$s/rate"    && grep '^s NOT VERIFIED$' "$s/rate/stdout"    && exit 0 ||:
+  test -d "$s/rateOLD" && grep '^s NOT VERIFIED$' "$s/rateOLD/stdout" && exit 0 ||:
 fi
 
 staging="$(realpath staging)"
