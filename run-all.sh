@@ -7,9 +7,12 @@ make -C tools
 (cd tools/rate && cargo build --release)
 ./prepare-benchmarks-and-solvers.sh
 
-# run everything with rate first because we only care about verified benchmarks
-./combinations-with-padding.sh |
-CHECKERS='rate' ./run-instance-solver-combinations.sh
+if [ -n "$1" ]; then
+	# run everything with rate first because we only care about verified benchmarks
+	./combinations-with-padding.sh |
+	CHECKERS='rate' ./run-instance-solver-combinations.sh
+	exit 0
+fi
 
 ./combinations-with-padding.sh |
 CHECKERS='rate-d drat-trim gratgen' ./run-instance-solver-combinations.sh
