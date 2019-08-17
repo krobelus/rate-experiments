@@ -852,6 +852,7 @@ It might be possible to forego DRAT completely and directly generate LRAT
 in a solver which is done by `varisat`. This removes the need for a complex
 checker at the cost of a larger proof artifact.
 
+
 [^acl2]: <https://github.com/acl2/acl2/>
 [^rupee]: <https://github.com/arpj-rebola/rupee>
 [^rate]: <https://github.com/krobelus/rate>
