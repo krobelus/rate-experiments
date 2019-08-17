@@ -87,7 +87,7 @@ trap : INT TERM
 rm "$tmp/formula.cnf"
 rm "$tmp/proof.drat"
 rm -f "$tmp/proof.lrat"
-if [ "$DISCARD" = 1 ]; then
+if [ "${DISCARD:-}" = 1 ]; then
 	rm -rf "$tmp"
 else
 	mkdir -p "$(dirname "$destination")"
