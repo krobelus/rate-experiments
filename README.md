@@ -123,8 +123,7 @@ in the area of proof-checking.
 A literal is a propositional variable, like $x$, or a negation of a variable,
 denoted by $\overline{x}$. A clause is a disjunction of literals, usually
 denoted by juxtaposition of the disjuncts, e.g. we write $xy\overline{z}$
-for $x \lor y \lor \overline{z}$. For clauses of size one we use $\{x\}$
-to avoid confusion with the literal $x$.
+for $x \lor y \lor \overline{z}$.
 
 An assignment is a finite, complement-free set of literals. All literals in an
 assignment are considered to be satisfied by that assignment.  Conversely,
@@ -223,7 +222,7 @@ There are various criteria of redundancy, with different levels of expressivity
 and computational costs.
 
 **Redundancy criterion RUP:** a clause $C$ is RUP (reverse unit propagation)
-in formula $F$ if unit propagation on $F' := F \cup \{ \{\overline{l}\} \,|\,
+in formula $F$ if unit propagation on $F' := F \cup \{ \overline{l} \,|\,
 l \in C \}$ derives the empty clause [@rup]. To compute whether $C$ is RUP,
 the negated literals in $C$ are added as assumptions and propagated until the
 empty clause is derived.  A clause that is RUP is logical consequence of $F$
@@ -447,8 +446,8 @@ of future RAT inferences. Given the accumulated formula $F$, let some locked
 clause $D \in F$ have satisfied literal $l \in D$ --- all other literals in
 $D$ are falsified.  In the unpatched version, $D$ could be deleted.  Variant 1
 prevents this by not deleting $D$ while variant 2 modifies the formula to be
-$F' := (F \cup \{\{l\}\}) \setminus \{D\}$.  A clause $C$ is RAT in $F$ if and
-only it is RAT in $F'$ because resolving $C$ with either $D$ or $\{l\}$ yields
+$F' := (F \cup \{l\}) \setminus \{D\}$.  A clause $C$ is RAT in $F$ if and
+only it is RAT in $F'$ because resolving $C$ with either $D$ or $l$ yields
 two resolvents that are equivalent given the assignment of the shared UP-model.
 \fi
 
@@ -662,7 +661,7 @@ Let $F$ be the accumulated formula up to and excluding the lemma.
 4. For each witness, consisting of `failing_clause`, `failing_model` and `pivot`.
     1. The `failing_clause` is in $F$.
     2. The union of `natural_model` and `failing_model` is the shared UP-model of
-       $F \cup \{ \{\overline{l}\} \,|\, l \in r\}$
+       $F \cup \{ \overline{l} \,|\, l \in r\}$
        where $r$ is the resolvent on `pivot` of the lemma and the `failing_clause`.
 
 A SICK certificate can only be produced by checker of specified DRAT, because
@@ -832,15 +831,14 @@ excessive number of reason deletions can make it significantly more costly.
 
 If a checker for specified DRAT were to be adopted, it might be beneficial to
 implement a way to perform deletions of non-unique reasons more efficiently
-than `rate` does. These deletions do not alter the shared UP-model, but
-`rate` does not know this. An optimization could consist of a simple
-criterion to determine if whether some reason clause is unique.  A simple
-criterion is as follows: if a reason clause for some literal $l$ is deleted,
-check if unit clause $\{l\}$ is in the formula. If it is, then the deleted
-reason is not unique and the shared UP-model will definitely not change.
-This criterion might be sufficient for the proofs produced by the second
-variant of the patches from [section 3][3. DRAT Proofs without Deletions of
-Unique Reason Clauses].
+than `rate` does. These deletions do not alter the shared UP-model, but `rate`
+does not know this. An optimization could consist of a simple criterion to
+determine if whether some reason clause is unique.  A simple criterion is as
+follows: if a reason clause for some literal $l$ is deleted, check if unit
+clause $l$ is in the formula. If it is, then the deleted reason is not unique
+and the shared UP-model will definitely not change.  This criterion might be
+sufficient for the proofs produced by the second variant of the patches from
+[section 3][3. DRAT Proofs without Deletions of Unique Reason Clauses].
 
 State-of-the-art DRAT checkers are heavily optimized for speed but they keep
 the entire input proof and the resulting LRAT proof in memory. If the available
