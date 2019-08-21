@@ -67,10 +67,12 @@ rate: rust # TODO ?!
 	cd bin && ln -sf ../rate/target/release/rate .
 
 sick-check: rate
-	cd bin && ln -sf ../rate/target/release/sick-check .
+	cd rate && cargo build --release $@
+	cd bin && ln -sf ../rate/target/release/$@ .
 
 drat2cdrat: rate
-	cd bin && ln -sf ../rate/target/release/drat2cdrat .
+	cd rate && cargo build --release $@
+	cd bin && ln -sf ../rate/target/release/$@ .
 
 sbcl:
 	curl -O https://netcologne.dl.sourceforge.net/project/sbcl/sbcl/1.4.16/sbcl-1.4.16-x86-64-linux-binary.tar.bz2
