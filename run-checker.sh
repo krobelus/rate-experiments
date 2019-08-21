@@ -44,7 +44,7 @@ if [ "$checker" = gratgen ]; then
     params="$params --binary-drat"
   fi
 else
-  # params="-L $tmp/proof.lrat"
+  params="-L $tmp/proof.lrat -C"
   if [ "$checker" = rate ]; then
     params="$params -i $tmp/witness.sick"
   fi
@@ -72,6 +72,12 @@ if [ "$checker" != gratgen ]; then
           "$tmp/formula.cnf" "$tmp/proof.lrat" nil t \
     	| tee "$tmp"/lrat-check.out \
     	| grep -q '^s VERIFIED' || echo "lrat-check failed for $tmp"
+	(
+		printf 'DRAT size: '
+		wc -c < "$tmp/proof.drat"
+		printf 'LRAT size: '
+		tools/bin/to-clrat "$tmp"/proof.lrat /dev/stdout | wc -c
+	) >> "$tmp"/lrat-check.out
     }
     # awk '/^.runlim..time:/ {printf "lrat check: %.2f seconds\n", $3}' "$tmp"/lrat-check.runlim.out
     :

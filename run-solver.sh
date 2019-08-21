@@ -51,6 +51,8 @@ rm "$tmp/formula.cnf"
 grep -qE '^(s | UNSATISFIABLE)' "$tmp"/stdout && {
     test "$solver" = 'glucose4.2.1' -o "$solver" = 'expGlucose' \
         && tools/bin/fix-glucose-drat.pl "$tmp"/proof.out
+    tools/bin/compress-proof < "$tmp"/proof.out > "$tmp"/proof.out.cdrat
+    mv "$tmp"/proof.out.cdrat "$tmp"/proof.out
     tools/bin/zstd -5 --quiet --rm "$tmp"/proof.out
 } ||  {
     echo "solver failed to produce a solution: $solver_with_config on $instance"
