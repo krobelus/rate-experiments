@@ -67,11 +67,11 @@ rate: rust # TODO ?!
 	cd bin && ln -sf ../rate/target/release/rate .
 
 sick-check: rate
-	cd rate && cargo build --release $@
+	cd rate && cargo build --release --bin $@
 	cd bin && ln -sf ../rate/target/release/$@ .
 
 drat2cdrat: rate
-	cd rate && cargo build --release $@
+	cd rate && cargo build --release --bin $@
 	cd bin && ln -sf ../rate/target/release/$@ .
 
 sbcl:
