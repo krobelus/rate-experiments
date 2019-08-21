@@ -40,9 +40,9 @@ tools/bin/zstd --quiet --decompress "$s"/proof.out.zst -o "$tmp/proof.drat"
 params=
 if [ "$checker" = gratgen ]; then
   params="$params --no-progress-bar"
-  if tools/bin/is-binary-drat.pl "$tmp/proof.drat"; then
+  # if tools/bin/is-binary-drat.pl "$tmp/proof.drat"; then
     params="$params --binary-drat"
-  fi
+  # fi
 else
   params="-L $tmp/proof.lrat -C"
   if [ "$checker" = rate ]; then
