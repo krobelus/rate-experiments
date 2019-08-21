@@ -54,7 +54,7 @@ drat-trim:
 
 to-clrat: drat-trim
 	cd drat-trim && gcc -o $@ to-clrat.c
-	cd bin && ln -s ../drat-trim/to-clrat .
+	cd bin && ln -sf ../drat-trim/to-clrat .
 
 rust:
 	which cargo >/dev/null 2>/dev/null || ./install-rust.sh
