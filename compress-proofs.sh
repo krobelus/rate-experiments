@@ -12,7 +12,7 @@ echo "$proof"
 pwd="$(dirname "$proof")"
 uncompressed="$(echo "$proof"|sed 's/.zst$//')"
 tools/bin/zstd -dcf "$proof" | tools/bin/is-binary-drat.pl /dev/stdin || (
-	zstd -d "$proof" --force
+	tools/bin/zstd -d "$proof" --force
 	tools/bin/drat2cdrat < "$uncompressed" > "$uncompressed".tmp
 	rm -f "$uncompressed"
 	tools/bin/zstd -5 "$uncompressed".tmp -o "$proof" --force --rm
