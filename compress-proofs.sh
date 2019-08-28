@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # # run like this:
 # for proof in benchmarks/*/*/proof.out.zst
@@ -8,6 +8,8 @@
 # --limit "df | sort -nk 2 | tail -n1 | perl -ae 'exit 1 if @F[3] < 70*(1<<20)'" \
 
 set -e -u
+
+set -o pipefail
 
 zstd() {
 	tools/bin/zstd "$@"
