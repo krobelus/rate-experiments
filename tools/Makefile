@@ -63,7 +63,7 @@ rust:
 rate: rust # TODO ?!
 	test -d rate || git clone -b experiments https://github.com/krobelus/rate
 	cd rate && git config receive.denyCurrentBranch updateInstead
-	cd rate && cargo build --release
+	cd rate && cargo build --release --bin $@
 	cd bin && ln -sf ../rate/target/release/rate .
 
 sick-check: rate

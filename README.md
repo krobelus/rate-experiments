@@ -26,9 +26,10 @@ deletions of unit clauses, which means that they are checking against a proof
 system that differs from the specification of DRAT.  We demonstrate that it
 is possible to implement a competitive checker that honors unit deletions.
 Many reputable SAT solvers produce proofs that are incorrect under the DRAT
-specification, because they contain spurious deletions of unique reason
+specification, because they contain spurious deletions of reason
 clauses. We present patches for top SAT solvers to produce correct proofs
 with respect to the specification.
+\todo{sick, results}
 :::
 
 \tableofcontents
@@ -36,31 +37,31 @@ with respect to the specification.
 1. Introduction
 ===============
 
-In past decades, there has been significant progress in SAT solving
+Over past decades, there has been significant progress in SAT solving
 technology. SAT solvers have had documented bugs [@BrummayerBiere-SMT09]
 [@BrummayerLonsingBiere-SAT10].  As a measure to detect incorrect results,
 there are *checker* programs that *verify* a solver's result based on a witness
 given by the solver. Satisfiability witnesses, or models are trivial to check
 in linear time.  Unsatisfiability witnesses, or proofs of unsatisfiability
-on the other hand can be much more costly to check.  In SAT competitions,
-solvers are required to give proofs of unsatisfiability in the DRAT proof
-format [@Heule_2014].
+on the other hand can be much more costly to check.
 
 A SAT solver operates on a formula that acts as knowledge base.  It contains
-constraints that are called clauses.  Starting from the input formula, clauses
-are added and deleted by the solver.  A DRAT proof is a trace of a solver
-execution, containing information on which clauses are added and deleted.
+constraints that are called clauses.  Starting from the input formula,
+clauses are added and deleted by the solver.  In SAT competitions, solvers
+are required to give proofs of unsatisfiability in the DRAT proof format
+[@Heule_2014]. A DRAT proof is a trace of a solver execution, containing
+information on which clauses are added and deleted.
 
 Deletions were introduced in solvers based on the *conflict-driven
 clause-learning* (CDCL) architecture to improve performance [@cdcl].  Many
-state-of-the-art CDCL solvers emit deletions of unique reason clauses, yet
+state-of-the-art CDCL solvers emit deletions of reason clauses, yet
 these solvers do not undo inferences made using those clauses.  Perhaps because
 of this inconsistency, state-of-the-art proof checkers ignore deletions of
-unit clauses [@rebola2018two] (including unique reason clauses), matching the
+unit clauses [@rebola2018two] (including reason clauses), matching the
 solvers' internal behavior.  As a result, the checkers are not faithful to
 the specification of DRAT proofs [@rebola2018two].  We provide patches for
 award-winning solvers to make them generate proofs without those spurious
-deletions of unique reasons, eliminating the need to ignore some deletion
+deletions of reasons, eliminating the need to ignore some deletion
 instructions.
 
 We refer to the original definition of the proof format as *specified* DRAT and
@@ -71,7 +72,7 @@ two flavors of DRAT are incomparable.
 State-of-the-art SAT solvers use complex inprocessing techniques to simplify a
 formula. To support proof logging, such a simplification must be backed by an
 appropriate fragment that will be added to the proof.  If the proof fragment
-uses deletions of unique reason clauses, then a checker for specified DRAT is
+uses deletions of reason clauses, then a checker for specified DRAT is
 necessary to verify the inprocessing step [@rebola2018two].  The absence of
 an efficient checker for specified DRAT prevents solvers from using such
 techniques in competitions. We provide the first optimized checker for
@@ -106,7 +107,7 @@ We contribute an extension to the SICK format.
 The rest of this paper is organized as follows: In [the following
 section][2. Preliminaries] we will introduce preliminary knowledge about
 SAT solving, proofs of unsatisfiability and proof checking, including the
-problem with unique reason deletions.  Our first contribution, a proposal on
+problem with reason deletions.  Our first contribution, a proposal on
 how to change solvers to produce unambiguously correct proofs, can be found
 in [Section 3][3. DRAT Proofs without Deletions of Unique Reason Clauses].
 [Section 4][4. Complete and Fast DRAT Proof-Checking] concerns the efficient
