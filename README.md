@@ -147,34 +147,33 @@ if $F$ is satisfiable if and only $G$ is satisfiable.
 2.1 SAT Solving
 ---------------
 
-A SAT solver takes as input a formula and finds a model if the formula is
-satisfiable. Otherwise, the solver provides a proof that the formula is
-unsatisfiable. This proof needs to derive the unsatisfiable empty clause.
+A SAT solver takes as input a formula and finds a model if the formula
+is satisfiable. Otherwise, the solver provides a proof that the formula
+is unsatisfiable.  While searching for a model, a solver maintains an
+assignment along with the order in which the literals were assigned.
+We call this data structure the *trail*.  SAT solvers search through the
+space of all possible assignments.  They make *assumptions*, adding literals
+to the trail that might be part of a satisfying assignment.  At each step,
+unit propagation, which will be introduced later, may add more literals to
+the trail.  These literals are logically implied by the formula with the
+assumptions, so assignments that falsify the literals are pruned from the
+search space.  Once the trail falsifies a clause, the solver has derived
+the unsatisfiable empty clause and therefore established unsatisfiability
+of the current formula and also the input formula.
 
-While searching for a model, a solver maintains an assignment along with
-the order in which the literals were assigned.  We call this data structure the
-*trail*.  SAT solvers search through the space of all possible assignments.
-They make assumptions, adding literals to the trail that might be part
-of a satisfying assignment.  At each step, unit propagation, which will
-be introduced later, may add more literals to the trail.  These literals
-are logically implied by the formula plus assumptions, assignments that
-falsify them are pruned from the search space.  Once the trail falsifies a
-clause, the solver has derived the empty clause and therefore established
-unsatisfiability of the current formula and also the input formula.
-
-\paragraph{Unit Propagation} Given an assignment, a *unit clause* contains
-only falsified literals except for a single non-falsified *unit literal*.
-At any point during a solver's search, if the formula contains a unit
-clause given the current assignment, the unit literal $l$ in that clause is
-necessarily satisfied and therefore added to the trail.  The unit clause
+\paragraph{Unit Propagation} A *unit clause* with respect to some assignment
+contains only falsified literals except for a single non-falsified *unit
+literal*.  At any point during a solver's search, if the formula contains a
+unit clause with respect to the trail, the unit literal $l$ in that clause
+is necessarily satisfied and therefore added to the trail.  The unit clause
 is recorded as the *reason clause* for $l$.  Every time a literal $l$ is
 added to the trail, the formula will be simplified by *propagating* $l$:
 any clause containing $l$ is discarded because it will be satisfied by $l$,
 and occurrences of $\overline{l}$ are removed from the remaining clauses. The
 latter step may spawn new unit clauses and thus trigger further propagation.
 
-The *shared UP-model* is the assignment consisting of all literals implied by
-unit propagation [@rebola2018two] in the current formula plus assumptions.
+The *shared UP-model* is the assignment consisting of all literals implied
+by unit propagation [@rebola2018two] in the formula plus assumptions.
 
 Given a formula where above unit propagation has been performed until fixpoint,
 we call a unit clause $C$ with unit literal $l \in C$ a *unique reason clause*
@@ -205,7 +204,7 @@ on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant
 
 \paragraph{CDCL} Predominant SAT solvers implement Conflict Driven Clause
 Learning (CDCL) which is based on the following principle: whenever some
-clause in the formula is falsified under the current assignment, this means
+clause in the formula is falsified with respect to the trail, this means
 that the current set of assumptions cannot be a subset of any model. Therefore
 a subset of the assumptions is reverted and a *conflict clause* is learned
 --- it is added to the formula to prevent the solver from revisiting those
@@ -423,14 +422,15 @@ from the clause database and adds them as a deletion to the DRAT proof output.
 Those clauses remain satisfied indefinitely for the rest of the search,
 because the shared UP-model is a subset of any model.
 
-In `MiniSat`, *locked* clauses are reasons for some literal in the trail.
-The function `Solver::removeSatisfied` also deletes locked clauses, however,
-the induced assignments are not undone.  This suggests that a locked clause is
+In `MiniSat`, *locked* clauses are reason clauses, the reason for having
+propagated some literal in the trail.  The function `Solver::removeSatisfied`
+also deletes locked clauses, however, the literals assigned because of a
+locked clause are not unassigned here.  This suggests that a locked clause is
 implicitly kept in the formula, even though it is deleted.  State-of-the-art
-DRAT checkers ignore deletions of unit clauses, which means they do not undo
-any assignments when deleting clauses, matching the solvers' behavior.
+DRAT checkers ignore deletions of unit clauses, which means they do not
+unassign any literal when deleting clauses, matching the solvers' behavior.
 
-We suggest two possible changes to make `DRUPMiniSat` produce proofs that
+We propose two possible changes to make `DRUPMiniSat` produce proofs that
 do not require this workaround of ignoring unit deletions when checking.
 
 1. Do not remove locked clauses during simplification.

@@ -7,29 +7,34 @@ from math import floor
 name = sys.argv[1]
 start = int(sys.argv[2])
 
-INPUT = f'{name}.cnf'
-
+CNF = f'{name}.cnf'
+INPUT = f'{name}.drat'
 def interesting():
     return 0 == os.system("rate g.cnf g.drat 2>&1|grep -q assertion.failed:.left.position")
 
+DEBUG = 0
+
 def x(s):
-    if 0:
+    if DEBUG:
         print(s)
-    if 1:
+    else:
         assert 0 == os.system(s)
 
 lines = int(check_output(f'wc -l < {INPUT}', shell=True).rstrip())
 current = start
 
+x(f'cp {CNF} {CNF}.bak')
 x(f'cp {INPUT} {INPUT}.bak')
 
 while current < lines:
-    chunk = max(1, floor(lines / 20))
-    # chunk = 1
+    # chunk = max(1, floor(lines / 20))
+    # chunk = max(1, floor((lines - current) / 33))
+    chunk = 1
     maxintidx = 'init'
     while current < lines:
         print(f'line: {current}/{lines} removing: {chunk}, maxintidx: {maxintidx}')
-        # input()
+        # print('cont?', end=''); input()
+        x(f'sed {current},{current + chunk}p -n {INPUT} | sed "/^d /d" >> {CNF}')
         x(f'sed {current},{current + chunk}d -i {INPUT}')
         if maxintidx != 'init':
             maxintidx -= chunk
@@ -37,6 +42,7 @@ while current < lines:
         if interesting():
             print('interesting')
             x(f'cp {INPUT} {INPUT}.bak')
+            x(f'cp {CNF} {CNF}.bak')
             if maxintidx == 'init':
                 chunk *= 2
             else:
@@ -47,6 +53,7 @@ while current < lines:
         else:
             print('not interesting')
             x(f'cp {INPUT}.bak {INPUT}')
+            x(f'cp {CNF}.bak {CNF}')
             if maxintidx != 'init':
                 maxintidx += chunk
             lines += chunk
