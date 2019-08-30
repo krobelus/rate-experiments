@@ -74,6 +74,10 @@ drat2cdrat: rate
 	cd rate && cargo build --release --bin $@
 	cd bin && ln -sf ../rate/target/release/$@ .
 
+cdrat2drat: rate
+	cd rate && cargo build --release --bin $@
+	cd bin && ln -sf ../rate/target/release/$@ .
+
 sbcl:
 	curl -O https://netcologne.dl.sourceforge.net/project/sbcl/sbcl/1.4.16/sbcl-1.4.16-x86-64-linux-binary.tar.bz2
 	tar xf sbcl-1.4.16-x86-64-linux-binary.tar.bz2
