@@ -1,4 +1,4 @@
-TOOLS := tmux runlim parallel zstd gratgen drat-trim to-clrat rate sick-check drat2cdrat sysstat
+TOOLS := tmux runlim parallel zstd gratgen drat-trim to-clrat rate sick-check drat2cdrat cdrat2drat sysstat
 
 all: bin $(TOOLS) acl2-devel .emacs.d
 
