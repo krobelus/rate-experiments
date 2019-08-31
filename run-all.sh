@@ -7,7 +7,7 @@ make -C tools
 (cd tools/rate && cargo build --release)
 ./prepare-benchmarks-and-solvers.sh
 
-if [ -n "$1" ]; then
+if [ -n "${1:+x}" ]; then
 	# run everything with rate first because we only care about verified benchmarks
 	./combinations-with-padding.sh |
 	CHECKERS='rate' ./run-instance-solver-combinations.sh
