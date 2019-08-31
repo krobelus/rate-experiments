@@ -20,16 +20,24 @@ header-includes: |
 ---
 
 ::: {.abstract}
-**Abstract:** Clausal proof format DRAT is the de facto standard way to certify
-SAT solvers' unsatisfiability results.  State-of-the-art DRAT checkers ignore
-deletions of unit clauses, which means that they are checking against a proof
-system that differs from the specification of DRAT.  We demonstrate that it
-is possible to implement a competitive checker that honors unit deletions.
-Many reputable SAT solvers produce proofs that are incorrect under the DRAT
-specification, because they contain spurious deletions of reason
-clauses. We present patches for top SAT solvers to produce correct proofs
-with respect to the specification.
-\todo{sick, results}
+
+**Abstract:** Clausal proof format DRAT is the de facto standard way to
+certify SAT solvers' unsatisfiability results.  State-of-the-art DRAT
+proof checkers ignore deletions of unit clauses, which means that they
+are checking against a proof system that differs from the specification of
+DRAT and they cannot verify inprocessing techniques that use unit deletions.
+State-of-the-art SAT solvers produce proofs that are incorrect under the DRAT
+specification, because they contain spurious deletions of reason clauses. We
+present patches for award-winning SAT solvers to produce correct proofs with
+respect to the specification.  Performing unit deletions in a proof checker
+can be expensive.  We implemented a competitive checker that honors unit
+deletions and provide experimental results that on average checking costs
+are the same as when not doing unit deletions.  As it is very expensive to
+determine the (in-)correctness of a proof we present the SICK format which
+describes small and efficiently checkable certificates of the incorrectness
+of a DRAT proof. This increases trust in incorrectness results and can be
+useful when debugging solvers and checkers.
+
 :::
 
 \tableofcontents
@@ -37,7 +45,7 @@ with respect to the specification.
 1. Introduction
 ===============
 
-Over past decades, there has been significant progress in SAT solving
+Over the past decades, there has been significant progress in SAT solving
 technology. SAT solvers have had documented bugs [@BrummayerBiere-SMT09]
 [@BrummayerLonsingBiere-SAT10].  As a measure to detect incorrect results,
 there are *checker* programs that *verify* a solver's result based on a witness
@@ -52,76 +60,75 @@ are required to give proofs of unsatisfiability in the DRAT proof format
 [@Heule_2014]. A DRAT proof is a trace of a solver execution, containing
 information on which clauses are added and deleted.
 
-Deletions were introduced in solvers based on the *conflict-driven
-clause-learning* (CDCL) architecture to improve performance [@cdcl].  Many
-state-of-the-art CDCL solvers emit deletions of reason clauses, yet
-these solvers do not undo inferences made using those clauses.  Perhaps because
-of this inconsistency, state-of-the-art proof checkers ignore deletions of
-unit clauses [@rebola2018two] (including reason clauses), matching the
-solvers' internal behavior.  As a result, the checkers are not faithful to
-the specification of DRAT proofs [@rebola2018two].  We provide patches for
-award-winning solvers to make them generate proofs without those spurious
-deletions of reasons, eliminating the need to ignore some deletion
-instructions.\todo{xx}
+State-of-the-art proof checkers ignore deletions of unit
+clauses[@rebola2018two].  As a result, the checkers are not faithful to the
+specification of DRAT proofs.  The original definition of the proof format
+is referred to as *specified* DRAT and to the one that is implemented by
+state-of-the-art checkers as *operational* DRAT [@rebola2018two]. The classes
+of proofs verified by checkers of these two flavors of DRAT are incomparable.
+To find out why the checkers might opt to ignore unit deletions we pose the
+question why state-of-the-art solvers produce proofs with deletions of reason
+clauses in the first place, since we did not see a motivation for that.
 
-We refer to the original definition of the proof format as *specified* DRAT and
-to the one that is implemented by state-of-the-art checkers as *operational*
-DRAT [@rebola2018two]. The classes of proofs verified by checkers of these
-two flavors of DRAT are incomparable.
+We found that the solvers that produce proofs with deletions of reason
+clauses do not undo inferences made using those clauses.  Perhaps because
+of this mismatch, proof checkers ignore deletions of unit clauses (which
+includes reason clauses), matching the solvers' internal behavior.  We provide
+patches for award-winning solvers to make them generate proofs without those
+spurious deletions of reason clauses, eliminating the need to ignore some
+deletion instructions.
 
-State-of-the-art SAT solvers use complex inprocessing techniques to modify
-a formula. When DRAT proof logging is desired, such a modification needs to
-be expressed by some lemmas and clause deletions.  If these use deletions
-of reason clauses then a checker for specified DRAT is necessary to verify
-the inprocessing step [@rebola2018two] because a checker for operational
-DRAT would ignore the deletions which can cause future correct proof steps
-to be rejected.  The absence of an efficient checker for specified DRAT
-means that solvers cannot use such techniques in competitions. We provide
-the first optimized checker for specified DRAT.
+DRAT proofs are designed to use minimal space per proof step but checking
+them is computationally expensive.  In theory, checking costs are comparable
+to solving [@Heule_2014]. Consider the problem of the Schur Number Five,
+where solving took just over 14 CPU years whereas running the DRAT checker
+on the resulting proof took 20.5 CPU years [@schur-5].  Additionally,
+state-of-the-art SAT solvers use complex inprocessing techniques to modify
+a formula. When DRAT proof logging is desired, such a modification needs
+to be expressed by a DRAT proof consisting of clause introductions and
+clause deletions.  If such a proof uses deletions of reason clauses then
+a checker for specified DRAT is necessary to verify the inprocessing step
+[@rebola2018two] because a checker for operational DRAT would ignore the
+deletions which can cause future proof steps to be incorrectly rejected.
+The absence of an efficient checker for specified DRAT means that solvers
+cannot use such techniques in competitions.  There is an efficient algorithm
+to check specified DRAT [@RebolaCruz2018] that features several optimizations
+that are not necessary for operational DRAT.  Previous implementations were
+not competitive.  Our research question is whether it is possible to check
+specified DRAT as efficiently as operational DRAT.
 
-DRAT proofs are designed to use minimal space for each lemma but checking them
-is computationally expensive.  In theory, checking costs are comparable to
-solving [@Heule_2014]. Consider the problem of the Schur Number Five, where
-solving took just over 14 CPU years whereas running the DRAT checker on the
-resulting proof took 20.5 CPU years [@schur-5].  We implemented an algorithm
-that was published in [@RebolaCruz2018] to efficiently check specified DRAT.
-Previous empirical results for that algorithm suggest that the computational
-costs of checking DRAT are practically the same for both flavors of DRAT
-but those results were produced with a checker that was not competitive in
-terms of performance.  Our implementation has state-of-the-art performance.
-We provide more extensive results, providing more evidence that specified and
-operational DRAT are equally expensive to check on the average real-world
-instance.  We also observe that a high number of reason deletions tends to
-have a significant impact on checking performance.\todo{xx}
+We implemented a checker for specified DRAT with state-of-the-art performance.
+Our experimental results suggest that specified and operational DRAT are
+equally expensive to check on the average real-world instance.  We also
+observe that a high number of reason deletions tends to have a significant
+impact on checking performance.
 
 The majority of solvers at SAT competitions produce proofs that are
 incorrect under specified DRAT. For those proofs, our checker outputs a
 small, efficiently checkable incorrectness certificate in the SICK format
-which was originally developed for the first checker for specified DRAT but
-not yet published.  The incorrectness certificate can be used to check the
-incorrectness of a proof independently of the checker, which helps developers
-debug proof-generation and proof-checking algorithms.  While checking
-operational DRAT efficiently is arguably easier than specified DRAT, the
-straighforward semantics of specified DRAT facilitates reasoning about a
-proof, e.g.\ it allows the definition of the SICK format to be much simpler.
-We contribute an extension to the SICK format.
+which was originally developed along with the first checker for specified
+DRAT[^rupee] but has not been published.  The incorrectness certificate can
+be used to check the incorrectness of a proof independently of the checker,
+which helps developers debug proof-generation and proof-checking algorithms.
+While checking operational DRAT efficiently is arguably easier than specified
+DRAT, the straighforward semantics of specified DRAT facilitates reasoning
+about a proof, e.g.\ it allows the definition of the SICK format to be
+much simpler.  We contribute an extension to the SICK format.
 
 This thesis is organized as follows: In [the following
 section][2. Preliminaries] we will introduce preliminary knowledge about
 SAT solving, proofs of unsatisfiability and proof checking, including the
-challenges of specified DRAT checking of proofs containing reason deletions.
-Our first contribution, a proposal on how to change solvers to produce
-unambiguously correct proofs, can be found in [Section 3][3. DRAT Proofs
-without Deletions of Unique Reason Clauses].  [Section 4][4. Complete and Fast
-DRAT Proof-Checking] concerns the efficient implementation of a specified
-DRAT checker:  after briefly discussing other checkers we present our
+optimization challenges of specified DRAT checking of proofs containing reason
+deletions.  Our first contribution, a proposal on how to change solvers to
+produce unambiguously correct proofs, can be found in [Section 3][3. DRAT
+Proofs without Deletions of Unique Reason Clauses].  [Section 4][4. Complete
+and Fast DRAT Proof-Checking] concerns the efficient implementation of a
+specified DRAT checker:  after briefly discussing other checkers we present our
 implementation and describe the SICK format for incorrectness certificates.
 Experimental results evaluating checker performance are given in [Section
 5][5. Experimental Evaluation].  Finally, we draw a conclusion in [Section
 6][6. Conclusion] and give outlook on future work in the area of DRAT
 proof-checking in [the last section][7. Future Work].
-
-\todo{structure: present setting, research questions, contributions, roadmap}
 
 2. Preliminaries
 ================
@@ -137,56 +144,51 @@ Conversely, the complements of those literals are *falsified* by that
 assignment.  Other literals are *unassigned*.
 
 SAT solvers work on formulas in *conjunctive normal form* (CNF), conjunctions
-of clauses. A clause is satisfied by an assignment $I$ if any literal in the
-clause is satisfied by $I$. A formula in CNF is satisfied by $I$ if each of
-its clauses is satisfied by $I$. An assignment that satisfies a formula is
-called a *model* for that formula. A formula is *satisfiable* if there exists
-a model for it. Two formulas $F$ and $G$ are *satisfiability-equivalent*
-if $F$ is satisfiable if and only $G$ is satisfiable.
+(or multisets) of clauses. A clause is satisfied by an assignment $I$
+if any literal in the clause is satisfied by $I$. A formula in CNF is
+satisfied by $I$ if each of its clauses is satisfied by $I$. An assignment
+that satisfies a formula is called a *model* for that formula. A formula
+is *satisfiable* if there exists a model for it. Two formulas $F$ and $G$
+are *satisfiability-equivalent* if $F$ is satisfiable if and only $G$
+is satisfiable.
+
+A *unit clause* with respect to some assignment contains only falsified
+literals except for a single non-falsified *unit literal*.
+
+\paragraph{Unit Propagation} Let $F$ be a CNF formula. We say that a literal
+$l$ is implied by *unit propagation* over $F$ whenever there is a finite
+*propagation sequence* $(C_1,\dots,C_n) \subseteq F$ of clauses such that for
+each $1 \leq i \leq n$ there is a literal $l_i \in C_i$ with $C_i \setminus
+\{l_i\} \subseteq \{\overline{l_1},\dots,\overline{l_{i-1}}\}$.  We call $C_i$
+the *reason clause* for $l_i$ with respect to this propagation sequence.
+Clause $C$ is called the *unique reason clause* for literal $l$ with respect
+to $F$ if it is the reason clause for $l$ in some propagation sequence in
+$F$ and there is no propagation sequence in $F$ where another clause is the
+reason for $l$.  The *shared UP-model* is the assignment consisting of all
+literals implied by unit propagation [@rebola2018two] in the formula.
 
 2.1 SAT Solving
 ---------------
 
 A SAT solver takes as input a formula and finds a model if the formula
-is satisfiable. Otherwise, the solver provides a proof that the formula
-is unsatisfiable.  While searching for a model, a solver maintains an
-assignment along with the order in which the literals were assigned.
-We call this data structure the *trail*.  SAT solvers search through the
-space of all possible assignments.  They make *assumptions*, adding literals
-to the trail that might be part of a satisfying assignment.  At each step,
-unit propagation, which will be introduced later, may add more literals to
-the trail.  These literals are logically implied by the formula with the
-assumptions, so assignments that falsify the literals are pruned from the
-search space.  Once the trail falsifies a clause, the solver has derived
-the unsatisfiable empty clause and therefore established unsatisfiability
-of the current formula and also the input formula.
+is satisfiable. Otherwise, the solver provides a proof that the formula is
+unsatisfiable.  While searching for a model, a solver maintains an assignment
+along with the order in which the literals were assigned.  We call this
+data structure the *trail*.  SAT solvers search through the space of all
+possible assignments.  They make *assumptions*, virtually adding clauses
+of size one to the formula temporarily.  This triggers unit propagation,
+adding more literals to the trail.  These literals are logically implied
+by the formula with the current assumptions, so assignments that falsify
+the literals are pruned from the search space. Additionally solvers can use
+inprocessing techniques to modify the formula.  Once the trail falsifies a
+clause, the solver has derived the unsatisfiable empty clause and therefore
+established unsatisfiability of the current formula plus assumptions.
+If there are assumptions, some of them are undone and the solver resumes
+search.  Otherwise the input formula is unsatisfiable.
 
-\paragraph{Unit Propagation} A *unit clause* with respect to some assignment
-contains only falsified literals except for a single non-falsified *unit
-literal*.  At any point during a solver's search, if the formula contains a
-unit clause with respect to the trail, the unit literal $l$ in that clause
-is necessarily satisfied and therefore added to the trail.  The unit clause
-is recorded as the *reason clause* for $l$.  Every time a literal $l$ is
-added to the trail, the formula will be simplified by *propagating* $l$:
-any clause containing $l$ is discarded because it will be satisfied by $l$,
-and occurrences of $\overline{l}$ are removed from the remaining clauses. The
-latter step may spawn new unit clauses and thus trigger further propagation.
-
-The *shared UP-model* is the assignment consisting of all literals implied
-by unit propagation [@rebola2018two] in the formula plus assumptions.
-
-Given a formula where above unit propagation has been performed until fixpoint,
-we call a unit clause $C$ with unit literal $l \in C$ a *unique reason clause*
-if it was required to propagate $l$ in a formula --- that is, there can be
-no other reason clause for $l$ when performing the propagations. Hence a
-unique reason clause is defined with respect to a formula only, independent
-of a propagation sequence. Every reason clause is a unit clause.
-
-As assumptions need to be undone during search, the implementation of unit
-propagation does not delete clauses and literals from the data structure,
-but merely scans the formula for new units.  To efficiently keep track
-of which clauses can become unit, competitive solvers and checkers use
-the two-watched-literal scheme [@Moskewicz:2001:CEE:378239.379017]. It
+\paragraph{Efficient Implementation of Unit Propagation} To efficiently keep
+track of which clauses can become unit, competitive solvers and checkers
+use the two-watched-literal scheme [@Moskewicz:2001:CEE:378239.379017]. It
 consists of a watchlist for each literal in the formula, which is a list of
 clause references.  Clauses in the watchlist of some literal are said to be
 *watched on* that literal.  Each clause is watched on two literals, which are
@@ -197,21 +199,21 @@ is not unit.
 **Invariant 1.** If a clause is watched on two distinct literals $l$ and $k$,
 and the current trail $I$ falsifies $l$, then $I$ satisfies $k$.
 
-In particular, when literal $l$ is assigned, it is propagated by scanning
-the watchlist of $\overline{l}$, thus visiting only clauses that are watched
-on $\overline{l}$. Since their watch $\overline{l}$ is falsified, Invariant
-1 might need to be restored.
+A clause that is not already satisfied, can only become unit if one of
+it is watches is falsified. When literal $l$ is assigned, it is sufficient
+to visit clauses in the watchlist of $\overline{l}$ to find unit literals
+that are not yet assigned. For clauses that are not unit, the watches are
+changed to restore Invariant 1.
 
 \paragraph{CDCL} Predominant SAT solvers implement Conflict Driven Clause
-Learning (CDCL) which is based on the following principle: whenever some
-clause in the formula is falsified with respect to the trail, this means
-that the current set of assumptions cannot be a subset of any model. Therefore
-a subset of the assumptions is reverted and a *conflict clause* is learned
---- it is added to the formula to prevent the solver from revisiting those
-wrong assumptions.  As the number of clauses increases, so does memory usage,
-and the time spent on unit propagation. Because of this learned clauses are
-regularly deleted from the formula in a satisfiability-preserving way if
-they are not considered useful.
+Learning (CDCL) [@cdcl] which is based on the following principle: whenever
+some clause in the formula is falsified with respect to the trail, the current
+set of assumptions makes the formula unsatisfiable. Therefore a subset of the
+assumptions is undone and a *conflict clause* is learned --- it is added to the
+formula to prevent the solver from revisiting those wrong assumptions.  As the
+number of clauses increases, so does memory usage, and the time spent on unit
+propagation. Because of this learned clauses are regularly deleted from the
+formula in a satisfiability-preserving way if they are not considered useful.
 
 2.2 Proofs of SAT Solvers' Unsatisfiability Results
 ---------------------------------------------------
@@ -221,35 +223,35 @@ $F$ if $F$ and $F \cup \{C\}$ are satisfiability equivalent [@Heule_2017].
 There are various criteria of redundancy, with different levels of expressivity
 and computational costs.
 
-1. *RUP*: a clause $C$ is RUP (reverse unit propagation) in formula $F$ if
-unit propagation on $F' := F \cup \{ \overline{l} \,|\, l \in C \}$ derives
-the empty clause [@rup]. To compute whether $C$ is RUP, the negated literals in
-$C$ are added as assumptions and propagated until the empty clause is derived.
-A clause that is RUP $F$ is logical consequence of $F$ [@rup].
+1. *RUP*: a clause $C$ is a *reverse unit propagation* (RUP) inference in
+formula $F$ if the shared UP-model of $F' := F \cup \{ \overline{l} \,|\, l
+\in C \}$ falsifies a clause in $F$ [@rup].  To compute whether $C$ is RUP,
+the negated literals in $C$ are added as assumptions and propagated until
+a clause is falsified by the trail.  A clause that is RUP $F$ is logical
+consequence of $F$ [@rup].
 
 2. *RAT* a clause $C$ is a *resolution asymmetric tautology* (RAT)
 [@inprocessingrules] on some literal $l \in C$ with respect to formula $F$
 whenever for all clauses $D \in F$ where $\overline{l} \in D$, the resolvent
 on $l$ of $C$ and $D$, which is $(C \setminus \{l\}) \cup (D \setminus
-\{\overline{l}\})$ is RUP in $F$. Clause $D$ is called a *resolution candidate*
+\{\overline{l}\})$ is a RUP in $F$. Clause $D$ is called a *resolution candidate*
 for $C$. Computing whether a clause is RAT can be done with one RUP check
 for each resolution candidate.
 
-
 \paragraph{DRAT Proofs} Proofs based on RUP alone are not expressive enough
 to simulate all inprocessing techniques in state-of-the-art SAT solvers
-[@rat]. Because of this, the more powerful criterion RAT is used today [@rat].
-A formula in CNF can be regarded as a multiset of clauses.  A DRAT (*delete
-resolution asymmetric tautology*) [@Wetzler_2014] proof is a sequence of lemmas
-(clause introductions) and deletions, which can be performed on a formula to
-simulate the clause introductions, clause deletions and inprocessing steps
-that the solver performed. The *accumulated formula* at each proof step is the
-input formula with all clause introductions and deletions from prior proof
-steps applied.  Based on the accumulated formula, the checker can compute
-the shared UP-model at each step, eventually deriving the empty clause just
-like the solver did. Every lemma in a correct DRAT proof is RUP or RAT with
-respect to the accumulated formula.  In practice, most lemmas are RUP, so
-a checker first tries to check RUP and only if that fails, falls back to RAT.
+[@rat]. Because of this, the more powerful criterion RAT is used today
+[@rat].  A DRAT (*delete resolution asymmetric tautology*) [@Wetzler_2014]
+proof is a sequence of lemmas (clause introductions) and deletions, which can
+be applied to a formula to simulate the clause introductions, clause deletions
+and inprocessing steps that the solver performed. The *accumulated formula*
+at each proof step is the result of applying all prior proof steps to the
+input formula.  Based on the accumulated formula, the checker can compute
+the shared UP-model at each step which eventually falsifies some clause,
+just like in the solver. Every lemma in a correct DRAT proof is a RUP or
+RAT inference with respect to the accumulated formula.  In practice, most
+lemmas are RUP inferences, so a checker first tries to check RUP and only
+if that fails, falls back to RAT.
 
 A proof solely consisting of clause introductions will result in the checker's
 propagation routines slowing down due to the huge number of clauses just like
@@ -257,10 +259,9 @@ in a CDCL solver that does not delete learned clauses.  To counteract this,
 clause deletion information has been added, making the proof-checking time
 comparable to solving time [@Heule_2014] [@Wetzler_2014].  While deletions
 were added as an optimization, they can also enable additional inferences
-due to RAT being non-monotonic [@philipp_rebola_unsatproofs].
-
-As in [@rebola2018two], we refer to *operational DRAT* as the flavor of DRAT
-where deletions of unit clauses are ignored, as opposed to *specified DRAT*.
+due to RAT being non-monotonic [@philipp_rebola_unsatproofs].  This means
+that ignoring deletions may prevent RAT inferences which is why a proof that
+is correct under specified DRAT can be incorrect under operational DRAT.
 
 \paragraph{LRAT Proofs} The runtime and memory usage of DRAT checkers
 can exceed the ones of the solver that produced the proof [@schur-5]. The
@@ -274,7 +275,7 @@ formula formula is indeed unsatisfiable.  Most solvers can only generate
 an DRAT proofs but DRAT checkers can be used to produce an LRAT proof from
 a DRAT proof. The LRAT proof resembles DRAT, but it includes clause hints
 for each resolution candidates and all unit clauses that are necessary to
-derive the empty clause to show that each resolvent is a RUP.
+falsify a clause to show that each resolvent is a RUP inference.
 
 2.3 Proof Checking
 ------------------
@@ -286,49 +287,32 @@ each lemma.
 \paragraph{Backwards Checking} During search, SAT solvers cannot know which
 learned clauses are useful in a proof, so they add all of them as lemmas. This
 means that many lemmas might not be necessary in a proof of unsatisfiability.
-To avoid checking superfluous lemmas, the proof is checked backwards ---
-starting from the empty clause, only lemmas that are transitively necessary
-to derive that empty clause are checked [@Heule_2013].
+*Backwards checking* [@Heule_2013] avoids checking superfluous lemmas by
+only checking *core* lemmas --- lemmas that are part of the *unsatisfiable
+core*, an unsatisfiable subset of an unsatisfiable formula.  Starting from
+the falsified clause, the proof is traversed backwards.  Initially, the
+falsified clause is added to the core.  Each core lemma is checked. Every
+lemma that is used in a propagation sequence to derive some other lemma is
+added to the core as well.  Clauses and lemmas that are not in the core do
+not influence the unsatisfiability result and are virtually dropped from
+the proof.  Tools like `drat-trim` can output a *trimmed* proof that only
+contains core lemmas in DRAT or LRAT format.
 
-This can be done using two passes over the proof: a forward pass performing
-unit propagation [@RebolaCruz2018] until the empty clause is derived, and
-a backward pass that checks lemmas as required.
+To check an inference the checker needs to compute the shared UP-model of the
+accumulated formula. This is stored in the trail.  Instead of recomputing
+the shared UP-model from scratch at each proof step, the trail is modified
+incrementally: whenever a clause is added to the formula, propagation adds
+the missing literals to the trail. When a reason clause is deleted, some
+literals may be removed.
 
-A formula in CNF can be regarded as a multiset of clauses.  An *unsatisfiable
-core*, for short *core* is an unsatisfiable subset of an unsatisfiable
-formula. With backwards checking, a core is eventually computed like this:
-whenever the empty clause is derived as part of some redundancy check,
-conflict analysis adds to the core all clauses that were required to do so.
-This is done through a depth-first search in the graph induced by the reason
-clauses: starting from the clause that was falsified, the clause is added
-to the core and, for each of its literals $l$, the same is done recursively
-for the reason for $\overline{l}$.
-
-Starting from the empty clause that finishes the proof, only lemmas that are
-already in the core are checked. Other clauses and lemmas do not influence the
-unsatisfiability result and are virtually dropped from the proof.  Tools like
-`drat-trim` can output a *trimmed* proof that only contains core lemmas in
-DRAT or LRAT format.
-
-\if0
-Checking a lemma requires finding one or more conflicts via unit propagation.
-\fi
-
-The trail is a mutable data structure that corresponds to the shared UP-model
-of the accumulated formula at each proof step.  After adding or deleting a
-clause, the shared UP-model changes and the trail is modified accordingly: In
-the forward pass, an introduction instruction may cause the shared UP-model
-to grow due to new propagation, while a deletion instruction may cause the
-shared UP-model to shrink which means that some literals will be removed from
-the trail.  Doing this modification is arguably more efficient than computing
-the shared UP-model from scratch.  On the other hand, the backward pass
-traverses the proof in reverse order and executes the inverse of each proof
-step, that is, a clause introduction in the backward pass deletes that clause
-from the formula, while a clause deletion in the backward pass re-introduces
-the deleted clause. To make the trail correspond to the shared UP-model, in
-the backward pass before each proof step the modification that was done in
-the forward pass after this step needs to be reverted.  This ensures that when
-some lemma is processed the trail is the same during forward and backward pass.
+Backwards checking can be implemented using two passes over the proof:
+a forward pass that merely performs unit propagation after each proof step
+[@RebolaCruz2018] until some clause is falsified, and a backward pass that
+checks lemmas as required.  The forward pass enables the checker to record
+the state of the trail at each proof step and efficiently restore it during
+the backward pass. If there are no deletions of unique reason clauses,
+the shared UP-model grows monotonically, and the trail can be restored by
+simply truncating it.
 
 \paragraph{Core-first Unit Propagation} To keep the core small and reduce
 checking costs, core-first unit propagation was introduced [@Heule_2013].
@@ -341,30 +325,36 @@ It works by doing unit propagation in two phases:
    - Otherwise terminate.
 
 This results in a minimum of clauses being added to the core because if a
-conflict can be reached without adding another clause to the core it will
-always do that. Overall, this usually seems to make checking faster, probably
+falsified clause can be found without adding another clause to the core it
+will always be found. This usually seems to make checking faster, probably
 because unit propagation is mostly done in the core instead of all clauses.
 
-\paragraph{Reason Deletions} Here we explain, how reason deletions are
-performed efficiently under specified DRAT. Unique reason deletions are
-the cause for the discrepancy between specified and operational DRAT and
-can in some cases be avoided as we will see in the next section. However,
-to reliably detect unique reason deletions, it is necessary to implement
-specified DRAT, as it is to support inprocessing steps with reason deletions.
+\paragraph{Reason Deletions} Under operational DRAT unit deletions are
+ignored. Only proofs with unique reason deletions have different semantics
+under specified and operational DRAT.  However, to detect unique reason
+deletions, it is necessary to implement specified DRAT as it is to verify
+inprocessing steps with reason deletions, A reason is a a clause that
+was used in some propagation sequence to compute a literal $l$ in the
+trail. When a unique reason clause is deleted, $l$ is no longer implied by
+unit propagation and needs to be removed from the trail. This means that
+it is not possible anymore to revert this modification of the trail in the
+backward pass by truncating the trail. Instead, for each reason deletion,
+the removed literals are recorded by the checker, along with their positions
+in the trail and their reasons.  This information can be used in the backward
+pass to restore the state of the trail to be exactly the same as in the forward
+pass for each proof step, which is what the algorithm from [@RebolaCruz2018]
+does along other techniques to maintain the watch invariants.
 
-As explained in [@RebolaCruz2018], when checking a proof without deletions
-of unique reason clauses, the trail grows monotonically, that is, it never
-shrinks at any proof step during the forward phase. Therefore, during the
-backwards phase it is trivial to revert the modifications to the trail by
-truncating it.  This also maintains watch invariants, making sure that the
-watchlists can find all unit clauses.  However, when deleting a unique reason
-clause in the forward pass under specified DRAT, some literals are removed from
-the trail and reordered.  This means that it is not possible anymore to revert
-this modification of the trail in the backward pass by truncating the trail.
-Instead algorithm from [@RebolaCruz2018] can be used to restore the trail
-and to efficiently reinstate the watchlists' Invariant 1 in the backward
-pass. While an understanding of the algorithm is not required to understand
-the contributions in this paper, we explain parts of it nevertheless.
+\if0
+ However,
+when deleting a unique reason clause in the forward pass under specified DRAT,
+some literals are removed from the trail and reordered.  This means that it is
+not possible anymore to revert this modification of the trail in the backward
+pass by truncating the trail.  Instead the algorithm from [@RebolaCruz2018]
+can be used to restore the trail and to efficiently reinstate the watchlists'
+Invariant 1 in the backward pass. While an understanding of the algorithm
+is not required to understand the contributions in this paper, we explain
+parts of it nevertheless.
 
 Let us consider a proof with deletions of unique reasons.  A deletion
 instruction is performed by removing a clause from the formula in the forward
@@ -399,6 +389,7 @@ of Invariant 1 at a later point as described in [@RebolaCruz2018; Example 5].
 Instead, the second watch may be set to the most recently falsified literal
 $l_r$, or any other literal that was falsified during the propagation that
 was done after adding the lemma that resulted in the propagation of $l_r$.
+\fi
 
 3. DRAT Proofs without Deletions of Unique Reason Clauses
 =========================================================
@@ -822,7 +813,7 @@ employ deletions of unique reason clauses [@rebola2018two].  We implement an
 efficient checker, `rate`, that supports both specified and operational DRAT.
 Furthermore specified DRAT comes with the advantage that the accumulated
 formula is easy to compute without performing unit propagation.  This enables
-us to produce SICK certificates which are small, efficiently check-able
+us to produce SICK certificates which are small, efficiently checkable
 witnesses of a proof's incorrectness.  They report which proof step failed,
 which can be used to trace back bugs in solvers and checkers.  We provide
 a tool, `sick-check` to check SICK witnesses.
