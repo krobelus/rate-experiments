@@ -53,7 +53,7 @@ if [ "$checker" = gratgen ]; then
     params="$params --binary-drat"
   fi
 else
-  params="-L $tmp/proof.lrat"
+  # params="-L $tmp/proof.lrat"
   if [ "$checker" = rate ]; then
     params="$params -i $tmp/witness.sick"
   fi
