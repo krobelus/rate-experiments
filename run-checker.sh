@@ -26,9 +26,9 @@ test -f "$s"/proof.out.zst || {
 }
 if [ "$checker" != rate ]; then
   # echo Skipping: proof not verified by rate
-  for checker in rate rateOLD rateLRAT; do
+  for checker in rate 'rate[A-Z]*'; do
 	  if test -d "$s/$checker"; then
-		  grep -Fxq 's VERIFIED' "$s/$checker/stdout" || exit 0
+		  grep -Fxq 's VERIFIED' "$s"/$checker/stdout || exit 0
 	  fi
   done
 fi
@@ -43,9 +43,9 @@ tools/bin/zstd --quiet --decompress "$s"/proof.out.zst -o "$tmp/proof.drat"
 params=
 if [ "$checker" = gratgen ]; then
   params="$params --no-progress-bar"
-  # if tools/bin/is-binary-drat.pl "$tmp/proof.drat"; then
+  if tools/bin/is-binary-drat.pl "$tmp/proof.drat"; then
     params="$params --binary-drat"
-  # fi
+  fi
 else
   params="-L $tmp/proof.lrat"
   if [ "$checker" = rate ]; then
