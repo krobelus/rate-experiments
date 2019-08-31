@@ -26,9 +26,9 @@ test -f "$s"/proof.out.zst || {
 }
 if [ "$checker" != rate ]; then
   # echo Skipping: proof not verified by rate
-  for checker in rate 'rate[A-Z]*'; do
-	  if test -d "$s/$checker"; then
-		  grep -Fxq 's VERIFIED' "$s"/$checker/stdout || exit 0
+  for c in rate 'rate[A-Z]*'; do
+	  if test -d "$s/$c"; then
+		  grep -Fxq 's VERIFIED' "$s"/$c/stdout || exit 0
 	  fi
   done
 fi
