@@ -38,8 +38,14 @@ mkdir -p "$staging"
 tmp="$staging/$instance.$solver_with_config.$checker"
 rm -rf "$tmp"
 mkdir "$tmp"
-tools/bin/zstd --quiet -d "benchmarks/$instance/formula.cnf.zst" -o "$tmp/formula.cnf"
-tools/bin/zstd --quiet --decompress "$s"/proof.out.zst -o "$tmp/proof.drat"
+if ! tools/bin/zstd --quiet --decompress "benchmarks/$instance/formula.cnf.zst" -o "$tmp/formula.cnf"; then
+	echo failed to decompress "benchmarks/$instance/formula.cnf.zst"
+	exit 1
+fi
+if ! tools/bin/zstd --quiet --decompress "$s"/proof.out.zst -o "$tmp/proof.drat"; then
+	echo failed to decompress "$s"/proof.out.zst
+	exit 1
+fi
 params=
 if [ "$checker" = gratgen ]; then
   params="$params --no-progress-bar"
