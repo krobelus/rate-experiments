@@ -11,4 +11,4 @@ do
 		# only already solved instances
 		test -f benchmarks/"$instance"/"$solver"/proof.out.zst && printf "%s/%s\n" $instance $solver||:
 	done
-done < instances.txt
+done < <(shuf instances.txt)
