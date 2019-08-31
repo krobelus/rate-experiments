@@ -10,7 +10,7 @@ make -C tools
 if [ -n "$1" ]; then
 	# run everything with rate first because we only care about verified benchmarks
 	./combinations-with-padding.sh |
-	CHECKERS='rateLRAT' ./run-instance-solver-combinations.sh
+	CHECKERS='rate' ./run-instance-solver-combinations.sh
 	exit 0
 fi
 
