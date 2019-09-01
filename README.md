@@ -331,19 +331,19 @@ because unit propagation is mostly done in the core instead of all clauses.
 
 \paragraph{Reason Deletions} Under operational DRAT unit deletions are
 ignored. Only proofs with unique reason deletions have different semantics
-under specified and operational DRAT.  However, to detect unique reason
-deletions, it is necessary to implement specified DRAT as it is to verify
-inprocessing steps with reason deletions, A reason is a a clause that
-was used in some propagation sequence to compute a literal $l$ in the
-trail. When a unique reason clause is deleted, $l$ is no longer implied by
-unit propagation and needs to be removed from the trail. This means that
-it is not possible anymore to revert this modification of the trail in the
-backward pass by truncating the trail. Instead, for each reason deletion,
-the removed literals are recorded by the checker, along with their positions
-in the trail and their reasons.  This information can be used in the backward
-pass to restore the state of the trail to be exactly the same as in the forward
-pass for each proof step, which is what the algorithm from [@RebolaCruz2018]
-does along other techniques to maintain the watch invariants.
+under specified and operational DRAT.  To detect unique reason deletions,
+it is necessary to implement specified DRAT, as it is to verify inprocessing
+steps with reason deletions, A reason is a a clause that was used in some
+propagation sequence to compute a literal $l$ in the trail. When a unique
+reason clause is deleted, $l$ is no longer implied by unit propagation and
+needs to be removed from the trail. This means that it is not possible anymore
+to revert this modification of the trail in the backward pass by truncating the
+trail. Instead, for each reason deletion, the removed literals are recorded
+by the checker, along with their positions in the trail and their reasons.
+This information can be used in the backward pass to restore the state
+of the trail to be exactly the same as in the forward pass for each proof
+step, which is what the algorithm from [@RebolaCruz2018] does along other
+non-trivial techniques to maintain the watch invariants.
 
 \if0
  However,
@@ -394,45 +394,45 @@ was done after adding the lemma that resulted in the propagation of $l_r$.
 3. DRAT Proofs without Deletions of Unique Reason Clauses
 =========================================================
 
-Operational DRAT (as opposed to specified DRAT) checking is currently used
-to verify some solvers' proofs because these solvers emit unique reason
-deletions. Since these solvers act as if reason clauses were not deleted
-we propose patches to avoid deletions of unique reason clauses, matching
-the solver's internal behavior.  Since for the fragment of proofs without
-unique reason deletions, *operational* and *specified* DRAT coincide, these
-proofs can then be checked with a checker of either flavor.
+Some state-of-the-art solvers produce proofs with deletions of unique
+reason clauses.  A significant fraction of their proofs are incorrect
+under specified DRAT.  Since these solvers act as if reason clauses were
+not deleted we propose patches to avoid deletions of unique reason clauses,
+matching the solver's internal behavior.  Since for the fragment of proofs
+without unique reason deletions, operational and specified DRAT coincide,
+these proofs can then be checked with a checker of either flavor.
 
 Out of the solvers submitted to the main track of the 2018 SAT competition,
 the ones based on `MiniSat` and `CryptoMiniSat` produce proofs with deletions
 of unique reasons while, to the best of our knowledge others do not.
 
 Let us explain how `DRUPMiniSat`[^drupminisat] emits unique reason deletions.
-Used during the simplification phase, the method `Solver::removeSatisfied`
-looks for clauses that are satisfied by the shared UP-model and removes them
-from the clause database and adds them as a deletion to the DRAT proof output.
-Those clauses remain satisfied indefinitely for the rest of the search,
+Used during the simplification phase, the method `Solver::removeSatisfied`,
+for each clause $C$ that is satisfied by the shared UP-model, removes $C$
+from the clause database and emits a deletion of $C$ to the DRAT proof output.
+Such a clause $C$ remains satisfied indefinitely for the rest of the search,
 because the shared UP-model is a subset of any model.
 
 In `MiniSat`, *locked* clauses are reason clauses, the reason for having
 propagated some literal in the trail.  The function `Solver::removeSatisfied`
-also deletes locked clauses, however, the literals assigned because of a
-locked clause are not unassigned here.  This suggests that a locked clause is
-implicitly kept in the formula, even though it is deleted.  State-of-the-art
-DRAT checkers ignore deletions of unit clauses, which means they do not
-unassign any literal when deleting clauses, matching the solvers' behavior.
+also deletes locked clauses, however, the literals assigned because of
+a locked clause are not unassigned here.  This suggests that a locked
+clause is implicitly kept in the formula, even though it is deleted.
+State-of-the-art DRAT checkers ignore deletions of unit clauses, which
+means they do not unassign any literal when deleting clauses, matching the
+`DRUPMiniSat's` behavior.
 
 We propose two possible changes to make `DRUPMiniSat` produce proofs that
 do not require this workaround of ignoring unit deletions when checking.
 
 1. Do not remove locked clauses during simplification.
 
-2. Before to removing locked clauses, emit the corresponding propagated
+2. Before removing locked clauses, emit the corresponding propagated
 literal as addition of a unit clause in the DRAT proof.  Suggested by
 Mate Soos[^suggestion-add-units], this option is also the preferred one
 to the authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].
 Additionally, this is implemented in `CaDiCaL's`[^cadical] preprocessor.
-
-The second variant does not influence of future inferences because the unit
+This does not influence the correctness of future inferences because the unit
 clause that is added and the reason clause that is removed are equivalent
 under the shared UP-model, whose literals will never be unassigned throughout
 the solver's runtime.
@@ -479,8 +479,8 @@ verified by the formally verified checker[^acl2].  This gives us confidence
 in the correctness of our implementation and allows for a comparison of our
 checker with `DRAT-trim` since both have the same input and output formats.
 
-`DRAT-trim` pioneered deletions, backwards checking add core-first propagation.
-Additionally it employs an optimization to which we also use: during RAT
+`DRAT-trim` pioneered deletions, backwards checking and core-first propagation.
+Additionally it employs an optimization which we also use: during RAT
 checks, resolution candidates that are not in the core are ignored, because
 the proof can be rewritten to delete them immediately after the current
 lemma[^gratgen-noncore-rat-candidates].
@@ -495,7 +495,7 @@ certificate, guaranteeing that the original formula is indeed unsatisfiable.
 We also implement GRAT generation in our tool. However, the `gratchk` tool
 ignores unit deletions, so GRAT proofs are only useful for operational DRAT.
 
-They introduce two notable optimizations:
+They introduce two optimizations:
 
 1. Separate watchlists for core and non-core clauses[^gratgen-cf]. This
    speeds up unit propagation, so we use it in our implementation.
@@ -508,7 +508,7 @@ They introduce two notable optimizations:
    is negligible when compared to the number of RUP introductions.
 
 Among state-of-the-art DRAT checkers, `gratgen` is arguably the easiest to
-understand (despite implementing a parallel mode), so we advise interested
+understand (even though can do a parallel checking), so we advise interested
 readers to study that.
 
 \paragraph{\texttt{rupee}} This is the original implementation[^rupee]
@@ -519,14 +519,12 @@ which was fixed[^fix-revise-watches].
 In previous experiments, `rupee` appeared to be an order of magnitude
 slower than `DRAT-trim` [@RebolaCruz2018].  We believe that this overhead
 is primarily not a consequence of algorithmic differences but exists mostly
-due to implementation details such as parsing[^rupee-parsing].
+due to implementation details such as parsing[^rupee-parsing].  Additionally
+`rupee` does not use core-first unit propagation while the other checkers do.
 
 [^rupee-parsing]: Both `rupee` and `DRAT-trim` use a fixed-size hash table
 to locate deleted clauses but `rupee`'s is smaller by one order of magnitude,
 which may explain parts of the difference in performance.
-
-Additionally `rupee` does not use core-first unit propagation while the
-other checkers do.
 
 4.2 Checker Implementation
 --------------------------
@@ -534,12 +532,12 @@ other checkers do.
 Our checker is called `rate`[^rate].  It is a drop-in replacement for a
 subset of `drat-trim`'s functionality --- namely the forward and backward
 unsatisfiability checks --- with the important difference that it checks
-specified DRAT.  When a proof is verified, `rate` can output core lemmas as
-DIMACS, LRAT or GRAT.  Otherwise, the rejection of a proof can be supplemented
-by a SICK certificate of unsatisfiability.  The representation of the DRAT
-proof --- binary or textual -- is automatically detected the same way as
-`drat-trim`.  Additionally, compressed input files (Gzip, Zstandard, Bzip2,
-XZ, LZ4) are transparently uncompressed.
+specified DRAT by default.  When a proof is verified, `rate` can output core
+lemmas as DIMACS, LRAT or GRAT.  Otherwise, the rejection of a proof can be
+supplemented by a SICK certificate of unsatisfiability.  The representation
+of the DRAT proof --- binary or textual -- is automatically detected the same
+way as `drat-trim`.  Additionally, compressed input files (Gzip, Zstandard,
+Bzip2, XZ, LZ4) are transparently uncompressed.
 
 We provide two options that alter the semantics of the checker:
 
@@ -561,10 +559,8 @@ proof generation procedures.
 We also support a more powerful clausal proof format, DPR (*delete propagation
 redundancy*) [@Heule_2017].
 
-The debug build comes with lots of assertions, including checks for arithmetic
-overflows and narrowing conversions that cause unintended changes of values.
-These checks can also be enabled in the release build with purportedly
-minimal impact on performance.
+To automatically minimize inputs that expose bugs in our checker we have
+developed a set of scripts to delta-debug CNF and DRAT instances.
 
 \paragraph{Rust} We chose the modern systems programming language Rust[^rust]
 for our implementation.  Among the respondents of the 2019 Stack Overflow
@@ -576,6 +572,19 @@ inconveniences with the borrow checker[^partial-ref], it is a viable
 alternative to C and C++ for the domain of SAT solving. The first Rust-based
 solver to take part in competitions `varisat`[^varisat] is a great example
 of this.
+
+Rust aims to avoid any undefined behavior.  For example, buffer overflows are
+prevented by performing runtime bounds checks upon array access.  While for
+most programs those bounds checks have negligible impact (branch prediction
+can handle them seamlessly), we removed bounds checking by default, which
+gave speedups of around 15% in preliminary tests.  Additionally checker
+implementation contains a variety of cheap runtime assertions, including
+checks for arithmetic overflows and narrowing conversions that cause a change
+of value.
+
+\if0
+In some cases the LLVM backend can prove that an array access is valid.
+\fi
 
 4.3. SICK Format
 ----------------
@@ -667,9 +676,8 @@ do unit propagation which is avoided by design in the SICK checker.  This is
 a potential benefit of a specified checker: the accumulated formula at each
 proof step is clearly defined and can be computed without unit propagation.
 
-\paragraph{Contribution} Our contribution is the design of a new syntax that
-takes into account the different versions of DRAT with fixed or arbitrary
-pivot.
+\paragraph{Contribution} Our contribution to the SICK format consists of the
+design of a this new syntax that takes into account the different variants of DRAT.
 
 
 5. Experimental Evaluation
