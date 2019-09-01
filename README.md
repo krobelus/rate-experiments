@@ -575,12 +575,12 @@ part in competitions `varisat`[^varisat] is a great example of this.
 
 Rust aims to avoid any undefined behavior.  For example, buffer overflows are
 prevented by performing runtime bounds checks upon array access.  While for
-most programs those bounds checks have negligible impact (branch prediction
-can handle them seamlessly), we removed bounds checking by default, which
-gave speedups of around 15% in preliminary tests.  Furthermore, our checker
-implementation contains a variety of cheap runtime assertions, including
-checks for arithmetic overflows and narrowing conversions that cause a change
-of value.
+most programs those bounds checks have negligible impact on performance
+(branch prediction can handle them seamlessly), we removed bounds checking by
+default, which gave speedups of around 15% in preliminary tests.  Furthermore,
+our checker implementation contains a variety of cheap runtime assertions,
+including checks for arithmetic overflows and narrowing conversions that
+cause a change of value.
 
 \if0
 In some cases the LLVM backend can prove that an array access is valid.
