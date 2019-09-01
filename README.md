@@ -395,12 +395,12 @@ was done after adding the lemma that resulted in the propagation of $l_r$.
 =========================================================
 
 Some state-of-the-art solvers produce proofs with deletions of unique
-reason clauses.  A significant fraction of their proofs are incorrect
-under specified DRAT.  Since these solvers act as if reason clauses were
-not deleted we propose patches to avoid deletions of unique reason clauses,
-matching the solver's internal behavior.  Since for the fragment of proofs
-without unique reason deletions, operational and specified DRAT coincide,
-these proofs can then be checked with a checker of either flavor.
+reason clauses.  A significant fraction of their proofs are incorrect under
+specified DRAT.  Since these solvers act as if reason clauses were not deleted
+we propose patches to avoid deletions of unique reason clauses, matching the
+solver's internal behavior.  For the fragment of proofs without unique reason
+deletions, operational and specified DRAT coincide, hence these proofs can
+be checked with a checker of either flavor.
 
 Out of the solvers submitted to the main track of the 2018 SAT competition,
 the ones based on `MiniSat` and `CryptoMiniSat` produce proofs with deletions
@@ -415,8 +415,8 @@ because the shared UP-model is a subset of any model.
 
 In `MiniSat`, *locked* clauses are reason clauses, the reason for having
 propagated some literal in the trail.  The function `Solver::removeSatisfied`
-also deletes locked clauses, however, the literals assigned because of
-a locked clause are not unassigned here.  This suggests that a locked
+also deletes locked clauses, however, the literals assigned because of such
+a locked clause will not be unassigned.  This suggests that the locked
 clause is implicitly kept in the formula, even though it is deleted.
 State-of-the-art DRAT checkers ignore deletions of unit clauses, which
 means they do not unassign any literal when deleting clauses, matching the
@@ -454,8 +454,8 @@ and the winner of the main track of the 2018 SAT competition
 (1.[^patch-MapleLCMDistChronoBT-keep-locked-clauses] and
 2.[^patch-MapleLCMDistChronoBT]).
 Both patches are arguably rather simple and we do not expect any significant
-impacts in terms of solver runtime, memory usage or proof size.  The same
-methods can be applied easily to other `DRUPMiniSat`-based solvers.
+impacts in terms of solver runtime, memory usage or proof size.  They can
+be easily adapted to other `DRUPMiniSat`-based solvers.
 
 4. Complete and Fast DRAT Proof-Checking
 ========================================
@@ -482,7 +482,7 @@ checker with `DRAT-trim` since both have the same input and output formats.
 `DRAT-trim` pioneered deletions, backwards checking and core-first propagation.
 Additionally it employs an optimization which we also use: during RAT
 checks, resolution candidates that are not in the core are ignored, because
-the proof can be rewritten to delete them immediately after the current
+the proof can be rewritten to delete them immediately before the current
 lemma[^gratgen-noncore-rat-candidates].
 
 \paragraph{GRAT Toolchain} More recently, Peter Lammich has published the
@@ -519,7 +519,7 @@ which was fixed[^fix-revise-watches].
 In previous experiments, `rupee` appeared to be an order of magnitude
 slower than `DRAT-trim` [@RebolaCruz2018].  We believe that this overhead
 is primarily not a consequence of algorithmic differences but exists mostly
-due to implementation details such as parsing[^rupee-parsing].  Additionally
+due to implementation details such as parsing[^rupee-parsing].  Additionally,
 `rupee` does not use core-first unit propagation while the other checkers do.
 
 [^rupee-parsing]: Both `rupee` and `DRAT-trim` use a fixed-size hash table
@@ -563,21 +563,21 @@ To automatically minimize inputs that expose bugs in our checker we have
 developed a set of scripts to delta-debug CNF and DRAT instances.
 
 \paragraph{Rust} We chose the modern systems programming language Rust[^rust]
-for our implementation.  Among the respondents of the 2019 Stack Overflow
-Developer Survey[^so-survey] it is the most loved programming language and
-Rust developers have the highest contribution rate to open source projects.
+for our implementation because of its feature parity with C in the domain of
+SAT solving.  Among the respondents of the 2019 Stack Overflow Developer
+Survey[^so-survey] it is the most loved programming language and Rust
+developers have the highest contribution rate to open source projects.
 
 Based on our experience, we believe that, while there may be some
 inconveniences with the borrow checker[^partial-ref], it is a viable
-alternative to C and C++ for the domain of SAT solving. The first Rust-based
-solver to take part in competitions `varisat`[^varisat] is a great example
-of this.
+alternative to C or C++ for SAT solving. The first Rust-based solver to take
+part in competitions `varisat`[^varisat] is a great example of this.
 
 Rust aims to avoid any undefined behavior.  For example, buffer overflows are
 prevented by performing runtime bounds checks upon array access.  While for
 most programs those bounds checks have negligible impact (branch prediction
 can handle them seamlessly), we removed bounds checking by default, which
-gave speedups of around 15% in preliminary tests.  Additionally checker
+gave speedups of around 15% in preliminary tests.  Furthermore, our checker
 implementation contains a variety of cheap runtime assertions, including
 checks for arithmetic overflows and narrowing conversions that cause a change
 of value.
