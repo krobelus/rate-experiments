@@ -582,10 +582,6 @@ our checker implementation contains a variety of cheap runtime assertions,
 including checks for arithmetic overflows and narrowing conversions that
 cause a change of value.
 
-\if0
-In some cases the LLVM backend can prove that an array access is valid.
-\fi
-
 4.3. SICK Format
 ----------------
 
