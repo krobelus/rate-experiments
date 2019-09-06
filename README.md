@@ -693,33 +693,33 @@ Only `rate` checks specified DRAT, the other three implement operational DRAT.
 
 \paragraph{Benchmark Selection} For a checker, a benchmark shall be a pair of
 a SAT problem instance and a solver to produce the proof for this instance.
-We take from the 2018 SAT competition[^sc18] both the SAT instances and the
-solvers from the main track.  We take several steps to exclude benchmarks that
-are not interesting for our purpose:  first we discard all benchmarks where the
+We take from the 2018 SAT competition[^sc18] both the SAT instances and
+the solvers from the main track.  We exclude benchmarks that are not
+interesting for our purpose:  firstly we discard all benchmarks where the
 instance is satisfiable according to the competition results[^sc18-results].
 Secondly we discard the benchmarks (pair of solver and instance) where the
 solver timed out for the instance in the competition results because these
-combinations will likely time out in our experiments as well.  Running the
-checkers on the remaining benchmarks would still have taken several CPU
-years. We take a random sample of around one third of the remaining benchmarks
-and explicitly select a few interesting ones too. For these benchmarks we
-have have run the solver to generate the proof.  Some solvers would time out,
-failing to generate a complete proof.  If the solver succeeded, we ran the
-four checkers on the proof.
-
-Around two thirds of these proofs are incorrect under specified DRAT.
-When `rate` rejects a proof it exits as soon an incorrect instruction is
-encountered in the backward pass. This means that it processed only a fraction
-of the proof while other checkers would process the entire proof. Hence it
-is not useful for benchmarking checker performance to runtimes for proofs
-that are rejected under specified DRAT. For the performance comparison we
-discard benchmarks with such proofs.
+combinations will probably time out in our experiments as well.  For these
+benchmarks we have have run the solver to generate the proof.  Some solvers
+would time out, failing to generate a proof.  As a final measure to include
+only interesting benchmarks, we exclude all proofs that are rejected by
+`rate` (more than half of all proofs).  This ensures a fair comparison in
+terms of checker performance: when `rate` rejects a proof it exits as soon
+an incorrect instruction is encountered in the backward pass. This means
+that it processed only a fraction of the proof while other checkers would
+process the entire proof. Hence it is not useful for benchmarking checker
+performance to runtimes for proofs that are rejected under specified DRAT.
 
 In total we analyze 39 solvers and 120 unsatisfiable instances, making for
 over 4000 potential solver-instances pairs as benchmarks. However, after
-the sampling and above steps discarding benchmarks that are not relevant
-for us, we are left with merely 373 benchmarks where the proof is verified
+ above steps discarding benchmarks that are not relevant
+for our purpose, we are left with 810 benchmarks where the proof is verified
 by all checkers.
+
+\if0
+1948 processed by rate
+835  verified  by rate
+\fi
 
 \paragraph{Execution} For each benchmark, first the solver is run to
 create a proof, then all checkers are run on that proof. For `rate`,
