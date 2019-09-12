@@ -15,7 +15,7 @@ build-dependencies:
 	@which pandoc-placetable >/dev/null || ( echo $(placetable) && exit 1 )
 
 TITLE := DRAT Proofs Without Deletions of Unique Reason Clauses
-TITLE += // Complete and Fast DRAT Proof Checking
+TITLE += // Complete and Efficient DRAT Proof Checking
 
 pandoc := pandoc --filter pandoc-fignos --filter pandoc-citeproc --filter pandoc-placetable
 
