@@ -905,7 +905,7 @@ being added to the core.  In Figure @fig:cactus-time and @fig:cactus-space
 we show the distribution of performance narrowed down to the most difficult
 proof instances.  For easier instances the differences are smaller.  Figure
 @fig:cactus-time suggests that `gratgen` is a bit faster, and `DRAT-trim`
-is slower than `rate`. Moreover `rate`, and `rate --skip-unit-deletions`
+is slower than `rate`. Moreover `rate`, and `rate -d`
 show roughly the same distribution of runtimes.  Figure @fig:cactus-space
 indicates that `drat-trim` and `rate` use roughly the same amount of memory,
 while `gratgen` needs a bit more. This is not surprising because we use
@@ -915,13 +915,13 @@ almost the same data structures as `drat-trim`.
 
 ![Cactus plot showing the distribution of the checkers' memory usage](p/cactus-space.pdf){#fig:cactus-space}
 
-![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `rate`.
+![Cross plot comparing the individual runtimes of `rate -d` with `rate`.
 Each marker represents a proof instance.](p/cross-rate-d-rate.pdf){#fig:cross-rate-d-rate}
 
-![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `gratgen`.
+![Cross plot comparing the individual runtimes of `rate -d` with `gratgen`.
 Each marker represents a proof instance.](p/cross-rate-d-gratgen.pdf){#fig:cross-rate-d-gratgen}
 
-![Cross plot comparing the individual runtimes of `rate --skip-unit-deletions` with `DRAT-trim`.
+![Cross plot comparing the individual runtimes of `rate -d` with `DRAT-trim`.
 Each marker represents a proof instance.](p/cross-rate-d-drat-trim.pdf){#fig:cross-rate-d-drat-trim}
 
 We take a closer look, comparing the performance of two checkers on each
