@@ -297,6 +297,11 @@ the resolvent is a RUP inference.
 2.3 Proof Checking
 ------------------
 
+We say that some tool *verifies* some property of an artifact when that
+artifact has this property according to the semantics encoded in the tool.
+This is not to be confused with formal verification; for our checkers we have
+no proof that the implementation corresponds to any formal specification.
+
 The naïve way to verify that a proof is correct consists of performing
 each instruction in the proof from the first to the last one, while checking
 each lemma.
@@ -559,7 +564,7 @@ on the clause $D$, so it can be freely removed. This is the case because in
 the RAT check, the resolution candidate becomes unit after propagating the
 reverse literals in resolvent, so unit literal $\overline{l}$ is satisfied, or
 rather $l$ is falsified. This makes $D$ a tautology which will never be used to
-derive a conflict and thus make an inference [^gratgen-noncore-rat-candidates].
+derive a conflict and thus make an inference[^gratgen-noncore-rat-candidates].
 
 \paragraph{GRAT Toolchain} More recently, Peter Lammich has published the
 GRAT toolchain [@lammich2017grat] that is able to outperform `DRAT-trim`
@@ -637,6 +642,11 @@ cannot provide the latter. This might be useful to validate that a SAT
 solver's proof contains no unique reason deletion, since we are not aware
 of a good reason why proofs by current solvers should contain such deletions
 (apart from some inprocessing techniques).
+
+As other state-of-the-art checkers, `rate` actually deviates from the
+specification of DRAT where it is convenient or necessary for competitive
+performance. For example we permit sloppy input, and fail when given $2^{30}$
+or more clauses.
 
 We also support a more powerful clausal proof format, DPR (*delete propagation
 redundancy*) [@Heule_2017].
