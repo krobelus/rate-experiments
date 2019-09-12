@@ -870,14 +870,13 @@ is verified by all checkers.
 835  verified  by rate
 \fi
 
-\paragraph{Execution} For each benchmark, all checkers are run on that
-proof. For `rate`, `rate-d` `DRAT-trim`, we ensure that the LRAT proof
-is verified by the LRAT checker[^acl2] in preliminary runs, but we do
-not generate LRAT (or GRAT) proofs for the final measurments.  For proofs
-rejected by `rate`, we always run `sick-check`, to double-check that the
-proof is incorrect under to the semantics of specified DRAT.  For our
-measurments we also disabled assertions and logging in `rate` which seems
-to give minor speedups.
+\paragraph{Measurments} We ran all checkers on the selected benchmarks.
+For `rate`, `rate-d` `DRAT-trim`, we ensured that the LRAT proof is verified
+by the LRAT checker[^acl2] in preliminary runs, but we do not generate LRAT
+(or GRAT) proofs for the final measurments.  For proofs rejected by `rate`,
+we always run `sick-check`, to double-check that the proof is incorrect
+under to the semantics of specified DRAT.  For our this evaluation we also
+disabled assertions and logging in `rate` which seems to give small speedups.
 
 For running the solvers we used the same limits as in the SAT competition ---
 5000 seconds CPU time and 24 GB memory using runlim[^runlim]. Similarly, for
