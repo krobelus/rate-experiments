@@ -686,21 +686,27 @@ Since our checker already computes the shared UP-models for the RUP checks, we
 can output that and check the inference with an independent tool.  This tool
 can be much simpler than the checker because it does not need to implement
 unit propagation. This is useful because unit propagation with watch lists
-is non-trivial to implement correctly for specified DRAT.  The format we
-use for the incorrectness certificates is called *SICK*. It was originally
-developed for `rupee`.  A certificate in our SICK format can be used by our
-tool `sick-check` to verify incorrectness of the proof without doing any
-unit propagation. Furthermore, the incorrectness certificate is tiny compared
-to the formula. We have fixed some bugs in our checker that were exposed by
-`sick-check`.
+is non-trivial to implement correctly for specified DRAT.  A bug in watch
+list implementation often cause problems when it causes some clauses to
+not be watched when they are unit which means that the propagation may be
+incomplete.  If so, the shared UP-model computed by the checker is smaller
+than the actual shared UP-model. This can be detected easily by checking each
+individual clause if it is a unit that is not yet assigned. On the other hand,
+if the checker's shared UP-model is bigger than the actual shared UP-model,
+this is a bug that will not easily be detected by such a tool.
 
-The SICK file format is using TOML[^toml] syntax.  See Figure \ref{grammar} for
-a grammar.  An example of a SICK certificate is in Figure \ref{sick-example}.
-The first two columns show a satisfiable formula with two binary clauses
-in DIMACS format and an incorrect DRAT proof for this formula. The proof
-consists of two lemmas, a size-one clause, and the empty clause.  The third
-column shows the corresponding SICK certificate, stating that the RAT check
-failed for the first lemma in the proof.
+The format we use for the incorrectness certificates is called *SICK*. It
+was originally developed for `rupee`.  A certificate in our SICK format can
+be used by our tool `sick-check` to verify incorrectness of the proof without
+doing any unit propagation. Furthermore, the incorrectness certificate is tiny
+compared to the formula. We have fixed some bugs in our checker that were
+exposed by `sick-check`.  The SICK file format is using TOML[^toml] syntax.
+See Figure \ref{grammar} for a grammar.  An example of a SICK certificate
+is in Figure \ref{sick-example}.  The first two columns show a satisfiable
+formula with two binary clauses in DIMACS format and an incorrect DRAT proof
+for this formula. The proof consists of two lemmas, a size-one clause, and
+the empty clause.  The third column shows the corresponding SICK certificate,
+stating that the RAT check failed for the first lemma in the proof.
 
 \begin{figure}
     \begin{tabular}{rcl}
@@ -786,8 +792,7 @@ ListOfLiterals  := '[' (Literal ',')* ']'
    therefore in practise `DRAT-arbitrary-pivot` is usually desired. New
    proof formats such as PR however require explicitly specifying the witness.
  
-- `natural_model` gives the shared UP-model before checking this proof
-  step. This is included to avoid having to do propagation in a checking tool.
+- `natural_model` gives the shared UP-model before checking this proof step.
 
 Each witness is a counter-example to some redundancy check.
 
