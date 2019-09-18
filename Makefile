@@ -2,7 +2,7 @@ plots := p
 tables := t
 
 all: build-dependencies tools results.csv $(plots) $(tables) \
-	 README.pdf README.markdown README.tex poster/poster.pdf
+	 thesis.pdf thesis.tex poster/poster.pdf
 
 error := "*** Error: please install"
 citeproc := $(error) pandoc-citeproc
@@ -14,25 +14,16 @@ build-dependencies:
 	@which pandoc-fignos     >/dev/null || ( echo $(fignos)     && exit 1 )
 	@which pandoc-placetable >/dev/null || ( echo $(placetable) && exit 1 )
 
-TITLE := DRAT Proofs Without Deletions of Unique Reason Clauses
-TITLE += // Complete and Efficient DRAT Proof Checking
-
 pandoc := pandoc --filter pandoc-fignos --filter pandoc-citeproc --filter pandoc-placetable
 
-# diff example
-# latexdiff (git show 1290044b6ce1285ce64ab9ce11075d0c01b7fc51:README.md
-# | pandoc --filter pandoc-fignos --filter pandoc-citepro c --filter \
-# pandoc-placetable --to latex --standalone | psub) README.tex | pandoc --from \
-# latex -o diff.pdf
-
-README.pdf: README.md $(tables) $(plots) Makefile
+thesis.pdf: thesis.md $(tables) $(plots) Makefile
 	$(pandoc) $< -o $@
-README.markdown: README.md $(tables) $(plots) Makefile
-	$(pandoc) $< -o $@ -t gfm
-	sed -i '1i# $(TITLE)' $@
-README.tex: README.md $(tables) $(plots) Makefile
+# thesis.markdown: thesis.md $(tables) $(plots) Makefile
+# 	$(pandoc) $< -o $@ -t gfm
+# 	sed -i '1i# $(TITLE)' $@
+thesis.tex: thesis.md $(tables) $(plots) Makefile
 	$(pandoc) $< -o $@ --standalone
-README.html: README.md $(tables) $(plots) Makefile
+thesis.html: thesis.md $(tables) $(plots) Makefile
 	$(pandoc) $< -o $@
 
 results.csv: results.json csv.sh
