@@ -17,7 +17,6 @@ fi
 ./combinations-with-padding.sh |
 CHECKERS='rate rate-d drat-trim gratgen' ./run-instance-solver-combinations.sh
 
-
 # 1/3 is verified by rate (200/ 600) using about 50GB
 # total number of benchmarks: 2000 (*3), will use 150GB
 
