@@ -1,12 +1,10 @@
-## Experiments for evaluating [`rate`]
+This repository contains my [thesis](./thesis.pdf) and the scripts I used
+to run the experiments evaluating DRAT proof checker [`rate`].
 
-- [Thesis containing the problem description](./thesis.pdf)
-- The full data is in [results.json](./results.json)
-  Based on that we generate:
-  - [tables](./t)
-  - [plots](./p)
+The full data set with the results is in [results.json](./results.json)
+Based on that we generate [tables](./t) and [plots](./p) and the thesis using `make`.
 
-The workflow is roughly `./deploy.sh` to copy to a target machine and then execute `./run-all.sh` there. 
-The thesis, plots and tables are generated using `make`.
+The workflow to run the experiments is roughly `./deploy.sh` to copy to a
+remote machine; then execute `./run-all.sh` there.
 
 [`rate`]: <https://github.com/krobelus/rate>
