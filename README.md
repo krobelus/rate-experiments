@@ -885,7 +885,7 @@ is verified by all checkers.
 835  verified  by rate
 \fi
 
-\paragraph{Measurments} We ran all checkers on the selected benchmarks.
+\paragraph{Experimental Setup} We ran all checkers on the selected benchmarks.
 For `rate`, `rate-d` `DRAT-trim`, we ensured that the LRAT proof is verified
 by the LRAT checker[^acl2] in preliminary runs, but we do not generate LRAT
 (or GRAT) proofs for the final measurments.  For proofs rejected by `rate`,
