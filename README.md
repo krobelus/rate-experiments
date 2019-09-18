@@ -403,52 +403,6 @@ of the trail to be exactly the same as in the forward pass for each proof
 step, which is what the algorithm from [@RebolaCruz2018] does along other
 non-trivial techniques to maintain the watch invariants.
 
-\if0
- However,
-when deleting a unique reason clause in the forward pass under specified DRAT,
-some literals are removed from the trail and reordered.  This means that it is
-not possible anymore to revert this modification of the trail in the backward
-pass by truncating the trail.  Instead the algorithm from [@RebolaCruz2018]
-can be used to restore the trail and to efficiently reinstate the watchlists'
-Invariant 1 in the backward pass. While an understanding of the algorithm
-is not required to understand the contributions in this paper, we explain
-parts of it nevertheless.
-
-Let us consider a proof with deletions of unique reasons.  A deletion
-instruction is performed by removing a clause from the formula in the forward
-pass and re-introducing it in the backward pass.  This is implemented by
-removing the clause from the watchlists and adding it respectively.
-
-During the forward pass, whenever the reason clause for some literal is
-deleted, this literal is unassigned.  If it was used to make a clause unit
-and thus propagate it, that unit may be unassigned as well, and so on. All
-these literals form the *cone of influence* (see [@RebolaCruz2018]) of
-the first literal. Before being unassigned, the literals in the cone are
-recorded in the checker, alongside their positions in the trail and their
-reason clauses. This information allows the checker to re-introduce the cone
-literals later in the backward pass when the deletion is undone.
-
-When the deletion of a reason is processed during the backwards phase, each
-literal in the cone will be reintroduced into the trail at the recorded
-position.  Consider literal $l$ in the cone. Before applying the backwards
-deletion $l$ could have been satisfied or unassigned (but not falsified).
-After reintroducing $l$, it is satisfied. Therefore, a clause containing
-$\overline{l}$ might become unit without the checker noticing.  Because of
-this, the watchlists of all reverse cone literals $\overline{l}$ have to be
-traversed to restore the watch invariant.  Each of those clause is watched
-on the now-falsified literal $\overline{l}$. Therefore the watches may need
-to be replaced to restore Invariant 1.
-
-If above clause has at least two non-falsified literals, the watches can be
-set to any two out of those.  However, if the clause has only one non-falsified
-literal --- which is necessarily satisfied because of Invariant 1 --- then the
-other watch cannot be chosen arbitrarily because this might provoke a violation
-of Invariant 1 at a later point as described in [@RebolaCruz2018; Example 5].
-Instead, the second watch may be set to the most recently falsified literal
-$l_r$, or any other literal that was falsified during the propagation that
-was done after adding the lemma that resulted in the propagation of $l_r$.
-\fi
-
 3. DRAT Proofs without Deletions of Unique Reason Clauses
 =========================================================
 
@@ -754,33 +708,6 @@ stating that the RAT check failed for the first lemma in the proof.
 \end{figure}
 
 
-\if0
-\paragraph{Grammar}
-
-Formula     Proof   SICK Certificate
------------ ------- ---------------------------------------------
-`p cnf 2 2` `1 0`   `proof_format   = "DRAT-arbitrary-pivot"`
-`-1 -2 0`   `0`     `proof_step     = 1`
-`-1  2 0`            `natural_model  = [-1, ]`
-                    `[[witness]]`
-                    `failing_clause = [-2, -1, ]`
-                    `failing_model  = [2, ]`
-                    `pivot          = 1`
-
-```
-SICK            := ProofFormat ProofStep NaturalModel Witness*
-ProofFormat     := 'proof_format' '=' ( "DRAT-arbitrary-pivot"
-                                      | "DRAT-pivot-is-first-literal")
-ProofStep       := 'proof_step' '=' Integer
-NaturalModel    := 'natural_model' '=' ListOfLiterals
-Witness         := FailingClause FailingModel Pivot
-FailingClause   := 'failing_clause' '=' ListOfLiterals
-FailingModel    := 'failing_model' '=' ListOfLiterals
-Pivot           := 'pivot' '=' Literal
-ListOfLiterals  := '[' (Literal ',')* ']'
-```
-\fi
-
 \paragraph{Explanation}
 
 - `proof_step` specifies the proof step that failed (by offset in the proof,
@@ -880,15 +807,10 @@ by `rate`, so as a result of above steps discarding benchmarks that are not
 relevant for our purpose, we are left with 810 benchmarks where the proof
 is verified by all checkers.
 
-\if0
-1948 processed by rate
-835  verified  by rate
-\fi
-
-\paragraph{Experimental Setup} We ran all checkers on the selected benchmarks.
+\paragraph{Experimental Setting} We ran all checkers on the selected benchmarks.
 For `rate`, `rate-d` `DRAT-trim`, we ensured that the LRAT proof is verified
 by the LRAT checker[^acl2] in preliminary runs, but we do not generate LRAT
-(or GRAT) proofs for the final measurments.  For proofs rejected by `rate`,
+(or GRAT) proofs for the final measurements.  For proofs rejected by `rate`,
 we always run `sick-check`, to double-check that the proof is incorrect
 under to the semantics of specified DRAT.  For our this evaluation we also
 disabled assertions and logging in `rate` which seems to give small speedups.
@@ -1008,11 +930,6 @@ be streamed as well, with some postprocessing to fix the clause IDs.
 It might be possible to forego DRAT completely and directly generate LRAT
 in a solver which is done by `varisat`. This removes the need for a complex
 checker at the cost of a larger proof artifact.
-
-\if0
-DRAT: 414101681719
-LRAT: 294413262360 (core only)
-\fi
 
 [^acl2]: <https://github.com/acl2/acl2/>
 [^rupee]: <https://github.com/arpj-rebola/rupee>
