@@ -1,3 +1,5 @@
+# rate-experiments
+
 This repository contains my [thesis](./thesis.pdf) and the scripts I used
 to run the experiments evaluating DRAT proof checker [`rate`].
 
