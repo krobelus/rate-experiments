@@ -31,10 +31,10 @@ verify inprocessing techniques that use unit deletions.  State-of-the-art SAT
 solvers produce proofs that are accepted by DRAT checkers, but are incorrect
 under the DRAT specification, because they contain spurious deletions of reason
 clauses. We present patches for award-winning SAT solvers to produce correct
-proofs with respect to the specification.  Performing unit deletions in a
-proof checker can be computationally expensive.  We implemented a competitive
-checker that honors unit deletions and provide experimental results that
-on average checking costs are the same as when not doing unit deletions.
+proofs with respect to the specification.  Performing unit deletions in a proof
+checker can be computationally expensive.  We implemented a competitive checker
+that honors unit deletions and provide experimental results suggesting that,
+on average, checking costs are the same as when not doing unit deletions.
 As it is also expensive to determine the (in-)correctness of a proof we
 present the SICK format which describes small and efficiently checkable
 certificates of the incorrectness of a DRAT proof. This increases trust in
