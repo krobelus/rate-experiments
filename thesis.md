@@ -35,7 +35,7 @@ proofs with respect to the specification.  Performing unit deletions in a proof
 checker can be computationally expensive.  We implemented a competitive checker
 that honors unit deletions and provide experimental results suggesting that,
 on average, checking costs are the same as when not doing unit deletions.
-As it is also expensive to determine the (in-)correctness of a proof we
+As it is also expensive to determine the (in-)correctness of a proof, we
 present the SICK format which describes small and efficiently checkable
 certificates of the incorrectness of a DRAT proof. This increases trust in
 incorrectness results and can be useful when debugging solvers and checkers.
