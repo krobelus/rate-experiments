@@ -288,7 +288,7 @@ need for a DRAT checker to be as efficient as possible requires mutable data
 structures that rely on pointer indirection which are difficult to verify.
 The lack of a formally verified DRAT checker is remedied by making the DRAT
 checker output an annotated proof in the LRAT format [@cruz2017efficient]. The
-LRAT proof can be checked by a formally verified checker[^acl2] without unit
+LRAT proof can be checked by a formally verified checker without unit
 propagation, making sure that the formula formula is indeed unsatisfiable.
 Most solvers can only generate DRAT proofs but DRAT checkers can be used to
 produce an LRAT proof from a DRAT proof. The LRAT proof resembles DRAT, but
@@ -448,25 +448,25 @@ means that they do not unassign any literal when deleting clauses, matching
 from $F$, the unique reason clause for literal $x$ is gone. Therefore the
 shared UP-model does not contain literal $x$ anymore.
 
-We propose two possible changes to make `DRUPMiniSat` produce proofs that
-do not require ignoring unit deletions when checking.
+We have proposed[^minisat-post] two possible changes to make `DRUPMiniSat`
+produce proofs that do not require ignoring unit deletions when checking.
 
 1. Do not remove locked clauses during simplification. In our example,
 this would mean that $x$ is not deleted, so shared UP-model stays the same.
 
 2. Before removing locked clauses, emit the corresponding propagated
-literal as addition of a unit clause in the DRAT proof.  Suggested by
-Mate Soos[^suggestion-add-units], this option is also the preferred one
-to the authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].
-Additionally, this is implemented in `CaDiCaL's`[^cadical] preprocessor.
-This does not influence the correctness of future inferences because the unit
-clause that is added and the reason clause that is removed are equivalent,
-so in conjunction they preserve the equivalence of the formula.  The added
-and removed clauses are equivalent because under the shared UP-model they are
-the same clause. The literals of the shared UP-model will never be unassigned
-throughout the solver's runtime because this is done during the simplification
-phase at decision level zero.  In our example this means that another instance
-of $x$ is added, before one $x$ is deleted, which preserves the formula.
+literal as addition of a unit clause in the DRAT proof.  Suggested by Mate
+Soos[^suggestion-add-units], this option is also the preferred one to the
+authors of `mergesat`[^mergesat-pr] and `varisat`[^varisat-pr].  Additionally,
+this is implemented in `CaDiCaL's` preprocessor.  This does not influence
+the correctness of future inferences because the unit clause that is added
+and the reason clause that is removed are equivalent, so in conjunction they
+preserve the equivalence of the formula.  The added and removed clauses are
+equivalent because under the shared UP-model they are the same clause. The
+literals of the shared UP-model will never be unassigned throughout the
+solver's runtime because this is done during the simplification phase at
+decision level zero.  In our example this means that another instance of $x$
+is added, before one $x$ is deleted, which preserves the formula.
 
 We provide patches implementing these for `MiniSat` version 2.2
 (1.  [^patch-MiniSat-keep-locked-clauses] and 2.[^patch-MiniSat]),
@@ -502,7 +502,7 @@ checkers.
 \paragraph{\texttt{DRAT-trim}} The seminal reference implementation; Marijn
 Heule's `DRAT-trim` can produce a trimmed proof in the DRAT or LRAT format. We
 mimic their way of producing LRAT proofs and ensure that all our proofs are
-verified by the formally verified checker[^acl2].  This gives us confidence
+verified by a formally verified checker.  This gives us confidence
 in the correctness of our implementation and allows for a comparison of our
 checker with `DRAT-trim` since both have the same input and output formats.
 
@@ -773,9 +773,7 @@ design of a this new syntax that takes into account the different variants of DR
 ==========================
 
 Here we present a performance evaluation of our checker.  Technical details
-are available[^rate-experiments].
-
-We compare the performance of four checkers:
+are available[^rate-experiments].  We analyze four checkers:
 
 1. `rate`
 2. `rate-d` \hfill (the flag `-d` means *"skip unit deletions"*)
@@ -784,24 +782,48 @@ We compare the performance of four checkers:
 
 Only `rate` checks specified DRAT, the other three implement operational DRAT.
 
-\paragraph{Benchmark Selection} Each individual benchmark consists of a
+\paragraph{Experimental Setting} Each individual benchmark consists of a
 SAT problem instance and a solver to produce the proof for this instance.
-We take from the 2018 SAT competition[^sc18] both the SAT instances and the
-solvers from the main track.  We exclude benchmarks that are not interesting
-for our purpose of evaluating `rate's` performance: firstly we discard all
-benchmarks where the instance is satisfiable according to the competition
-results[^sc18-results].  Secondly we discard the benchmarks where the solver
-timed out in the competition because these runs will probably time out in
-our experiments as well.  For the remaining benchmarks we have have run the
-solver to generate the proof.  Some solvers would time out, failing to generate
-a proof.  As a final measure to include only interesting benchmarks, we exclude
-all proofs that are rejected by `rate`.  This ensures a fair comparison in
-terms of checker performance: when `rate` rejects a proof it exits as soon
-as an incorrect instruction is encountered in the backward pass. This means
-that it processed only a fraction of the proof while other checkers would
-process the entire proof. Hence it is not useful for benchmarking checker
-performance to include proofs that are rejected under specified DRAT.
+For each benchmark, we run the solvers with the same limits as in the
+SAT competition --- a maximum of 5000 seconds CPU time and 24 GB memory
+using runlim[^runlim]. Then we run the checkers on the resulting proof
+(using a time limit of 5000 as in the competition).  For `rate`, `rate-d`
+`DRAT-trim`, we ensured that the LRAT proof is verified by the verfied checker
+`lrat-4`[^lrat-check] in preliminary runs.  However, we do not generate LRAT
+(or GRAT) proofs for the final measurements because we don't expect any
+interesting differences LRAT proof output routines.  For proofs rejected by
+`rate`, we run `sick-check`, to double-check that the proof is incorrect
+under to the semantics of specified DRAT.  For our this evaluation we also
+disabled assertions and logging in `rate` and `rate-d` which seems to give
+small speedups.
 
+We performed all experiments on a machine with two AMD Opteron 6272 CPUs
+with 16 cores each and 220 GB main memory running Linux version 4.9.189.
+We used GNU parallel [@Tange2018] to run 32 jobs simultaneously. Such a high
+load slows down the solvers and checkers, likely due to increased memory
+pressure. Based on preliminary experiments we expect that the checkers are
+affected equally so a comparison between the checkers should be trustworthy.
+
+\paragraph{Benchmark Selection} We take from the 2018 SAT competition[^sc18]
+both the SAT instances and the solvers from the main track, excluding
+benchmarks that are not interesting for our purpose of evaluating `rate's`
+performance.  We consider only unsatisfiable instances where the solver did
+not time out according to the competition results[^sc18-results], and where
+the resulting proof is not rejected by `rate`. The latter condition ensures
+a fair comparison in terms of checker performance: when `rate` rejects a
+proof it exits as soon as an incorrect instruction is encountered in the
+backward pass. This means that it processed only a fraction of the proof
+while other checkers would process the entire proof. Hence it is not useful
+for benchmarking checker performance to include proofs that are rejected
+under specified DRAT.
+
+1. all bm
+        from which unsat
+                from which not time out according to the competition
+                        from which not time out in our exp
+                                from which rate not rejected
+                                verified
+                                timeout
 In total we analyze 39 solvers and 120 unsatisfiable instances, making for
 over 4000 potential solver-instances pairs as benchmarks.  Roughly half of
 the instances are satisfiable, and more than half of the proofs are rejected
@@ -809,29 +831,21 @@ by `rate`, so as a result of above steps discarding benchmarks that are not
 relevant for our purpose, we are left with 810 benchmarks where the proof
 is verified by all checkers.
 
-\paragraph{Experimental Setting} We ran all checkers on the selected benchmarks.
-For `rate`, `rate-d` `DRAT-trim`, we ensured that the LRAT proof is verified
-by the LRAT checker[^acl2] in preliminary runs, but we do not generate LRAT
-(or GRAT) proofs for the final measurements.  For proofs rejected by `rate`,
-we always run `sick-check`, to double-check that the proof is incorrect
-under to the semantics of specified DRAT.  For our this evaluation we also
-disabled assertions and logging in `rate` which seems to give small speedups.
-
-For running the solvers we used the same limits as in the SAT competition ---
-5000 seconds CPU time and 24 GB memory using runlim[^runlim]. Similarly, for
-checking, where  the timeout is 20000 seconds.  We present performance data
-as reported by `runlim` --- time in seconds and memory usage in megabytes
-(2^20^ bytes).
-
-We performed all experiments on a machine with two AMD Opteron 6272 CPUs with
-16 cores each and 220 GB main memory.  We used GNU parallel [@Tange2018]
-to run 32 jobs simultaneously. This high load slows down the solvers and
-checkers, most likely due to increased memory pressure, however, based on
-preliminary experiments we believe that the checkers are affected equally
-hence it is still a fair comparison.
-
 5.1 Comparison of Checkers
 --------------------------
+
+We present performance data as reported by `runlim` --- time in seconds and
+memory usage in megabytes (2^20^ bytes).
+
+![Cactus plot showing the distribution of checkers' runtime and memory usage](p/cactus.pdf){#fig:cactus}
+
+\begin{figure}
+% https://tex.stackexchange.com/questions/57702/custom-margin-settings-for-figure-in-latex
+\centerline{\includegraphics[width=2\textwidth,height=.9\textheight,keepaspectratio]{p/cross.pdf}}
+\caption{Cross plot comparing the runtime and memory usage of
+\texttt{rate\ -d} with the other checkers. Each marker represents a
+proof instance.\label{fig:cross}}
+\end{figure}
 
 On an individual instance two checkers might have different performance
 because of different propagation order and, as a result, different clauses
@@ -845,19 +859,6 @@ indicates that `drat-trim` and `rate` use roughly the same amount of memory,
 while `gratgen` needs a bit more. This is not surprising because we use
 almost the same data structures as `drat-trim`.
 
-![Cactus plot showing the distribution of checker runtimes](p/cactus-time.pdf){#fig:cactus-time}
-
-![Cactus plot showing the distribution of the checkers' memory usage](p/cactus-space.pdf){#fig:cactus-space}
-
-![Cross plot comparing the individual runtimes of `rate -d` with `rate`.
-Each marker represents a proof instance.](p/cross-rate-d-rate.pdf){#fig:cross-rate-d-rate}
-
-![Cross plot comparing the individual runtimes of `rate -d` with `gratgen`.
-Each marker represents a proof instance.](p/cross-rate-d-gratgen.pdf){#fig:cross-rate-d-gratgen}
-
-![Cross plot comparing the individual runtimes of `rate -d` with `DRAT-trim`.
-Each marker represents a proof instance.](p/cross-rate-d-drat-trim.pdf){#fig:cross-rate-d-drat-trim}
-
 We take a closer look, comparing the performance of two checkers on each
 instance, see Figures @fig:cross-rate-d-rate, @fig:cross-rate-d-gratgen
 and @fig:cross-rate-d-drat-trim: in Figure @fig:cross-rate-d-rate we see
@@ -865,14 +866,6 @@ that `rate` exhibits small differences in specified and operational mode.
 Figure @fig:cross-rate-d-gratgen shows that `gratgen` is faster than `rate`
 on most instances.  Similarly, Figure @fig:cross-rate-d-drat-trim shows that
 `rate` is faster than `DRAT-trim` on most instances.
-
-![Juxtaposition of the number of reason deletions and the relative
-runtime overhead of checking specified DRAT over operational
-DRAT.](p/correlation-reason-deletions-time-delta-percent.pdf){#fig:correlation-reason-deletions-time-delta-percent}
-
-![Juxtaposition of the number of reason deletions and the relative overhead
-in terms of memory usage of checking specified DRAT over operational
-DRAT.](p/correlation-reason-deletions-space-delta-percent.pdf){#fig:correlation-reason-deletions-space-delta-percent}
 
 5.2 Overhead of Reason Deletions
 --------------------------------
@@ -884,6 +877,10 @@ operational DRAT. Same holds for memory usage as can be seen in Figure
 @fig:correlation-reason-deletions-space-delta-percent.  Currently, `rate`
 incurs these extra costs also for proofs that contain no unique reason
 deletions.
+
+![The number of reason deletions compared to the runtime and
+memory overhead of checking specified DRAT over operational
+DRAT.](p/correlation-reason-deletions.pdf){#fig:correlation-reason-deletions}
 
 6. Conclusion
 =============
@@ -933,7 +930,7 @@ It might be possible to forego DRAT completely and directly generate LRAT
 in a solver which is done by `varisat`. This removes the need for a complex
 checker at the cost of a larger proof artifact.
 
-[^acl2]: <https://github.com/acl2/acl2/>
+[^lrat-check]: <https://github.com/acl2/acl2/tree/master/books/projects/sat/lrat>
 [^rupee]: <https://github.com/arpj-rebola/rupee>
 [^rate]: <https://github.com/krobelus/rate>
 [^sc18]: <http://sat2018.forsyte.tuwien.ac.at/>
@@ -943,6 +940,7 @@ checker at the cost of a larger proof artifact.
 [^fix-revise-watches]:
 <https://github.com/arpj-rebola/rupee/compare/b00351cbd3173d329ea183e08c3283c6d86d18a1..b00351cbd3173d329ea183e08c3283c6d86d18a1~~~>
 [^toml]: <https://github.com/toml-lang/toml>
+[^minisat-post]: <https://groups.google.com/d/msg/minisat/8AXELMFPzPY/8K8Tq-WVBQAJ>
 [^patch-MapleLCMDistChronoBT]:
 <https://github.com/krobelus/MapleLCMDistChronoBT/commit/add-unit-before-deleting-locked-clause/>
 [^patch-MapleLCMDistChronoBT-keep-locked-clauses]:
@@ -954,7 +952,6 @@ checker at the cost of a larger proof artifact.
 [^suggestion-add-units]:
 <https://github.com/msoos/cryptominisat/issues/554#issuecomment-496292652>
 [^mergesat-pr]: <https://github.com/conp-solutions/mergesat/pull/22/>
-[^cadical]: <http://fmv.jku.at/cadical/>
 [^varisat]: <https://github.com/jix/varisat/>
 [^varisat-pr]: <https://github.com/jix/varisat/pull/66/>
 [^so-survey]: <https://insights.stackoverflow.com/survey/2019>
