@@ -632,7 +632,7 @@ our checker implementation contains a variety of cheap runtime assertions,
 including checks for arithmetic overflows and narrowing conversions that
 cause a change of value.
 
-4.3. SICK Format
+4.3 SICK Format
 ----------------
 
 For DRAT proofs that are verified by `rate`, it can produce an LRAT
@@ -843,17 +843,17 @@ memory usage in megabytes (2^20^ bytes).
 On an individual instance two checkers might have different performance because
 of different propagation orders and, as a result, different clauses being added
 to the core. Instead we compare the distribution of the checkers' performance
-in Figure @fig:cactus.  From the underlying  long-tailed distribution it shows
-only the head where some differences emerge.  We conclude that `gratgen`
+in Figure \ref{fig:cactus}.  From the underlying  long-tailed distribution it
+shows only the head where some differences emerge.  We conclude that `gratgen`
 is a bit faster, and `DRAT-trim` is slower than `rate`.  As expected,
 `rate`, and `rate -d` show roughly the same distribution of runtimes.
 Because `drat-trim` and `rate` use almost the same data structures they use
 roughly the same amount of memory, while `gratgen` needs a bit more.
 
 For a more detailled view, we compare each checker to `rate-d` on individual
-instances in Figure @fig:cross : we see that `rate` and `rate-d` behave alike
-on most instances; `gratgen` is faster than `rate` on most instances, and
-`rate` is faster than `DRAT-trim` on most instances.
+instances in Figure \ref{fig:cross}: we see that `rate` and `rate-d` behave
+alike on most instances; `gratgen` is faster than `rate` on most instances,
+and `rate` is faster than `DRAT-trim` on most instances.
 
 \begin{figure}
 % https://tex.stackexchange.com/questions/57702/custom-margin-settings-for-figure-in-latex
