@@ -858,7 +858,7 @@ on most instances; `gratgen` is faster than `rate` on most instances, and
 \begin{figure}
 % https://tex.stackexchange.com/questions/57702/custom-margin-settings-for-figure-in-latex
 \centerline{\includegraphics[width=2\textwidth,height=.9\textheight,keepaspectratio]{p/cactus.pdf}}
-\caption{Cactus plot showing the distribution of checkers' runtime and memory usage.\label{fig:cross}}
+\caption{Cactus plot showing the distribution of checkers' runtime and memory usage.\label{fig:cactus}}
 \end{figure}
 
 \begin{figure}
