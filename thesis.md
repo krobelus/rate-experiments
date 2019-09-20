@@ -766,7 +766,7 @@ This is a potential benefit of a specified checker: the accumulated formula
 at each proof step can be computed without unit propagation.
 
 \paragraph{Contribution} Our contribution to the SICK format consists of the
-design of a this new syntax that takes into account the different variants of DRAT.
+design of this new syntax that takes into account the different variants of DRAT.
 
 
 5. Experimental Evaluation
@@ -817,19 +817,22 @@ while other checkers would process the entire proof. Hence it is not useful
 for benchmarking checker performance to include proofs that are rejected
 under specified DRAT.
 
-1. all bm
-        from which unsat
-                from which not time out according to the competition
-                        from which not time out in our exp
-                                from which rate not rejected
-                                verified
-                                timeout
-In total we analyze 39 solvers and 120 unsatisfiable instances, making for
-over 4000 potential solver-instances pairs as benchmarks.  Roughly half of
-the instances are satisfiable, and more than half of the proofs are rejected
-by `rate`, so as a result of above steps discarding benchmarks that are not
-relevant for our purpose, we are left with 810 benchmarks where the proof
-is verified by all checkers.
+Starting from the benchmarks where, according to the competition results,
+the solver successfully produced a proof of unsatisfiability, here is how
+we narrow down the benchmarks:
+
+\begin{tabular}{p{.1337\textwidth}p{.1337\textwidth}p{.1337\textwidth}lr}
+\toprule
+\multicolumn{4}{l}{All benchmarks}                                            & 3653 \\
+&\multicolumn{3}{l}{where the solver does not time out}                       & 3605 \\
+&&\multicolumn{2}{l}{from which \texttt{rate} does not reject the proof}      & 843  \\
+\midrule
+&&&\multicolumn{1}{l}{\texttt{rate} verifies the proof}                       & 835  \\
+&&&\multicolumn{1}{l}{\texttt{rate} times out}                                & 6    \\
+&&&\multicolumn{1}{l}{\texttt{rate} runs out of memory}                       & 1    \\
+&&&\multicolumn{1}{l}{\texttt{rate} reports an error}                         & 1    \\
+\bottomrule
+\end{tabular}
 
 5.1 Comparison of Checkers
 --------------------------
@@ -837,7 +840,26 @@ is verified by all checkers.
 We present performance data as reported by `runlim` --- time in seconds and
 memory usage in megabytes (2^20^ bytes).
 
-![Cactus plot showing the distribution of checkers' runtime and memory usage](p/cactus.pdf){#fig:cactus}
+On an individual instance two checkers might have different performance because
+of different propagation orders and, as a result, different clauses being added
+to the core. Instead we compare the distribution of the checkers' performance
+in Figure @fig:cactus.  From the underlying  long-tailed distribution it shows
+only the head where some differences emerge.  We conclude that `gratgen`
+is a bit faster, and `DRAT-trim` is slower than `rate`.  As expected,
+`rate`, and `rate -d` show roughly the same distribution of runtimes.
+Because `drat-trim` and `rate` use almost the same data structures they use
+roughly the same amount of memory, while `gratgen` needs a bit more.
+
+For a more detailled view, we compare each checker to `rate-d` on individual
+instances in Figure @fig:cross : we see that `rate` and `rate-d` behave alike
+on most instances; `gratgen` is faster than `rate` on most instances, and
+`rate` is faster than `DRAT-trim` on most instances.
+
+\begin{figure}
+% https://tex.stackexchange.com/questions/57702/custom-margin-settings-for-figure-in-latex
+\centerline{\includegraphics[width=2\textwidth,height=.9\textheight,keepaspectratio]{p/cactus.pdf}}
+\caption{Cactus plot showing the distribution of checkers' runtime and memory usage.\label{fig:cross}}
+\end{figure}
 
 \begin{figure}
 % https://tex.stackexchange.com/questions/57702/custom-margin-settings-for-figure-in-latex
@@ -847,36 +869,14 @@ memory usage in megabytes (2^20^ bytes).
 proof instance.\label{fig:cross}}
 \end{figure}
 
-On an individual instance two checkers might have different performance
-because of different propagation order and, as a result, different clauses
-being added to the core.  In Figure @fig:cactus-time and @fig:cactus-space
-we show the distribution of performance narrowed down to the most difficult
-proof instances.  For easier instances the differences are smaller.  Figure
-@fig:cactus-time suggests that `gratgen` is a bit faster, and `DRAT-trim`
-is slower than `rate`. Moreover `rate`, and `rate -d`
-show roughly the same distribution of runtimes.  Figure @fig:cactus-space
-indicates that `drat-trim` and `rate` use roughly the same amount of memory,
-while `gratgen` needs a bit more. This is not surprising because we use
-almost the same data structures as `drat-trim`.
-
-We take a closer look, comparing the performance of two checkers on each
-instance, see Figures @fig:cross-rate-d-rate, @fig:cross-rate-d-gratgen
-and @fig:cross-rate-d-drat-trim: in Figure @fig:cross-rate-d-rate we see
-that `rate` exhibits small differences in specified and operational mode.
-Figure @fig:cross-rate-d-gratgen shows that `gratgen` is faster than `rate`
-on most instances.  Similarly, Figure @fig:cross-rate-d-drat-trim shows that
-`rate` is faster than `DRAT-trim` on most instances.
-
 5.2 Overhead of Reason Deletions
 --------------------------------
 
-Figure @fig:correlation-reason-deletions-time-delta-percent suggests
-that a large number of reason deletions brings about some runtime
-overhead in `rate` when checking specified DRAT as opposed to
-operational DRAT. Same holds for memory usage as can be seen in Figure
-@fig:correlation-reason-deletions-space-delta-percent.  Currently, `rate`
+Handling reason deletions requires extra time and memory.  Figure
+@fig:correlation-reason-deletions shows the overhead of `rate` compared to
+`rate-d` --- among our benchmarks runtime at most doubles.  Currently, `rate`
 incurs these extra costs also for proofs that contain no unique reason
-deletions.
+deletions --- these instances are shown with red markers.
 
 ![The number of reason deletions compared to the runtime and
 memory overhead of checking specified DRAT over operational
@@ -911,14 +911,15 @@ excessive number of reason deletions can make it significantly more costly.
 
 If a checker for specified DRAT were to be adopted, it might be beneficial to
 implement a way to perform deletions of non-unique reasons more efficiently
-than `rate` does. These deletions do not alter the shared UP-model, but `rate`
-does not know this. An optimization could consist of an efficiently computable
-criterion to determine if some reason clause is unique.  A simple criterion is
-as follows: if a reason clause for some literal $l$ is deleted, check if unit
-clause $l$ is in the formula. If it is, then the deleted reason is not unique
-and the shared UP-model will definitely not change.  This criterion might be
-sufficient for the proofs produced by the second variant of the patches from
-[section 3][3. DRAT Proofs without Deletions of Unique Reason Clauses].
+than `rate` does. These deletions do not alter the shared UP-model but `rate`
+assumes they do and does more work than necessary.  An optimization could
+consist of an efficiently computable criterion to determine if some reason
+clause is unique.  A simple criterion is as follows: if a reason clause for
+some literal $l$ is deleted, check if unit clause $l$ is in the formula. If
+it is, then the deleted reason is not unique and the shared UP-model will
+definitely not change.  This criterion might be sufficient for the proofs
+produced by the second variant of the patches from [section 3][3. DRAT Proofs
+without Deletions of Unique Reason Clauses].
 
 State-of-the-art DRAT checkers are heavily optimized for speed but they
 keep the entire input proof and the resulting LRAT proof in memory. If the

@@ -150,7 +150,6 @@ def tmp():
 if __name__ == '__main__':
     # tmp()
     summary()
-    # TODO
-    # table_performance()
-    # table_difference()
-    # table_difference_accepted()
+    table_performance()
+    table_difference()
+    table_difference_accepted()
