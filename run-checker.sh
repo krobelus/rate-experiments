@@ -24,16 +24,17 @@ test -f "$s"/proof.out.zst || {
   # echo "Skipping: proof not found: '$s/proof.out.zst'"
   exit 0
 }
-if [ "$checker" = rate ]; then
-	grep -Fq 'error parsing proof' $s/rate*/stdout 2>/dev/null && exit 0 ||:
-else
-  # echo Skipping: proof not verified by rate
-  for c in rate rateOLD rateLRAT; do
-	  if test -d "$s/$c"; then
-		  grep -Fxq 's VERIFIED' "$s/$c"/stdout || exit 0
-	  fi
-  done
-fi
+# TODO
+# if [ "$checker" = rate ]; then
+# 	grep -Fq 'error parsing proof' $s/rate*/stdout 2>/dev/null && exit 0 ||:
+# else
+#   # echo Skipping: proof not verified by rate
+#   for c in rate rateOLD rateLRAT; do
+# 	  if test -d "$s/$c"; then
+# 		  grep -Fxq 's VERIFIED' "$s/$c"/stdout || exit 0
+# 	  fi
+#   done
+# fi
 
 staging="$(realpath staging)"
 mkdir -p "$staging"

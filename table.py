@@ -6,6 +6,7 @@ from plot import (pretty_name, global_data, dst, checkers, solvers, instances,
 import os
 import sys
 import csv
+import pandas as pd
 from sys import exit
 from results import dimensions
 
@@ -34,27 +35,43 @@ def csv_header(writer, cols):
 
 
 def summary():
+    # checked_proofs = [row for row in generated_proofs if checked_by_all_4(row)]
+    # ratio_checked_proofs = len(checked_proofs) / num_proofs
+    # verified_proofs = [row for row in checked_proofs if verified_by_all_4(row)]
+    # ratio_verified_proofs = len(verified_proofs) / num_proofs
+
+    # cs = (q(pretty_name(checker)) for checker in checkers)
+
+    # cf = pd.read_csv('archives/main.csv')
+    # benchmarks = len(cf)
+    # cf = cf[cf['status'] == 'complete']
+    # complete = len(cf)
+    # cf = cf[cf['result'] == 'UNSAT']
+    # unsat = len(cf)
+    max_proofs = 16400
+    comp_proofs = 3653
+
     num_proofs = len(solvers) * len(instances)
-    generated_proofs = [row for row in global_data if row['sresult'] != 'n/a']
-    ratio_generated_proofs = len(generated_proofs) / num_proofs
-
-    checked_proofs = [row for row in generated_proofs if checked_by_all_4(row)]
-    ratio_checked_proofs = len(checked_proofs) / num_proofs
-    verified_proofs = [row for row in checked_proofs if verified_by_all_4(row)]
-    ratio_verified_proofs = len(verified_proofs) / num_proofs
-
-    cs = (q(pretty_name(checker)) for checker in checkers)
+    proofs = [row for row in global_data if row['sresult'] != 'n/a']
+    print(set(row['rate-result'] for row in proofs))
+    def not_rejected(row):
+        return row['rate-result'] in ('error', 'lrat-check pending', 'out of time', 'out of memory')
+    not_rejected_proofs = [row for row in proofs if not_rejected(row)]
+    verified_proofs = [row for row in not_rejected_proofs if row['rate-result'] in ('verified', 'lrat-check pending')]
+    out_of_time = [row for row in not_rejected_proofs if row['rate-result'] == 'out of time']
+    out_of_memory = [row for row in not_rejected_proofs if row['rate-result'] == 'out of memory']
+    error = [row for row in not_rejected_proofs if row['rate-result'] == 'error']
 
     with open(f'{dst}/summary.csv', 'w') as summary:
         print(
             f'''
-    Number of checkers,   {len(checkers)} ({' + '.join(cs)})
-    Number of solvers,    {len(solvers)}
-    Number of instances,  {len(instances)}
-    Number of proofs,     {len(solvers)} * {len(instances)} = {num_proofs}
-    Generated proofs,     {len(generated_proofs)} / {num_proofs} ({"%.2f" % (ratio_generated_proofs * 100)}%)
-    Proofs processed by all checkers,       {len(checked_proofs)} / {num_proofs} ({"%.2f" % (ratio_checked_proofs * 100)}%)
-    Proofs verified by all checkers,       {len(verified_proofs)} / {num_proofs} ({"%.2f" % (ratio_verified_proofs * 100)}%)
+benchmarks where the solver terminates and UNSATISFIABLE in the competition     {comp_proofs}
+    from which our solver run successfully  generates a proof                   {len(proofs)}
+        from which rate does not reject the proof                               {len(not_rejected_proofs)}
+                                from which verified                             {len(verified_proofs)}
+                                timeout                                         {len(out_of_time)}
+                                memout                                          {len(out_of_memory)}
+                                error                                           {len(error)}
     '''.strip(),
             file=summary)
 
@@ -133,6 +150,7 @@ def tmp():
 if __name__ == '__main__':
     # tmp()
     summary()
-    table_performance()
-    table_difference()
-    table_difference_accepted()
+    # TODO
+    # table_performance()
+    # table_difference()
+    # table_difference_accepted()

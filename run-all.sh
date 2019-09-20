@@ -1,11 +1,31 @@
 #!/bin/sh
 
-set -e -u
+set -e
 cd "$(dirname "$0")"
 
 make -C tools
 (cd tools/rate && cargo build --release)
 ./prepare-benchmarks-and-solvers.sh
+
+if [ "$1" = missing ]; then
+	missing='by-X-2-7-100/abcdsat_r18@default
+mchess_17/abcdsat_r18@default
+pals_lcr.8_overflow_false-unreach-call.ufo.UNBOUNDED.pals.c/abcdsat_r18@default
+pals_lcr.8_overflow_false-unreach-call.ufo.UNBOUNDED.pals.c/smallsat@default
+pals_lcr-var-start-time.6_true-unreach-call.ufo.UNBOUNDED.pals.c/GHackCOMSPS_drup@ghack_drup
+queen8_12.col.12/GHackCOMSPS_drup@ghack_drup
+sdiv17prop/smallsat@default
+T92.2.0/CaDiCaL@DONTUNZIP-fixed'
+	for a in $missing
+	do
+		rm -rf benchmarks/$a/{rate,rate-d,drat-trim/gratgen}
+	done
+	(
+		echo "$missing"
+		./combinations.sh | sed 's/$/DISCARD/'
+	) | ./run-instance-solver-combinations.sh
+	exit 0
+fi
 
 if [ -n "${1:+x}" ]; then
 	# run everything with rate first because we only care about verified benchmarks
