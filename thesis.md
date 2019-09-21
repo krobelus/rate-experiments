@@ -835,8 +835,8 @@ we narrow down the benchmarks:
 &\multicolumn{3}{l}{where the solver does not time out}                       & 3605 \\
 &&\multicolumn{2}{l}{from which \texttt{rate} does not reject the proof}      & 843  \\
 \midrule
-&&&\multicolumn{1}{l}{\texttt{rate} verifies the proof}                       & 835  \\
-&&&\multicolumn{1}{l}{\texttt{rate} times out}                                & 6    \\
+&&&\multicolumn{1}{l}{\texttt{rate} verifies the proof}                       & 839  \\
+&&&\multicolumn{1}{l}{\texttt{rate} times out}                                & 2    \\
 &&&\multicolumn{1}{l}{\texttt{rate} runs out of memory}                       & 1    \\
 &&&\multicolumn{1}{l}{\texttt{rate} reports an error}                         & 1    \\
 \bottomrule
