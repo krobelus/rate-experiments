@@ -827,18 +827,19 @@ under specified DRAT.
 
 Starting from the benchmarks where, according to the competition results,
 the solver successfully produced a proof of unsatisfiability, here is how
-we narrow down the benchmarks:
+many benchmarks where removed at each step:
 
-\begin{tabular}{p{.1337\textwidth}p{.1337\textwidth}p{.1337\textwidth}lr}
+\begin{tabular}{p{.15\textwidth}p{.15\textwidth}p{.15\textwidth}lr}
 \toprule
 \multicolumn{4}{l}{All benchmarks}                                            & 3653 \\
 &\multicolumn{3}{l}{where the solver does not time out}                       & 3605 \\
-&&\multicolumn{2}{l}{from which \texttt{rate} does not reject the proof}      & 843  \\
+&&\multicolumn{2}{l}{from which \texttt{rate} rejects the proof}              & 2762 \\
+&&\multicolumn{2}{l}{from which \texttt{rate} reports an error}               & 1    \\
+&&\multicolumn{2}{l}{selected benchmarks}                                     & 842  \\
 \midrule
 &&&\multicolumn{1}{l}{\texttt{rate} verifies the proof}                       & 839  \\
 &&&\multicolumn{1}{l}{\texttt{rate} times out}                                & 2    \\
 &&&\multicolumn{1}{l}{\texttt{rate} runs out of memory}                       & 1    \\
-&&&\multicolumn{1}{l}{\texttt{rate} reports an error}                         & 1    \\
 \bottomrule
 \end{tabular}
 
@@ -850,13 +851,13 @@ memory usage in megabytes (2^20^ bytes).
 
 On an individual instance two checkers might have different performance because
 of different propagation orders and, as a result, different clauses being added
-to the core. Instead we compare the distribution of the checkers' performance
-in Figure \ref{fig:cactus}.  From the underlying  long-tailed distribution it
-shows only the head where some differences emerge.  We conclude that `gratgen`
-is a bit faster, and `DRAT-trim` is slower than `rate`.  As expected,
-`rate`, and `rate -d` show roughly the same distribution of runtimes.
-Because `drat-trim` and `rate` use almost the same data structures they use
-roughly the same amount of memory, while `gratgen` needs a bit more.
+to the core. Instead we compare the distribution of the checkers' performance in
+Figure \ref{fig:cactus}. From the underlying long-tailed distribution it shows
+only the head where some differences emerge. We conclude that `gratgen` is a bit
+faster, and `DRAT-trim` is slower than `rate`. As expected, `rate`, and `rate
+-d` show roughly the same distribution of runtimes. Because `drat-trim` and
+`rate` use almost the same data structures they use roughly the same amount of
+memory, while `gratgen` needs a bit more.
 
 For a more detailled view, we compare each checker to `rate-d` on individual
 instances in Figure \ref{fig:cross}: we see that `rate` and `rate-d` behave
@@ -880,11 +881,11 @@ proof instance.\label{fig:cross}}
 5.2 Overhead of Reason Deletions
 --------------------------------
 
-Handling reason deletions requires extra time and memory.  Figure
-@fig:correlation-reason-deletions shows the overhead of `rate` compared to
-`rate-d` --- among our benchmarks runtime at most doubles.  Currently, `rate`
-incurs these extra costs also for proofs that contain no unique reason
-deletions --- these instances are shown with red markers.
+Handling reason deletions requires extra time and memory. Figure
+@fig:correlation-reason-deletions shows the number of reason deletions and the
+overhead of `rate` compared to `rate-d` --- among our benchmarks runtime at most
+doubles. Currently, `rate` incurs these extra costs also for proofs that contain
+no unique reason deletions --- these instances are shown with red markers.
 
 ![The number of reason deletions compared to the runtime and
 memory overhead of checking specified DRAT over operational
@@ -893,28 +894,38 @@ DRAT.](p/correlation-reason-deletions.pdf){#fig:correlation-reason-deletions}
 6. Conclusion
 =============
 
-In [Section 3][3. DRAT Proofs without Deletions of Unique Reason Clauses] we
-have explained why operational DRAT is required to verify `DRUPMiniSat`-based
-solvers' proofs.  We have proposed patches for these solvers to create
-proofs that are correct under either flavor and do not require ignoring
-unit deletions.
+State-of-the-art SAT solvers produce proofs with deletions of unique reason
+clause. These proofs are often incorrect under specified DRAT. Under operational
+DRAT they are correct because those deletions will effectively be removed from
+the proof. In [Section 3][3. DRAT Proofs without Deletions of Unique Reason
+Clauses] we have explained how `DRUPMiniSat`-based solvers produce proofs with
+reason deletions and we have proposed patches to avoid them, removing the need
+to ignore some deletions to verify their proofs.
 
-Specified DRAT is necessary to verify solvers' inprocessing steps that
-employ deletions of unique reason clauses [@rebola2018two].  Our initial
-research question was whether specified DRAT can be checked as efficiently as
-operational DRAT.  To answer this, we have implemented an efficient checker,
-`rate`, that supports both specified and operational DRAT.  We provide
-experimental results suggesting that that the cost for specified DRAT is,
-on average, the same but an excessive number of reason deletions can make
-it significantly more costly.
+Specified DRAT is necessary to verify solvers' inprocessing steps that employ
+deletions of unique reason clauses [@rebola2018two]. Our initial research
+question was whether specified DRAT can be checked as efficiently as operational
+DRAT. Previous work has yielded an efficient algorithm but no competitive
+checker. We have implemented the first checker of state-of-the-art performance
+that supports both specified and operational DRAT. We provide experimental
+results suggesting that that the cost for specified DRAT is, on average, the
+same but an excessive number of reason deletions tends to make it significantly
+more costly.
 
-Furthermore, specified DRAT features the advantage that the accumulated
-formula is easy to compute without performing unit propagation.  This enables
-us to produce SICK certificates, which are small, efficiently checkable
-witnesses of a proof's incorrectness.  They report which proof step failed,
-which can be used to detect bugs in checkers and pinpoint bugs in solvers.
-We provide a tool, `sick-check` to check SICK witnesses.
-
+The algorithm to check specified DRAT is fairly convoluted and we have made lots
+of programming errors trying to implement to be efficient. Our checker outputs
+LRAT and GRAT certificates that can be verified by a formally verified checker,
+giving some confidence that our checker gave the right answer. However, many
+proofs are rejected by our checker in specifed mode. We needed a way to trust
+those incorrectness results. Since for specified DRAT the accumulated formula
+can be computed without performing unit propagation, we implemented a tool,
+`sick-check` that simply computes the accumulated formula up to the failed proof
+step and then checks that step without doing propagation. There is an option to
+`rate` to produce a small certificate of incorrectness in our SICK format when a
+proof is rejected. This certificate can be read by `sick-check` which
+efficiently verifies that the problematic proof step is indeed incorrect. These
+certificates can be used to detect bugs in checkers (we have found some in
+`rate`) and pinpoint bugs in solvers.
 
 7. Future Work
 ==============
