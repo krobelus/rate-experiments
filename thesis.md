@@ -389,11 +389,13 @@ core-first propagation the first falsified clause will always be found using
 only clauses that are already in the core if possible, so in this case it
 will choose $x$ or $\overline{x}$.
 
-\paragraph{Reason Deletions} Under operational DRAT unit deletions are
+\paragraph{Reason Deletions} Under operational DRAT, unit deletions are
 ignored. Only proofs with unique reason deletions have different semantics
-under specified and operational DRAT.  To detect unique reason deletions,
-it is necessary to implement specified DRAT, as it is to verify inprocessing
-steps with reason deletions, A reason is a a clause that was used in some
+under specified and operational DRAT, because only those deletions alter
+the shared UP-model. State-of-the-art DRAT checkers do not implement a way
+to detect unique reason deletions, but they can emit a warning whenever a
+unit clause is deleted.  To detect unique reason deletions, it is necessary
+to implement specified DRAT. A reason is a a clause that was used in some
 propagation sequence to compute a literal $l$ in the trail. When a unique
 reason clause is deleted, $l$ is no longer implied by unit propagation and
 needs to be removed from the trail. This means that it is not possible anymore
@@ -404,6 +406,12 @@ This information can be used in the backward pass to restore the state
 of the trail to be exactly the same as in the forward pass for each proof
 step, which is what the algorithm from [@RebolaCruz2018] does along other
 non-trivial techniques to maintain the watch invariants.
+
+\paragraph{Reason Deletions in Inprocessing Steps} Assume a solver performs an
+inprocessing step that, for whatever reason, introduces a temporary clause
+that is unit and deleted before finishing the inprocessing step. Under
+operational DRAT the clause would linger and thus the proof is interpreted
+in a different way than intended.
 
 3. DRAT Proofs without Deletions of Unique Reason Clauses
 =========================================================
@@ -892,19 +900,21 @@ proofs that are correct under either flavor and do not require ignoring
 unit deletions.
 
 Specified DRAT is necessary to verify solvers' inprocessing steps that
-employ deletions of unique reason clauses [@rebola2018two].  We implement an
-efficient checker, `rate`, that supports both specified and operational DRAT.
-Furthermore, specified DRAT features the advantage that the accumulated formula
-is easy to compute without performing unit propagation.  This enables us to
-produce SICK certificates which are small, efficiently checkable witnesses
-of a proof's incorrectness.  They report which proof step failed, which can
-be used to detect bugs in checkers and pinpoint bugs in solvers.  We provide
-a tool, `sick-check` to check SICK witnesses.
+employ deletions of unique reason clauses [@rebola2018two].  Our initial
+research question was whether specified DRAT can be checked as efficiently as
+operational DRAT.  To answer this, we have implemented an efficient checker,
+`rate`, that supports both specified and operational DRAT.  We provide
+experimental results suggesting that that the cost for specified DRAT is,
+on average, the same but an excessive number of reason deletions can make
+it significantly more costly.
 
-Our initial research question was whether specified DRAT can be checked
-as efficiently as operational DRAT.  Based on our benchmarks we provided
-evidence that the cost for specified DRAT is, on average, the same but an
-excessive number of reason deletions can make it significantly more costly.
+Furthermore, specified DRAT features the advantage that the accumulated
+formula is easy to compute without performing unit propagation.  This enables
+us to produce SICK certificates, which are small, efficiently checkable
+witnesses of a proof's incorrectness.  They report which proof step failed,
+which can be used to detect bugs in checkers and pinpoint bugs in solvers.
+We provide a tool, `sick-check` to check SICK witnesses.
+
 
 7. Future Work
 ==============
