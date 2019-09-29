@@ -5,10 +5,6 @@ date: \today
 csl: ieee.csl
 link-citations: true
 documentclass: report
-title: |
-        DRAT Proofs Without Deletions of Unique Reason Clauses 
-            &
-        Complete and Efficient DRAT Proof-Checking
 header-includes: |
         \usepackage{todonotes}
         \usepackage{longtable}
@@ -16,10 +12,11 @@ header-includes: |
         \title{
             DRAT Proofs Without Deletions of \\ Unique Reason Clauses \\
             \&\\
-            Complete and Efficient \\ DRAT Proof-Checking
+            Complete and Efficient \\ DRAT Proof Checking
         }
-        \renewcommand{\title}[1]{}
 ---
+
+\maketitle
 
 ::: {.abstract}
 
@@ -125,7 +122,7 @@ SAT solving, proofs of unsatisfiability and proof checking, including the
 optimization challenges of specified DRAT checking.  Our first contribution,
 a proposal on how to change solvers to produce unambiguously correct proofs,
 can be found in [Section 3][3. DRAT Proofs without Deletions of Unique Reason
-Clauses].  [Section 4][4. Complete and Efficient DRAT Proof-Checking] concerns
+Clauses].  [Section 4][4. Complete and Efficient DRAT Proof Checking] concerns
 the efficient implementation of a specified DRAT checker:  after briefly
 discussing other checkers we present our implementation and describe the
 SICK format for certificates of proof incorrectness.  Experimental results
@@ -495,7 +492,7 @@ additions and deletions, also at most one each per variable, which is small
 compared to the rest of a proof.  The patches can be easily adapted to other
 `DRUPMiniSat`-based solvers.
 
-4. Complete and Efficient DRAT Proof-Checking
+4. Complete and Efficient DRAT Proof Checking
 ========================================
 
 We implement a checker to compare the costs of checking specified and
