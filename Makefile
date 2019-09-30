@@ -16,7 +16,7 @@ build-dependencies:
 
 pandoc := pandoc --filter pandoc-fignos --filter pandoc-citeproc --filter pandoc-placetable
 
-thesis.pdf: thesis.md $(tables) $(plots) Makefile
+thesis.pdf: thesis.md $(tables) $(plots) Makefile ieee.csl references.bib
 	$(pandoc) $< -o $@
 # thesis.markdown: thesis.md $(tables) $(plots) Makefile
 # 	$(pandoc) $< -o $@ -t gfm

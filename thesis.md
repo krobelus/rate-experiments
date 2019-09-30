@@ -2,7 +2,6 @@
 author: Johannes Altmanninger
 bibliography: references.bib
 date: \today
-csl: ieee.csl
 link-citations: true
 documentclass: report
 header-includes: |
@@ -14,6 +13,7 @@ header-includes: |
             \&\\
             Complete and Efficient \\ DRAT Proof Checking
         }
+csl: ieee.csl
 ---
 
 \maketitle
@@ -164,12 +164,17 @@ $l$ is implied by *unit propagation* over $F$ whenever there is a finite
 each $1 \leq i \leq n$ there is a literal $l_i \in C_i$ with $C_i \setminus
 \{l_i\} \subseteq \{\overline{l_1},\dots,\overline{l_{i-1}}\}$.  We call $C_i$
 the *reason clause* for $l_i$ with respect to this propagation sequence.
-The *shared UP-model* of $F$ is the assignment consisting of all literals
-implied by unit propagation [@DBLP:conf/sat/Rebola-PardoB18]. It is a subset
-of any model. If unit propagation implies two complementing literals, the
-shared UP-model is empty.  Clause $C$ is called a *unique reason clause*
-in formula $F$ if the shared UP-model of $F \setminus \{C\}$ is smaller than
-the shared UP-model of $F$.
+
+An assignment $I$ is a *unit propagation model* (UP-model) of $F$ when for
+each clause $C \in F$, $I$ either satisfies $C$ or there are at least two
+literals in $C$ that are unassigned in $I$ [@DBLP:conf/sat/Rebola-PardoB18].
+Formula $F$ is UP-satisfiable if it has a UP-model. If conflicting literals
+are implied by unit propagation, or the formula contains the empty clause,
+it is UP-unsatisfiable. If $F$ is UP-satisfiable, its *shared UP-model* is the
+intersection of all UP-models. It is the assignment consisting of all literals
+implied by unit propagation in $F$. It is a subset of any model. Clause $C$
+is called a *unique reason clause* in formula $F$ if the shared UP-model of
+$F \setminus \{C\}$ is strictly smaller than the shared UP-model of $F$.
 
 2.1 SAT Solving
 ---------------
@@ -177,19 +182,18 @@ the shared UP-model of $F$.
 A SAT solver takes as input a formula and finds a model if the formula
 is satisfiable. Otherwise, the solver provides a proof that the formula is
 unsatisfiable.  While searching for a model, a solver maintains an assignment
-along with the order in which the literals were assigned.  We call this
-data structure the *trail*.  SAT solvers search through the space of all
-possible assignments.  They make *assumptions*, virtually adding clauses of
-size one to the formula temporarily.  This triggers unit propagation, adding
-more literals to the trail.  These literals are logically implied by the
-formula plus the current assumptions. Assignments that falsify the literals
-in the trail are pruned from the search space. Additionally, solvers may use
-inprocessing techniques to modify the formula without changing satisfiability.
-Once the trail falsifies a clause, the solver has derived the unsatisfiable
-empty clause and therefore established unsatisfiability of the current formula
-plus assumptions.  If there are assumptions, some of them are undone and the
-solver resumes search.  Otherwise, if there are no assumptions, the input
-formula is unsatisfiable.
+along with the order in which the literals were assigned.  We call this data
+structure the *trail*.  SAT solvers search through the space of all possible
+assignments.  They make *assumptions*, virtually adding clauses of size one to
+the formula temporarily.  This triggers unit propagation, adding more literals
+to the trail.  These literals are logically implied by the formula plus the
+current assumptions. Assignments that falsify the literals in the trail are
+pruned from the search space. Additionally, solvers may use inprocessing
+techniques to modify the formula without changing satisfiability.  Once the
+formula is UP-unsatisifiable, the solver has established unsatisfiability
+of the current formula plus assumptions.  If there are assumptions, some of
+them are undone and the solver resumes search.  Otherwise, if there are no
+assumptions, the input formula is unsatisfiable.
 
 \paragraph{Efficient Implementation of Unit Propagation} To efficiently keep
 track of which clauses can become unit, competitive solvers and checkers
@@ -222,16 +226,15 @@ is unit, which triggers propagation of $y$. Only $\overline{y}z\overline{x}$
 is watched on $\overline{y}$, which assigns unit $z$ and causes no further
 propagation. Clause $xy$ is never visited during propagation.
 
-\paragraph{CDCL} Predominant SAT solvers implement Conflict Driven
-Clause Learning (CDCL) [@DBLP:series/faia/SilvaLM09] which is based on
-the following principle: whenever some clause in the formula is falsified
-with respect to the trail, the current set of assumptions makes the formula
-unsatisfiable. Therefore a subset of the assumptions is undone and a *conflict
-clause* is learned --- it is added to the formula to prevent the solver from
-revisiting those wrong assumptions.  As the number of clauses increases,
-so does memory usage, and the time spent on unit propagation. Because
-of this, learned clauses are regularly deleted from the formula in a
-satisfiability-preserving way if they are not considered useful.
+\paragraph{CDCL} Predominant SAT solvers implement Conflict Driven Clause
+Learning (CDCL) [@DBLP:series/faia/SilvaLM09] which is based on the following
+principle: whenever the formula plus assumptions is UP-unsatisfiable, a
+subset of the assumptions is undone and a *conflict clause* is learned ---
+it is added to the formula to prevent the solver from revisiting those wrong
+assumptions.  As the number of clauses increases, so does memory usage,
+and the time spent on unit propagation. Because of this, learned clauses
+are regularly deleted from the formula in a satisfiability-preserving way
+if they are not considered useful.
 
 2.2 Proofs of SAT Solvers' Unsatisfiability Results
 ---------------------------------------------------
@@ -242,11 +245,13 @@ formula $F$ if $F$ and $F \cup \{C\}$ are satisfiability equivalent
 with different levels of expressivity and computational costs.
 
 - *RUP* --- a clause $C$ is a *reverse unit propagation* (RUP) inference
-in formula $F$ if the shared UP-model of $F' := F \cup \{ \overline{l}
-\,|\, l \in C \}$ falsifies a clause in $F$ [@DBLP:conf/date/GoldbergN03].
-To compute whether $C$ is RUP, the negated literals in $C$ are added as
-assumptions and propagated until a clause is falsified by the trail.  A clause
-that is RUP in $F$ is logical consequence of $F$ [@DBLP:conf/isaim/Gelder08].
+in formula $F$ if $F' := F \cup \{ \overline{l} \,|\, l \in C \}$ is
+UP-unsatisfiable [@DBLP:conf/date/GoldbergN03].  To compute whether $C$ is RUP,
+the negated literals in $C$ are added as assumptions and propagated until to
+determine whether the formula is UP-satisfiable. If the trail is a UP-model,
+$C$ is not RUP. Otherwise, if there are conflicting literals implied by unit
+propagation there is no UP-model and $C$ is RUP.  A clause that is RUP in $F$
+is logical consequence of $F$ [@DBLP:conf/isaim/Gelder08].
 
 - *RAT* --- a clause $C$ is a *resolution asymmetric tautology* (RAT)
 [@DBLP:conf/cade/JarvisaloHB12] on some literal $l \in C$ with respect
@@ -260,8 +265,8 @@ yet adding it to $F$ preserves satisfiability. RAT inference is non-monotonic.
 
 \paragraph{DRAT Proofs} Proofs based on RUP alone are not expressive
 enough to simulate all inprocessing techniques in state-of-the-art SAT
-solvers [DBLP:conf/cade/HeuleHW13]. Because of this, the more powerful
-criterion RAT is used today [DBLP:conf/cade/HeuleHW13].  A DRAT proof
+solvers [@DBLP:conf/cade/HeuleHW13]. Because of this, the more powerful
+criterion RAT is used today [@DBLP:conf/cade/HeuleHW13].  A DRAT proof
 (*delete resolution asymmetric tautology*) [@DBLP:conf/sat/WetzlerHH14]
 [@DBLP:journals/corr/Heule16] is a sequence of lemmas (clause introductions)
 and deletions, which can be applied to a formula to simulate the clause
@@ -269,11 +274,10 @@ introductions, clause deletions and inprocessing steps that the solver
 performed. The *accumulated formula* at each proof step is the result
 of applying all prior proof steps to the input formula.  Based on the
 accumulated formula, the checker can compute the shared UP-model at each
-step which eventually falsifies some clause, just like when the solver
-established unsatisfiablity of the formula. Every lemma in a correct DRAT
-proof is a RUP or RAT inference with respect to the accumulated formula.
-In practice, most lemmas are RUP inferences, so a checker first tries to
-check RUP and only if that fails, falls back to RAT.
+step to determine UP-satisfiability. Every lemma in a correct DRAT proof is a
+RUP or RAT inference with respect to the accumulated formula.  In practice,
+most lemmas are RUP inferences, so a checker first tries to check RUP and
+only if that fails, falls back to RAT.
 
 In *specified DRAT*, checking is performed with respect to the accumulated
 formula, while *operational DRAT* uses an *adjusted accumulated formula* that
@@ -301,11 +305,12 @@ DRAT checker is remedied by making the DRAT checker output an annotated proof
 in the LRAT format [@DBLP:conf/cade/Cruz-FilipeHHKS17]. The LRAT proof can be
 checked by a formally verified checker without unit propagation, making sure
 that the formula formula is indeed unsatisfiable [@DBLP:conf/itp/HeuleHKW17].
-Most solvers can only generate DRAT proofs but DRAT checkers can be used
-to produce an LRAT proof from a DRAT proof. The LRAT proof resembles DRAT,
-but it includes clause hints to guide unit propagation: for each resolution
-candidate, it contains a propagation sequence that falsifies some clause to
-show that the resolvent is a RUP inference.
+Most solvers can only generate DRAT proofs but DRAT checkers can be used to
+produce an LRAT proof from a DRAT proof. The LRAT proof resembles DRAT, but it
+includes clause hints to guide unit propagation: for each resolution candidate,
+the resolvent is shown to be a RUP inference by giving a propagation sequence
+that shows UP-unsatisfiability of the formula with the negated literals in
+the resolvent.
 
 2.3 Proof Checking
 ------------------
@@ -318,59 +323,49 @@ formal specification.
 
 The naïve way to verify that a proof is correct consists of performing
 each instruction in the proof from the first to the last one, while checking
-each lemma.
-
-To check an inference, the checker needs to compute the shared UP-model of
-the accumulated formula. This is stored in the trail.  Instead of recomputing
-the shared UP-model from scratch at each proof step, the trail is modified
-incrementally: whenever a clause is added to the formula, the propagation
-routine adds the missing literals to the trail. When a reason clause is
-deleted, some literals may be removed.
+each lemma.  To check an inference, the checker needs to compute the shared
+UP-model of the accumulated formula. This is stored in the trail.  Instead of
+recomputing the shared UP-model from scratch at each proof step, the trail
+is modified incrementally: whenever a clause is added to the formula, the
+propagation routine adds the missing literals to the trail. When a reason
+clause is deleted, some literals may be removed.
 
 \paragraph{Backwards Checking} During search, SAT solvers cannot know which
 learned clauses are useful in a proof, so they add all of them as lemmas. This
 means that many lemmas in a proof might not be necessary.  *Backwards checking*
 [@DBLP:conf/fmcad/HeuleHW13] avoids checking superfluous lemmas by only
 checking *core* lemmas --- lemmas that are part of the *unsatisfiable
-core*, an unsatisfiable subset of an unsatisfiable formula.  Starting from
-the falsified clause, the proof is traversed backwards.  Initially, the
-falsified clause is added to the core.  Each core lemma is checked. Every
-lemma that is used in some propagation sequence to derive some other lemma
-is added to the core as well.  Clauses and lemmas that are not in the core
-do not influence the unsatisfiability result and are virtually dropped from
-the proof.  Tools like `drat-trim` can output a *trimmed* proof that only
-contains core lemmas in DRAT or LRAT format.
+core*, an unsatisfiable subset of an unsatisfiable formula.  Initially, the
+clauses from the propagation sequence that establishes UP-unsatisfiability
+of the formula is added to the core.  Then the proof is processed backwards;
+only core lemmas are checked.  Every lemma that is used in some propagation
+sequence to derive another lemma is added to the core as well.  Clauses and
+lemmas that are not in the core do not influence the unsatisfiability result
+and are virtually dropped from the proof.  Tools like `drat-trim` can output
+a *trimmed* proof that only contains core lemmas in DRAT or LRAT format.
 
-Backwards checking can be implemented using two passes over the proof: a
-forward pass that merely performs unit propagation after each proof step
-[@DBLP:conf/fmcad/Rebola-PardoC18] until some clause is falsified, and a
-backward pass that checks lemmas as required.  The forward pass enables the
-checker to record the state of the trail at each proof step and efficiently
-restore it during the backward pass. If there are no deletions of unique
-reason clauses, the shared UP-model grows monotonically, and the trail can
-be restored by simply truncating it.
+Backwards checking can be implemented using two passes over the proof:
+a forward pass that merely performs unit propagation after each proof step
+[@DBLP:conf/fmcad/Rebola-PardoC18] until UP-unsatisfiability is established,
+and a backward pass that checks lemmas as required.  The forward pass
+enables the checker to record the state of the trail at each proof step and
+efficiently restore it during the backward pass. If there are no deletions
+of unique reason clauses, the shared UP-model grows monotonically, and the
+trail can be restored by simply truncating it.
 
-TODO Here is a small example for backwards checking: let $F = \{x, \overline{x}\}$
-be an unsatisfiable formula with a proof with two lemmas $(\textbf{add } y,
-\textbf{add } \square)$, where $\square$ is the empty clause.  For simplicity,
-we assume that checking is not short-cut as soon as a clause is falsified.
-The forward pass applies both lemmas in the proof, which makes the accumulated
-formula $\{x, \overline{x}, y, \square\}$ and its shared UP-model is
-$\{x, \overline{x}, y\}$.  The first step is to check that $\square$ is
-a RUP inference.  This is done by removing it from the formula, and then
-performing the RUP check: the reverse literals in $\square$ are added
-as assumptions and propagated.  This is a no-op here since the $\square$
-contains no literals. After these propagations, to show that $\square$ is
-RUP we need to find a clause that is falsified by the trail.  In fact, there
-are two clause: $x$ and $\overline{x}$, so we know that $\square$ is a RUP
-inference on the formula $\{x, \overline{x}, y\}$.  Then we need to perform
-conflict analysis to add to the core a falsified clause, and all clauses that
-are reasons for falsifying that clause.  Assuming we pick $\overline{x}$
-as falsified clause, then the reason for falsifying $\overline{x}$ is the
-clause $x$.  Hence the core is $\{\overline{x}, x\}$.  As $y$ is not in
-the core, we know that it did not contribute to a RUP inference at any step
-after its introduction. Therefore it is virtually deleted from the proof,
-and the redundancy check is not performed.
+Here is an example for backwards checking: let $F = \{xyz,
+xy\overline{z}, \overline{x}y, x\overline{y}, \overline{x}\overline{y},
+x\overline{z}\}$ be an unsatisfiable formula with a proof
+consisting of two lemmas $(\textbf{add } xy, \textbf{add } x)$. In the
+forward pass both lemmas are applied, then the accumulated formula is
+UP-unsatisifiable.  To derive that we propagate clauses $x$, $\overline{x}y$
+and $\overline{x}\overline{y}$ which are added to the core.  Then backwards
+checking can start: first we check lemma $x$ because it is in the core:
+it is RUP in $F \cup \{xy\}$ since $F \cup \{xy\} \cup \{\overline{x}\}$ is
+UP-unsatisfiable.  We show this by propagating the clauses $x\overline{y}$,
+$xyz$ and $xy\overline{z}$, which are then added to the core. Subsequently we
+can skip checking lemma $xy$ because it is not in the core; it is virtually
+deleted from the proof.
 
 \paragraph{Core-first Unit Propagation} To keep the core small and
 reduce checking costs, core-first unit propagation was introduced
@@ -382,24 +377,17 @@ alternating phases:
    add this literal to the trail and go to step 1, which will propagate this
    literal while only considering core clauses. Otherwise, terminate.
 
-This results in a minimum of clauses being added to the core because whenever a
-falsified clause can be found without adding a new clause to the core it will
-be found by core-first unit propagation. This generally makes checking faster
-because the amount of visited clauses while propagating decreases on average.
+This results in a minimum of clauses being added to the core because whenever
+UP-unsatisfiability can be shown without adding a new clause to the core,
+this will be done by core-first unit propagation. This generally makes
+checking faster because the amount of visited clauses while propagating
+decreases on average.
 
-Consider a similar example as above: let $F = \{x, \overline{x},
-\overline{x}y\}$ be an unsatisfiable formula with proof $(\textbf{add }xy,
-\textbf{add }\square)$.  To make such a small example possible we assume
-that, even though backwards checking is used, all lemmas are checked and
-not only core lemmas.  As above, after performing a successful RUP check
-of $\square$, the core has two clauses $\{x, \overline{x}\}$.  For checking
-lemma $xy$, its reverse literals $\overline{x}$ and $\overline{y}$ are added
-to the formula as assumptions and propagated. Then the trail contains $\{x,
-\overline{x}, \overline{y}\}$.  This means that the clause $\overline{x}y$
-in the formula is falsified and could be added to the core.  However, with
-core-first propagation the first falsified clause will always be found using
-only clauses that are already in the core if possible, so in this case it
-will choose $x$ or $\overline{x}$.
+Consider the same example as above but assume we do check lemma $xy$, even
+though it is not in the core. To show that $xy$ is RUP in $F$ we show that $F
+\cup \{\overline{x}, \overline{y}\}$ is UP-unsatisfiable.  This can be done
+by propagating clauses $xyz$ and $x\overline{z}$.  However, $x\overline{z}$
+is not in the core, so core-first propagation will rather use $xy\overline{z}$.
 
 \paragraph{Reason Deletions} Under operational DRAT, unit deletions are
 ignored. Only proofs with unique reason deletions have different semantics
@@ -421,7 +409,7 @@ which is what the algorithm from [@DBLP:conf/fmcad/Rebola-PardoC18] does
 along other non-trivial routines to maintain the watch invariants.
 
 \paragraph{Reason Deletions in Inprocessing Steps} Some inprocessing
-techniques introduce or delete variables [DBLP:conf/sat/Rebola-PardoB18].
+techniques introduce or delete variables [@DBLP:conf/sat/Rebola-PardoB18].
 A deletion of a variable means that both of its literals are deleted from
 all clauses.  A deletion of literal $l$ from a clause $C$ is modelled in
 the proof by first adding $C \setminus \{l\}$ and subsequently deleting $C$.
@@ -431,7 +419,7 @@ reused by being introduced by another inprocessing step.
 
 Inprocessing steps for XOR reasoning [@DBLP:conf/jelia/PhilippR16] and
 symmetry breaking [@DBLP:conf/cade/HeuleHW15] are supported by proof fragments
-generated by hard-coded routines [DBLP:conf/sat/Rebola-PardoB18].  It may
+generated by hard-coded routines [@DBLP:conf/sat/Rebola-PardoB18].  It may
 not be easy or efficient for such routines to produce such proof fragments
 without reason deletions.  Under operational DRAT the deleted reason clauses
 would linger, thus the proof is checked in a different way than intended.
@@ -673,20 +661,18 @@ many proofs are rejected by our checker for specified DRAT.  To trust those
 results, we want to independently verify the incorrectness of such proofs.
 
 A DRAT proof is incorrect if any of its lemmas is not a RUP or RAT inference.
-To show that a lemma $C$ is not RUP in the accumulated formula $F$,
-it suffices to show that the shared UP-model of $F \cup \{ \overline{l}
-\,|\, l \in C \}$ does not falsify any clause in $F$.  On top of that,
-to show that $C$ is not RAT, it suffices to show that any resolvent with
-$C$ is not RUP.  For example, consider formula $F = \{xy, \overline{x}y,
-x\overline{y}\}$ and lemma $\overline{x}\overline{y}$ which is neither RUP
-nor RAT. To refute RUP for lemma $\overline{x}\overline{y}$ we check that
-the shared UP-model of $F \cup \{xy\}$, which is $\{xy\}$, does not falsify
-any clause in $F$.  To refute RAT for $\overline{x}\overline{y}$ on pivot
-$\overline{x}$ we check that some resolvent on $\overline{x}$ is not RUP.
-The first resolvent $y\overline{y}$ is a tautology and thus trivially RUP
-but the second resolvent $\overline{y}$ is not: the shared UP-model of $F
-\cup \{y\}$ is $\{xy\}$ which does not falsify any clause in $F$. The same
-thing can be shown for the resolvents on the other pivot $\overline{y}$.
+To show that a lemma $C$ is not RUP in the accumulated formula $F$, it suffices
+to show that $F \cup \{ \overline{l} \,|\, l \in C \}$ is UP-satisfiable.
+On top of that, to show that $C$ is not RAT, it suffices to show that any
+resolvent with $C$ is not RUP.  For example, consider formula $F = \{xy,
+\overline{x}y, x\overline{y}\}$ and lemma $\overline{x}\overline{y}$ which
+is neither RUP nor RAT. To refute RUP for lemma $\overline{x}\overline{y}$
+we find a UP-model of $F \cup \{xy\}$, for example $\{xy\}$.  To refute RAT
+for $\overline{x}\overline{y}$ on pivot $\overline{x}$ we check that some
+resolvent on $\overline{x}$ is not RUP.  The first resolvent $y\overline{y}$
+is a tautology and thus trivially RUP but the second resolvent $\overline{y}$
+is not: $F \cup \{y\}$ has a UP-model $\{xy\}$. The same thing can be shown
+for the resolvents on the other pivot $\overline{y}$.
 
 Since our checker already computes the shared UP-models for each RUP check,
 we can output those and check the inference with an independent tool.
@@ -953,21 +939,18 @@ DRAT. We provide experimental results suggesting that that the cost for
 specified DRAT is, on average, the same but a high number of reason deletions
 may make it significantly more costly.
 
-The efficient algorithm to check specified DRAT further complicates the already
-error-prone two-watched literal scheme.  Our checker implementation outputs
-LRAT and GRAT certificates that can be verified by a formally verified checker,
-giving some confidence that our checker gave the right answer. However, many
-proofs are rejected by our checker in specified mode. We needed a way to
-trust those incorrectness results. Since for specified DRAT the accumulated
-formula can be computed without performing unit propagation, we implemented
-a tool, `sick-check` that simply computes the accumulated formula up to the
-failed proof step and then checks that step without doing propagation. There
-is an option to `rate` to produce a small certificate of incorrectness in
-our SICK format when a proof is rejected. This certificate can be read by
-`sick-check` which efficiently verifies that the problematic proof step is
-indeed incorrect. These certificates can be used to detect bugs in checkers
-(we have found some in `rate`) and pinpoint bugs in solvers.
-TODO
+The efficient algorithm to check specified DRAT further complicates the
+two-watched literal scheme whose implementation is already quite error-prone.
+Our checker implementation is able to output LRAT and GRAT certificates
+that can be verified by a formally verified checker, giving some confidence
+that `rate` gave the right answer. However, many proofs are rejected by
+`rate`. We needed a way to trust those incorrectness results.  We extended
+the previously unpublished SICK format for proof incorrectness certificates
+and implemented a tool, `sick-check` that verifies those certificates,
+independent of `rate` and also much simpler than `rate`: `sick-check` merely
+computes the accumulated formula up to the failed proof step and then checks
+that step without doing propagation. These certificates can be used to detect
+bugs in checkers (we have found some in `rate`) and pinpoint bugs in solvers.
 
 7. Future Work
 ==============
