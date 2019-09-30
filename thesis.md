@@ -60,9 +60,9 @@ are required to give proofs of unsatisfiability in the DRAT proof format
 [@DBLP:journals/stvr/HeuleHW14]. A DRAT proof is the trace of a solver run,
 containing information on which clauses are added and deleted.
 
-State-of-the-art proof checkers ignore deletions of some clauses that are
-referred to as *unit* [@DBLP:conf/sat/Rebola-PardoB18].  As a result, the
-checkers are not faithful to the specification of DRAT proofs.  The original
+State-of-the-art proof checkers ignore deletions of some clauses called
+*unit clauses* [@DBLP:conf/sat/Rebola-PardoB18].  As a result, the checkers
+are not faithful to the specification of DRAT proofs.  The original
 definition of the proof format is referred to as *specified* DRAT and the
 one that is implemented by state-of-the-art checkers as *operational* DRAT
 [@DBLP:conf/sat/Rebola-PardoB18]. The classes of proofs verified by checkers
@@ -168,7 +168,7 @@ the *reason clause* for $l_i$ with respect to this propagation sequence.
 An assignment $I$ is a *unit propagation model* (UP-model) of $F$ when for
 each clause $C \in F$, $I$ either satisfies $C$ or there are at least two
 literals in $C$ that are unassigned in $I$ [@DBLP:conf/sat/Rebola-PardoB18].
-Formula $F$ is UP-satisfiable if it has a UP-model. If conflicting literals
+Formula $F$ is UP-satisfiable if it has a UP-model. If complementary literals
 are implied by unit propagation, or the formula contains the empty clause,
 it is UP-unsatisfiable. If $F$ is UP-satisfiable, its *shared UP-model* is the
 intersection of all UP-models. It is the assignment consisting of all literals
@@ -182,18 +182,18 @@ $F \setminus \{C\}$ is strictly smaller than the shared UP-model of $F$.
 A SAT solver takes as input a formula and finds a model if the formula
 is satisfiable. Otherwise, the solver provides a proof that the formula is
 unsatisfiable.  While searching for a model, a solver maintains an assignment
-along with the order in which the literals were assigned.  We call this data
-structure the *trail*.  SAT solvers search through the space of all possible
-assignments.  They make *assumptions*, virtually adding clauses of size one to
-the formula temporarily.  This triggers unit propagation, adding more literals
-to the trail.  These literals are logically implied by the formula plus the
-current assumptions. Assignments that falsify the literals in the trail are
-pruned from the search space. Additionally, solvers may use inprocessing
-techniques to modify the formula without changing satisfiability.  Once the
-formula is UP-unsatisifiable, the solver has established unsatisfiability
-of the current formula plus assumptions.  If there are assumptions, some of
-them are undone and the solver resumes search.  Otherwise, if there are no
-assumptions, the input formula is unsatisfiable.
+along with the order in which the literals were assigned.  We call this
+data structure the *trail*.  SAT solvers search through the space of all
+possible assignments.  They make *assumptions*, virtually adding clauses of
+size one to the formula temporarily.  This triggers unit propagation, adding
+more literals to the trail.  These literals are logically implied by the
+formula plus the current assumptions. Assignments that falsify the literals
+in the trail are pruned from the search space. Additionally, solvers may use
+inprocessing techniques to modify the formula without changing satisfiability.
+Once the trail falsifies a clause, the (UP-)unsatisfiability of the formula
+plus assumptions is established.  If there are assumptions, some of them are
+undone and the solver resumes search.  Otherwise, if there are no assumptions,
+the input formula is unsatisfiable.
 
 \paragraph{Efficient Implementation of Unit Propagation} To efficiently keep
 track of which clauses can become unit, competitive solvers and checkers
@@ -246,12 +246,12 @@ with different levels of expressivity and computational costs.
 
 - *RUP* --- a clause $C$ is a *reverse unit propagation* (RUP) inference
 in formula $F$ if $F' := F \cup \{ \overline{l} \,|\, l \in C \}$ is
-UP-unsatisfiable [@DBLP:conf/date/GoldbergN03].  To compute whether $C$ is RUP,
-the negated literals in $C$ are added as assumptions and propagated until to
-determine whether the formula is UP-satisfiable. If the trail is a UP-model,
-$C$ is not RUP. Otherwise, if there are conflicting literals implied by unit
-propagation there is no UP-model and $C$ is RUP.  A clause that is RUP in $F$
-is logical consequence of $F$ [@DBLP:conf/isaim/Gelder08].
+UP-unsatisfiable [@DBLP:conf/date/GoldbergN03].  To compute whether $C$
+is RUP, the negated literals in $C$ are added as assumptions and propagated
+until to determine whether the formula is UP-satisfiable. If the trail is
+a UP-model, $C$ is not RUP. Otherwise, if there are complementary literals
+implied by unit propagation there is no UP-model and $C$ is RUP.  A clause
+that is RUP in $F$ is logical consequence of $F$ [@DBLP:conf/isaim/Gelder08].
 
 - *RAT* --- a clause $C$ is a *resolution asymmetric tautology* (RAT)
 [@DBLP:conf/cade/JarvisaloHB12] on some literal $l \in C$ with respect
@@ -264,20 +264,20 @@ A clause that is RAT in $F$ is not necessarily a logical consequence of $F$,
 yet adding it to $F$ preserves satisfiability. RAT inference is non-monotonic.
 
 \paragraph{DRAT Proofs} Proofs based on RUP alone are not expressive
-enough to simulate all inprocessing techniques in state-of-the-art SAT
-solvers [@DBLP:conf/cade/HeuleHW13]. Because of this, the more powerful
-criterion RAT is used today [@DBLP:conf/cade/HeuleHW13].  A DRAT proof
-(*delete resolution asymmetric tautology*) [@DBLP:conf/sat/WetzlerHH14]
-[@DBLP:journals/corr/Heule16] is a sequence of lemmas (clause introductions)
-and deletions, which can be applied to a formula to simulate the clause
-introductions, clause deletions and inprocessing steps that the solver
-performed. The *accumulated formula* at each proof step is the result
-of applying all prior proof steps to the input formula.  Based on the
-accumulated formula, the checker can compute the shared UP-model at each
-step to determine UP-satisfiability. Every lemma in a correct DRAT proof is a
-RUP or RAT inference with respect to the accumulated formula.  In practice,
-most lemmas are RUP inferences, so a checker first tries to check RUP and
-only if that fails, falls back to RAT.
+enough to simulate all inprocessing techniques in state-of-the-art
+SAT solvers [@DBLP:conf/cade/HeuleHW13]. Because of this, the more
+powerful criterion RAT is used today [@DBLP:journals/amai/Gelder12]
+[@DBLP:conf/cade/HeuleHW13].  A DRAT proof (*delete resolution asymmetric
+tautology*) [@DBLP:conf/sat/WetzlerHH14] [@DBLP:journals/corr/Heule16]
+is a sequence of lemmas (clause introductions) and deletions, which can be
+applied to a formula to simulate the clause introductions, clause deletions
+and inprocessing steps that the solver performed. The *accumulated formula*
+at each proof step is the result of applying all prior proof steps to the
+input formula.  Based on the accumulated formula, the checker can compute
+the shared UP-model at each step to determine UP-satisfiability. Every
+lemma in a correct DRAT proof is a RUP or RAT inference with respect to
+the accumulated formula.  In practice, most lemmas are RUP inferences, so
+a checker first tries to check RUP and only if that fails, falls back to RAT.
 
 In *specified DRAT*, checking is performed with respect to the accumulated
 formula, while *operational DRAT* uses an *adjusted accumulated formula* that
@@ -628,12 +628,11 @@ redundancy*) [@DBLP:conf/cade/HeuleKB17].
 To automatically minimize inputs that expose bugs in our checker we have
 developed a set of scripts to delta-debug CNF and DRAT instances.
 
-\paragraph{Rust} We chose the modern systems programming language Rust[^rust]
-for our implementation because of its feature parity with C in the domain of
+We chose the modern systems programming language Rust[^rust] for our
+implementation because of its feature parity with C in the domain of
 SAT solving.  Among the respondents of the 2019 Stack Overflow Developer
 Survey[^so-survey] it is the most loved programming language and Rust
 developers have the highest contribution rate to open source projects.
-
 Based on our experience, we believe that it is a viable alternative to C
 or C++ for SAT solving, assuming people are willing to learn the language.
 The first Rust-based solver to take part in competitions `varisat`[^varisat]
@@ -874,11 +873,11 @@ We present performance data as reported by `runlim` --- time in seconds and
 memory usage in megabytes (2^20^ bytes).
 
 On an individual instance two checkers might have different performance
-because of different propagation orders and, as a result, different clauses
-being added to the core. Instead we compare the distribution of the checkers'
-performance.  The distribution has a long tail of instances where the checkers'
-performance is similar. In Figure \ref{fig:cactus} we show only the head
-of that distribution where some some differences emerge.  We conclude that
+because of different propagation orders and, as a result, different
+clauses being added to the core. Instead we compare the distribution of the
+checkers' performance.  The distribution has a long tail of instances where
+the checkers' performance is similar. In Figure \ref{fig:cactus} we show only
+the head of that distribution where some differences emerge.  We conclude that
 `gratgen` is a bit faster, and `DRAT-trim` is slower than `rate`. As expected,
 `rate`, and `rate -d` show roughly the same distribution of runtimes. Because
 `drat-trim` and `rate` use almost the same data structures they use roughly
@@ -970,10 +969,10 @@ sufficient for the proofs produced by the second variant of the patches from
 
 State-of-the-art DRAT checkers are heavily optimized for speed but they keep
 the entire input proof and the resulting LRAT proof in memory. If the available
-memory is at premium, some changes could be made to do backwards checking
-in an online fashion, processing one proof step at a time.  Similarly, the
-LRAT proof output could be written to disk immediately as well, with some
-postprocessing to fix the clause IDs.
+memory is at premium, some changes could be made to do backwards checking in
+an online fashion, processing one proof step at a time.  Similarly, an LRAT
+proof line could be written to disk immediately checking a corresponding
+lemma, with some postprocessing to fix the clause IDs.
 
 It might be possible to forego DRAT completely and directly generate LRAT
 in a solver which is already done by `varisat`. This removes the need for
