@@ -192,8 +192,8 @@ in the trail are pruned from the search space. Additionally, solvers may use
 inprocessing techniques to modify the formula without changing satisfiability.
 Once the trail falsifies a clause, the (UP-)unsatisfiability of the formula
 plus assumptions is established.  If there are assumptions, some of them are
-undone and the solver resumes search.  Otherwise, if there are no assumptions,
-the input formula is unsatisfiable.
+undone (backtracking [@769433]) and the solver resumes search.  Otherwise,
+if there are no assumptions, the input formula is unsatisfiable.
 
 \paragraph{Efficient Implementation of Unit Propagation} To efficiently keep
 track of which clauses can become unit, competitive solvers and checkers
