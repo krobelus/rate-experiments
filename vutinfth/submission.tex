@@ -149,28 +149,33 @@
 
 \begin{kurzfassung}
 
-Das klauselbasierte Beweisformat DRAT ist der de-facto-Standard um
+Das klauselbasierte Beweisformat DRAT ist der De-Facto-Standard um
 Unerfüllbarkeitsergebnisse von SAT-Gleichungslösern zu verifizieren.
-Moderne DRAT-Beweisprüfer ignorieren Löschinstruktionen von
-sogenannten Unit-Klauseln, was bedeutet dass sich ihre Semantik von der
-Spezifikation von DRAT unterscheidet; infolgedessen können sie womöglich
-Inprocessing-Techniken, die Unit-Klauseln löschen, nicht verifizieren.
-Moderne SAT-Löser generieren Beweise die von diesen DRAT-Prüfern akzeptiert
-werden, jedoch bezüglich der DRAT-Spezifikation inkorrekt sind, da sie
-Klausel-Löschungen enthalten, bei denen Information verloren gehen.  Wir
-schlagen Korrekturen for prämierte SAT-Löser vor, wodurch diese dann Beweise
-one die destruktiven Löschungen generieren, die deshalb korrekt sind im sinne
-der Spezifikation.  Die Durchführung von Unit-Löschungen in Beweisprüfern
+Moderne DRAT-Beweisprüfer ignorieren Eliminierungsinstruktionen
+von sogenannten Unit-Klauseln, was bedeutet dass sich die Semantik der
+Beweisprüfer von der DRAT-Spezifikation unterscheidet; infolgedessen können
+sie, unter Umständen von SAT-Lösern verwendete Vereinfachungstechniken die
+Unit-Klauseln eliminieren, nicht verifizieren.  Moderne SAT-Löser generieren
+Beweise die von diesen DRAT-Prüfern akzeptiert werden, jedoch bezüglich der
+DRAT-Spezifikation inkorrekt sind, da sie Eliminierungsinstruktionen enthalten,
+die nicht-redundante Informationen löschen.  Wir schlagen Korrekturen for
+prämierte SAT-Löser vor, wodurch diese in der Lage sind, Beweise ohne
+ebenjene destruktiven Eliminierungen zu generieren, die ergo im Sinne der
+Spezifikation korrekt sind. Dennoch können Unit-Eliminierungen in Beweisen
+in Anbetracht der Verwendung von fortgeschrittenen Vereinfachungstechniken
+wohl kaum ausgeschlossen werden, sofern der Löseaufwand nicht darunter
+leiden soll.  Die Durchführung von Unit-Eliminierungen in Beweisprüfern
 kann rechenaufwändig sein.  Wir haben den ersten wettbewerbsfähigen Prüfer
-der Unit-Löschungen berücksichtigt and präsentieren Testergebnisse, die
-darauf hindeuten, dass der Rechenaufwand für das Überprüfen von Beweisen
-mit oder ohne Unit-Löschungen im Durchschnitt gleich ist.  Da es ebenfalls
-rechenaufwändig ist, einen Beweis zu widerlegen, führen wir das SICK-Format
-ein, dass vergleichsweise kleine, einfach zu überprüfende Gegenbeispiele
-zu Beweisen beschreibt. Indem wir diese Beispiele unabhängig überprüfen,
-stärken wir das Vertrauen in die Korrekheit der Inkorrektheits-Ergebnisse.
-Außerdem könnte es von Nutzen sein um Fehler in SAT-Lösern und Prüfern
-zu finden.
+implementiert, der Unit-Eliminierungen berücksichtigt and präsentieren
+unsere Versuchsergebnisse, die darauf hindeuten, dass der Rechenaufwand
+für das Überprüfen von einem durchschnittlichen Beweis mit oder ohne
+Unit-Eliminierungen gleich ist.  Weiters führen wir das SICK-Format ein,
+das, vergleichsweise kleine, effizient überprüfbare Gegenbeispiele
+zu DRAT-Beweisen beschreibt. Indem wir diese Gegenbeispiele mit einem
+unabhängigen Programm überprüfen, stärken wir das Vertrauen in die
+Stichhaltigkeit der Inkorrektheits-Ergebnisse.  Außerdem kann diese Technik
+von Nutzen sein um Fehler in (der Beweisgenerierung von) SAT-Lösern und
+Prüfern zu finden.
 
 \end{kurzfassung}
 

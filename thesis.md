@@ -13,6 +13,20 @@ header-includes: |
         }
         \usepackage[style=alphabetic]{biblatex}
         \addbibresource{references.bib}
+        \usepackage{xcolor}
+        \hypersetup{
+          pdfauthor={Johannes Altmanninger},
+          pdftitle={DRAT Proofs Without Deletions of Unique Reason Clauses
+            \&
+            A Complete and Efficient DRAT Proof Checker
+          },
+          hidelinks,
+          colorlinks,
+          linkcolor={red!50!black},
+          citecolor={blue!50!black},
+          urlcolor={blue!80!black}
+        }
+
 csl: ieee.csl
 ---
 
@@ -25,12 +39,15 @@ certify SAT solvers' unsatisfiability results.  State-of-the-art DRAT proof
 checkers ignore deletions of unit clauses, which means that they are checking
 against a proof system that differs from the specification of DRAT and they
 may not be able to verify inprocessing techniques that use unit deletions.
-State-of-the-art SAT solvers produce proofs that are accepted by those DRAT
-checkers, but are incorrect under the DRAT specification, because they contain
-spurious deletions of reason clauses. We present patches for award-winning SAT
-solvers to produce proofs without those deletions that are thus correct with
-respect to the specification.  Performing unit deletions in a proof checker can
-be computationally expensive.  We implemented the first competitive checker
+State-of-the-art SAT solvers produce proofs that are accepted by those
+DRAT checkers, but are incorrect under the DRAT specification, because
+they contain spurious deletions of reason clauses. We present patches for
+award-winning SAT solvers to produce proofs without those deletions that are
+thus correct with respect to the specification.  However, handling reason
+deletions can still be desirable as such deletions can be a byproduct
+of advanced inprocessing techniques that is hard to avoid without extra
+costs in the solver.  Performing unit deletions in a proof checker can be
+computationally expensive.  We implemented the first competitive checker
 that honors unit deletions and provide experimental results suggesting that,
 on average, checking costs are the same as when not applying unit deletions.
 As it is also expensive to determine the incorrectness of a proof, we introduce
@@ -706,19 +723,21 @@ column shows the corresponding SICK certificate, stating that the RAT check
 failed for the first lemma in the proof.
 
 \begin{figure}
-    \begin{tabular}{rcl}
-    SICK            & := & ProofFormat ProofStep NaturalModel Witness* \\
-    ProofFormat     & := & \texttt{proof\_format =}
-    ( \texttt{"DRAT-arbitrary-pivot"} | \texttt{"DRAT-pivot-is-first-literal"}) \\
-    ProofStep       & := & \texttt{proof\_step =} Integer \\
-    NaturalModel    & := & \texttt{natural\_model =} ListOfLiterals \\
-    Witness         & := & \texttt{[[witness]]} FailingClause FailingModel Pivot \\
-    FailingClause   & := & \texttt{failing\_clause =} ListOfLiterals \\
-    FailingModel    & := & \texttt{failing\_model =} ListOfLiterals \\
-    Pivot           & := & \texttt{pivot =} Literal \\
-    ListOfLiterals  & := & \texttt{[} (Literal \texttt{,})* \texttt{]} \\
-    \end{tabular}
-    \caption{The grammar of a SICK certificate\label{grammar}}
+    {\small
+        \begin{tabular}{rcl}
+        SICK            & := & ProofFormat ProofStep NaturalModel Witness* \\
+        ProofFormat     & := & \texttt{proof\_format =}
+        ( \texttt{"DRAT-arbitrary-pivot"} | \texttt{"DRAT-pivot-is-first-literal"}) \\
+        ProofStep       & := & \texttt{proof\_step =} Integer \\
+        NaturalModel    & := & \texttt{natural\_model =} ListOfLiterals \\
+        Witness         & := & \texttt{[[witness]]} FailingClause FailingModel Pivot \\
+        FailingClause   & := & \texttt{failing\_clause =} ListOfLiterals \\
+        FailingModel    & := & \texttt{failing\_model =} ListOfLiterals \\
+        Pivot           & := & \texttt{pivot =} Literal \\
+        ListOfLiterals  & := & \texttt{[} (Literal \texttt{,})* \texttt{]} \\
+        \end{tabular}
+        \caption{The grammar of a SICK certificate\label{grammar}}
+    }
 \end{figure}
 
 \begin{figure}
