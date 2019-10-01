@@ -142,7 +142,7 @@ proofs of unsatisfiability and proof checking, including the optimization
 challenges of specified DRAT checking.  Our first contribution, a proposal on
 how to change solvers to produce unambiguously correct proofs, can be found
 in [Section 3][3 DRAT Proofs without Deletions of Unique Reason Clauses].
-[Section 4][4 Complete and Efficient DRAT Proof Checking] concerns the
+[Section 4][4 A Complete and Efficient DRAT Proof Checker] concerns the
 efficient implementation of a specified DRAT checker:  after briefly discussing
 other checkers we present our implementation and describe the SICK format for
 certificates of proof incorrectness.  Experimental results evaluating checker
@@ -519,8 +519,8 @@ additions and deletions, also at most one each per variable, which is small
 compared to the rest of a proof.  The patches can be easily adapted to other
 `DRUPMiniSat`-based solvers.
 
-4 Complete and Efficient DRAT Proof Checking
-============================================
+4 A Complete and Efficient DRAT Proof Checker
+=============================================
 
 We implement a checker to compare the costs of checking specified and
 operation DRAT. Additionally an efficient checker for specified DRAT can be
@@ -667,8 +667,8 @@ tests.  Furthermore, our checker implementation contains a variety of cheap
 runtime assertions, including checks for arithmetic overflows and narrowing
 conversions that cause a change of value.
 
-4.3 SICK Format
----------------
+4.3 The SICK Format
+-------------------
 
 For DRAT proofs that are verified by `rate`, it can produce an LRAT proof
 containing core lemmas. The formally verified LRAT checker can be used
