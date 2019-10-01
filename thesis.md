@@ -938,8 +938,8 @@ DRAT. We provide experimental results suggesting that that the cost for
 specified DRAT is, on average, the same but a high number of reason deletions
 may make it significantly more costly.
 
-The efficient algorithm to check specified DRAT further complicates the
-two-watched literal scheme whose implementation is already quite error-prone.
+The two-watched literal scheme is difficult to implement correctly, and
+efficient algorithm to check specified DRAT further complicates that.
 Our checker implementation is able to output LRAT and GRAT certificates
 that can be verified by a formally verified checker, giving some confidence
 that `rate` gave the right answer. However, many proofs are rejected by
@@ -949,7 +949,7 @@ and implemented a tool, `sick-check` that verifies those certificates,
 independent of `rate` and also much simpler than `rate`: `sick-check` merely
 computes the accumulated formula up to the failed proof step and then checks
 that step without doing propagation. These certificates can be used to detect
-bugs in checkers (we have found some in `rate`) and pinpoint bugs in solvers.
+bugs in checkers (we did find some in `rate`) and pinpoint bugs in solvers.
 
 7. Future Work
 ==============
