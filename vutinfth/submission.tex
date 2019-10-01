@@ -23,18 +23,51 @@
 \usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 
+\usepackage{textcomp} % provide euro and other symbols
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\urlstyle{same} % disable monospaced font for URLs
+\makeatletter
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{longtable}
+
 % Define convenience functions to use the author name and the thesis title in the PDF document properties.
-\newcommand{\authorname}{Forename Surname} % The author name without titles.
-\newcommand{\thesistitle}{Title of the Thesis} % The title of the thesis. The English version should be used, if it exists.
+\newcommand{\authorname}{Johannes Altmanninger} % The author name without titles.
+\newcommand{\thesistitle}{
+            DRAT Proofs Without Deletions of Unique Reason Clauses 
+            \&
+            A Complete and Efficient DRAT Proof Checker
+    } % The title of the thesis. The English version should be used, if it exists.
 
 % Set PDF document properties
 \hypersetup{
-    pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
+    % pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
     linkbordercolor = {Melon},                % The color of the borders of boxes around crosslinks (optional).
     pdfauthor       = {\authorname},          % The author's name in the document properties (optional).
     pdftitle        = {\thesistitle},         % The document's title in the document properties (optional).
-    pdfsubject      = {Subject},              % The document's subject in the document properties (optional).
-    pdfkeywords     = {a, list, of, keywords} % The document's keywords in the document properties (optional).
+    pdfsubject      = {},              % The document's subject in the document properties (optional).
+    pdfkeywords     = {} % The document's keywords in the document properties (optional).
 }
 
 \setpnumwidth{2.5em}        % Avoid overfull hboxes in the table of contents (see memoir manual).
@@ -50,13 +83,10 @@
 % Set persons with 4 arguments:
 %  {title before name}{name}{title after name}{gender}
 %  where both titles are optional (i.e. can be given as empty brackets {}).
-\setauthor{Pretitle}{\authorname}{Posttitle}{female}
-\setadvisor{Pretitle}{Forename Surname}{Posttitle}{male}
+\setauthor{}{\authorname}{}{male}
+\setadvisor{Associate Prof. Dipl.-Ing. D.Phil.}{Georg Weissenbacher}{}{male}
 
-% For bachelor and master theses:
-\setfirstassistant{Pretitle}{Forename Surname}{Posttitle}{male}
-\setsecondassistant{Pretitle}{Forename Surname}{Posttitle}{male}
-\setthirdassistant{Pretitle}{Forename Surname}{Posttitle}{male}
+\setfirstassistant{}{Adrián Rebola-Pardo}{Msc.}{male}
 
 % For dissertations:
 \setfirstreviewer{Pretitle}{Forename Surname}{Posttitle}{male}
@@ -66,18 +96,19 @@
 \setsecondadvisor{Pretitle}{Forename Surname}{Posttitle}{male} % Comment to remove.
 
 % Required data.
-\setregnumber{0123456}
-\setdate{01}{01}{2001} % Set date with 3 arguments: {day}{month}{year}.
-\settitle{\thesistitle}{Titel der Arbeit} % Sets English and German version of the title (both can be English or German). If your title contains commas, enclose it with additional curvy brackets (i.e., {{your title}}) or define it as a macro as done with \thesistitle.
-\setsubtitle{Optional Subtitle of the Thesis}{Optionaler Untertitel der Arbeit} % Sets English and German version of the subtitle (both can be English or German).
+\setregnumber{01455764}
+\setdate{06}{10}{2019} % Set date with 3 arguments: {day}{month}{year}.
+\settitle{\thesistitle}{\thesistitle}
+% Sets English and German version of the title (both can be English or German). If your title contains commas, enclose it with additional curvy brackets (i.e., {{your title}}) or define it as a macro as done with \thesistitle.
+\setsubtitle{}{} % Sets English and German version of the subtitle (both can be English or German).
 
 % Select the thesis type: bachelor / master / doctor / phd-school.
 % Bachelor:
-\setthesis{bachelor}
+\setthesis{master}
 %
 % Master:
 %\setthesis{master}
-%\setmasterdegree{dipl.} % dipl. / rer.nat. / rer.soc.oec. / master
+\setmasterdegree{master} % dipl. / rer.nat. / rer.soc.oec. / master
 %
 % Doctor:
 %\setthesis{doctor}
@@ -87,7 +118,8 @@
 %\setthesis{phd-school} % Deactivate non-English title pages (see below)
 
 % For bachelor and master:
-\setcurriculum{Media Informatics and Visual Computing}{Medieninformatik und Visual Computing} % Sets the English and German name of the curriculum.
+\newcommand{\emcl}{European Master's Program in Computational Logic}
+\setcurriculum{\emcl}{\emcl} % Sets the English and German name of the curriculum.
 
 % For dissertations at the PhD School:
 \setfirstreviewerdata{Affiliation, Country}
@@ -104,20 +136,46 @@
 \addtitlepage{english} % English title page.
 \addstatementpage
 
+\if0
 \begin{danksagung*}
-\todo{Ihr Text hier.}
+    TODO
 \end{danksagung*}
 
 \begin{acknowledgements*}
+    TODO
 \todo{Enter your text here.}
 \end{acknowledgements*}
+\fi
 
 \begin{kurzfassung}
-\todo{Ihr Text hier.}
+
+Das klauselbasierte Beweisformat DRAT ist der de-facto-Standard um
+Unerfüllbarkeitsergebnisse von SAT-Gleichungslösern zu verifizieren.
+Moderne DRAT-Beweisprüfer ignorieren Löschinstruktionen von
+sogenannten Unit-Klauseln, was bedeutet dass sich ihre Semantik von der
+Spezifikation von DRAT unterscheidet; infolgedessen können sie womöglich
+Inprocessing-Techniken, die Unit-Klauseln löschen, nicht verifizieren.
+Moderne SAT-Löser generieren Beweise die von diesen DRAT-Prüfern akzeptiert
+werden, jedoch bezüglich der DRAT-Spezifikation inkorrekt sind, da sie
+Klausel-Löschungen enthalten, bei denen Information verloren gehen.  Wir
+schlagen Korrekturen for prämierte SAT-Löser vor, wodurch diese dann Beweise
+one die destruktiven Löschungen generieren, die deshalb korrekt sind im sinne
+der Spezifikation.  Die Durchführung von Unit-Löschungen in Beweisprüfern
+kann rechenaufwändig sein.  Wir haben den ersten wettbewerbsfähigen Prüfer
+der Unit-Löschungen berücksichtigt and präsentieren Testergebnisse, die
+darauf hindeuten, dass der Rechenaufwand für das Überprüfen von Beweisen
+mit oder ohne Unit-Löschungen im Durchschnitt gleich ist.  Da es ebenfalls
+rechenaufwändig ist, einen Beweis zu widerlegen, führen wir das SICK-Format
+ein, dass vergleichsweise kleine, einfach zu überprüfende Gegenbeispiele
+zu Beweisen beschreibt. Indem wir diese Beispiele unabhängig überprüfen,
+stärken wir das Vertrauen in die Korrekheit der Inkorrektheits-Ergebnisse.
+Außerdem könnte es von Nutzen sein um Fehler in SAT-Lösern und Prüfern
+zu finden.
+
 \end{kurzfassung}
 
 \begin{abstract}
-\todo{Enter your text here.}
+\input{../abstract}
 \end{abstract}
 
 % Select the language of the thesis, e.g., english or naustrian.
@@ -129,27 +187,20 @@
 % Switch to arabic numbering and start the enumeration of chapters in the table of content.
 \mainmatter
 
-\chapter{Introduction}
-\todo{Enter your text here.}
-
-\chapter{Additional Chapter}
-\todo{Enter your text here.}
-
-% Remove following line for the final thesis.
-\input{intro.tex} % A short introduction to LaTeX.
+\input{thesis-for-submission.tex}
 
 \backmatter
 
 % Use an optional list of figures.
-\listoffigures % Starred version, i.e., \listoffigures*, removes the toc entry.
+% \listoffigures % Starred version, i.e., \listoffigures*, removes the toc entry.
 
 % Use an optional list of tables.
-\cleardoublepage % Start list of tables on the next empty right hand page.
-\listoftables % Starred version, i.e., \listoftables*, removes the toc entry.
+% \cleardoublepage % Start list of tables on the next empty right hand page.
+%\listoftables % Starred version, i.e., \listoftables*, removes the toc entry.
 
 % Use an optional list of alogrithms.
-\listofalgorithms
-\addcontentsline{toc}{chapter}{List of Algorithms}
+%\listofalgorithms
+%\addcontentsline{toc}{chapter}{List of Algorithms}
 
 % Add an index.
 \printindex
@@ -159,6 +210,6 @@
 
 % Add a bibliography.
 \bibliographystyle{alpha}
-\bibliography{intro}
+\bibliography{../references.bib}
 
 \end{document}

@@ -27,3 +27,12 @@
 plots.html
 README.html
 README.tex
+/abstract
+/thesis.tex
+/vutinfth/*
+/*.tex
+old-thesis*
+results.json.bak
+*.bcf
+*.lof
+*.run.xml

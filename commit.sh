@@ -2,7 +2,7 @@
 
 set -eu
 
-ignored='thesis.pdf poster/poster.pdf thesis.tex t p'
+ignored='thesis.pdf vutinfth/submission.pdf poster/poster.pdf t p'
 
 git commit -am "${1:-update}"
 git filter-branch -f --prune-empty --index-filter "git rm -r --cached --ignore-unmatch $ignored" HEAD

@@ -1,18 +1,18 @@
 ---
 author: Johannes Altmanninger
-bibliography: references.bib
 date: \today
-link-citations: true
 documentclass: report
 header-includes: |
         \usepackage{todonotes}
         \usepackage{longtable}
         \usepackage{booktabs}
         \title{
-            DRAT Proofs Without Deletions of \\ Unique Reason Clauses \\
+            DRAT Proofs Without Deletions of Unique Reason Clauses \\
             \&\\
-            Complete and Efficient \\ DRAT Proof Checking
+            A Complete and Efficient DRAT Proof Checker
         }
+        \usepackage[style=alphabetic]{biblatex}
+        \addbibresource{references.bib}
 csl: ieee.csl
 ---
 
@@ -25,48 +25,49 @@ certify SAT solvers' unsatisfiability results.  State-of-the-art DRAT proof
 checkers ignore deletions of unit clauses, which means that they are checking
 against a proof system that differs from the specification of DRAT and they
 may not be able to verify inprocessing techniques that use unit deletions.
-State-of-the-art SAT solvers produce proofs that are accepted by DRAT checkers,
-but are incorrect under the DRAT specification, because they contain spurious
-deletions of reason clauses. We present patches for award-winning SAT solvers
-to produce proofs without those deletions that are thus correct with respect
-to the specification.  Performing unit deletions in a proof checker can be
-computationally expensive.  We implemented the first competitive checker
+State-of-the-art SAT solvers produce proofs that are accepted by those DRAT
+checkers, but are incorrect under the DRAT specification, because they contain
+spurious deletions of reason clauses. We present patches for award-winning SAT
+solvers to produce proofs without those deletions that are thus correct with
+respect to the specification.  Performing unit deletions in a proof checker can
+be computationally expensive.  We implemented the first competitive checker
 that honors unit deletions and provide experimental results suggesting that,
 on average, checking costs are the same as when not applying unit deletions.
-As it is also expensive to determine the (in-)correctness of a proof, we
-present the SICK format which describes small and efficiently checkable
-certificates of the incorrectness of a DRAT proof. This increases trust in
-incorrectness results and can be useful when debugging solvers and checkers.
+As it is also expensive to determine the incorrectness of a proof, we introduce
+the SICK format which describes small and efficiently checkable certificates
+of the incorrectness of a DRAT proof. By checking this independently, we are
+able to increase trust in our incorrectness results. Additionally it can be
+useful when debugging solvers and checkers.
 
 :::
 
 \tableofcontents
 
-1. Introduction
-===============
+1 Introduction
+==============
 
 Over the past decades, there has been significant progress in SAT solving
-technology. SAT solvers have had documented bugs [@BrummayerBiere-SMT09]
-[@DBLP:conf/sat/BrummayerLB10].  To detect incorrect results, there are
-*checker* programs that *verify* a solver's result based on a witness given
-by the solver. Satisfiability witnesses, or *models* can be checked in
-linear time.  Unsatisfiability witnesses, or *proofs* of unsatisfiability
+technology. SAT solvers have had documented bugs \cite{BrummayerBiere-SMT09}
+\cite{DBLP:conf/sat/BrummayerLB10}.  To detect incorrect results, there
+are *checker* programs that *verify* a solver's result based on a witness
+given by the solver. Satisfiability witnesses, or *models* can be checked
+in linear time.  Unsatisfiability witnesses, or *proofs* of unsatisfiability
 on the other hand can be much more costly to check.
 
 A SAT solver operates on a formula that acts as knowledge base.  It contains
 constraints that are called clauses.  Starting from the input formula,
 clauses are added and deleted by the solver.  In SAT competitions, solvers
 are required to give proofs of unsatisfiability in the DRAT proof format
-[@DBLP:journals/stvr/HeuleHW14]. A DRAT proof is the trace of a solver run,
-containing information on which clauses are added and deleted.
+\cite{DBLP:journals/stvr/HeuleHW14}. A DRAT proof is the trace of a solver
+run, containing information on which clauses are added and deleted.
 
 State-of-the-art proof checkers ignore deletions of some clauses called
-*unit clauses* [@DBLP:conf/sat/Rebola-PardoB18].  As a result, the checkers
-are not faithful to the specification of DRAT proofs.  The original
+*unit clauses* \cite{DBLP:conf/sat/Rebola-PardoB18}.  As a result, the
+checkers are not faithful to the specification of DRAT proofs.  The original
 definition of the proof format is referred to as *specified* DRAT and the
 one that is implemented by state-of-the-art checkers as *operational* DRAT
-[@DBLP:conf/sat/Rebola-PardoB18]. The classes of proofs verified by checkers
-of these two flavors of DRAT are incomparable.
+\cite{DBLP:conf/sat/Rebola-PardoB18}. The classes of proofs verified by
+checkers of these two flavors of DRAT are incomparable.
 
 State-of-the-art solvers produce proofs with deletions of specific reason
 clauses, which are the reason for the discrepancy between specified and
@@ -79,22 +80,22 @@ deleted,  matching the solvers' internal behavior.  We provide patches for
 award-winning solvers to make them generate proofs without spurious deletions
 of reason clauses, eliminating the need to ignore some deletion instructions.
 
-DRAT proofs are designed to use minimal space per proof step but checking
-them is computationally expensive.  In theory, checking costs are comparable
-to solving costs [@DBLP:journals/stvr/HeuleHW14]. Consider the problem of
+DRAT proofs are designed to use minimal space per proof step but checking them
+is computationally expensive.  In theory, checking costs are comparable to
+solving costs \cite{DBLP:journals/stvr/HeuleHW14}. Consider the problem of
 the Schur Number Five, where solving took just over 14 CPU years whereas
 running the DRAT checker on the resulting proof took 20.5 CPU years
-[@DBLP:conf/aaai/Heule18].  Additionally, state-of-the-art SAT solvers
+\cite{DBLP:conf/aaai/Heule18}.  Additionally, state-of-the-art SAT solvers
 use complex inprocessing techniques to modify a formula. When DRAT proof
 logging is desired, such a modification needs to be expressed by a DRAT proof
 consisting of clause introductions and clause deletions.  If such a proof uses
 deletions of reason clauses then a checker for specified DRAT may be necessary
-to verify the inprocessing step [@DBLP:conf/sat/Rebola-PardoB18] because
+to verify the inprocessing step \cite{DBLP:conf/sat/Rebola-PardoB18} because
 a checker for operational DRAT would ignore the deletions which can cause
 future proof steps to be incorrectly rejected.  The absence of an efficient
 checker for specified DRAT means that solvers cannot use such techniques
 in competitions.  There is an efficient algorithm to check specified DRAT
-[@DBLP:conf/fmcad/Rebola-PardoC18] that features several optimizations that
+\cite{DBLP:conf/fmcad/Rebola-PardoC18} that features several optimizations that
 are not necessary for checking operational DRAT.  Previous implementations
 were not competitive.  Our research question is whether it is possible to
 check specified DRAT as efficiently as operational DRAT.
@@ -118,23 +119,22 @@ about a proof, e.g.\ it allows the definition of the SICK format to be
 much simpler.  We contribute an extension to the SICK format to support a
 slightly different semantics of DRAT checking.
 
-This thesis is organized as follows: In [the following
-section][2. Preliminaries] we will introduce preliminary knowledge about
-SAT solving, proofs of unsatisfiability and proof checking, including the
-optimization challenges of specified DRAT checking.  Our first contribution,
-a proposal on how to change solvers to produce unambiguously correct proofs,
-can be found in [Section 3][3. DRAT Proofs without Deletions of Unique Reason
-Clauses].  [Section 4][4. Complete and Efficient DRAT Proof Checking] concerns
-the efficient implementation of a specified DRAT checker:  after briefly
-discussing other checkers we present our implementation and describe the
-SICK format for certificates of proof incorrectness.  Experimental results
-evaluating checker performance are given in [Section 5][5. Experimental
-Evaluation].  Finally, we draw a conclusion in [Section 6][6. Conclusion]
-and give outlook on future work in the area of DRAT proof-checking in [the
-last section][7. Future Work].
+This thesis is organized as follows: In [the following section][2
+Preliminaries] we will introduce preliminary knowledge about SAT solving,
+proofs of unsatisfiability and proof checking, including the optimization
+challenges of specified DRAT checking.  Our first contribution, a proposal on
+how to change solvers to produce unambiguously correct proofs, can be found
+in [Section 3][3 DRAT Proofs without Deletions of Unique Reason Clauses].
+[Section 4][4 Complete and Efficient DRAT Proof Checking] concerns the
+efficient implementation of a specified DRAT checker:  after briefly discussing
+other checkers we present our implementation and describe the SICK format for
+certificates of proof incorrectness.  Experimental results evaluating checker
+performance are given in [Section 5][5 Experimental Evaluation].  Finally,
+we draw a conclusion in [Section 6][6 Conclusion] and give outlook on future
+work in the area of DRAT proof-checking in [the last section][7 Future Work].
 
-2. Preliminaries
-================
+2 Preliminaries
+===============
 
 A *literal* is a propositional variable, like $x$, or a negation of a variable,
 denoted by $\overline{x}$. A *clause* is a disjunction of literals, usually
@@ -165,9 +165,9 @@ each $1 \leq i \leq n$ there is a literal $l_i \in C_i$ with $C_i \setminus
 \{l_i\} \subseteq \{\overline{l_1},\dots,\overline{l_{i-1}}\}$.  We call $C_i$
 the *reason clause* for $l_i$ with respect to this propagation sequence.
 
-An assignment $I$ is a *unit propagation model* (UP-model) of $F$ when for
-each clause $C \in F$, $I$ either satisfies $C$ or there are at least two
-literals in $C$ that are unassigned in $I$ [@DBLP:conf/sat/Rebola-PardoB18].
+An assignment $I$ is a *unit propagation model* (UP-model) of $F$ when for each
+clause $C \in F$, $I$ either satisfies $C$ or there are at least two literals
+in $C$ that are unassigned in $I$ \cite{DBLP:conf/sat/Rebola-PardoB18}.
 Formula $F$ is UP-satisfiable if it has a UP-model. If complementary literals
 are implied by unit propagation, or the formula contains the empty clause,
 it is UP-unsatisfiable. If $F$ is UP-satisfiable, its *shared UP-model* is the
@@ -191,19 +191,19 @@ formula plus the current assumptions. Assignments that falsify the literals
 in the trail are pruned from the search space. Additionally, solvers may use
 inprocessing techniques to modify the formula without changing satisfiability.
 Once the trail falsifies a clause, the (UP-)unsatisfiability of the formula
-plus assumptions is established.  If there are assumptions, some of them are
-undone (backtracking [@769433]) and the solver resumes search.  Otherwise,
-if there are no assumptions, the input formula is unsatisfiable.
+plus assumptions is established.  If there are assumptions, some of them
+are undone (backtracking \cite{769433}) and the solver resumes search.
+Otherwise, if there are no assumptions, the input formula is unsatisfiable.
 
 \paragraph{Efficient Implementation of Unit Propagation} To efficiently keep
-track of which clauses can become unit, competitive solvers and checkers
-use the two-watched-literal scheme [@DBLP:conf/dac/MoskewiczMZZM01]. It
+track of which clauses can become unit, competitive solvers and checkers use
+the two-watched-literal scheme \cite{DBLP:conf/dac/MoskewiczMZZM01}. It
 uses a watchlist for each literal in the formula, which is a list of
 clause references.  Clauses in the watchlist of some literal are said to
 be *watched on* that literal.  Each clause is watched on two literals,
 which are also called its *watches*. Provided that Invariant 1 from
-[@DBLP:conf/fmcad/Rebola-PardoC18] is maintained, it suffices to look at
-the watches to determine that a clause is not unit:
+\cite{DBLP:conf/fmcad/Rebola-PardoC18} is maintained, it suffices to look
+at the watches to determine that a clause is not unit:
 
 **Invariant 1.** If a clause is watched on two distinct literals $l$ and $k$,
 and the current trail $I$ falsifies $l$, then $I$ satisfies $k$.
@@ -227,9 +227,9 @@ is watched on $\overline{y}$, which assigns unit $z$ and causes no further
 propagation. Clause $xy$ is never visited during propagation.
 
 \paragraph{CDCL} Predominant SAT solvers implement Conflict Driven Clause
-Learning (CDCL) [@DBLP:series/faia/SilvaLM09] which is based on the following
-principle: whenever the formula plus assumptions is UP-unsatisfiable, a
-subset of the assumptions is undone and a *conflict clause* is learned ---
+Learning (CDCL) \cite{DBLP:series/faia/SilvaLM09} which is based on the
+following principle: whenever the formula plus assumptions is UP-unsatisfiable,
+a subset of the assumptions is undone and a *conflict clause* is learned ---
 it is added to the formula to prevent the solver from revisiting those wrong
 assumptions.  As the number of clauses increases, so does memory usage,
 and the time spent on unit propagation. Because of this, learned clauses
@@ -241,20 +241,20 @@ if they are not considered useful.
 
 \paragraph{Redundancy Criteria} A clause $C$ is redundant in a
 formula $F$ if $F$ and $F \cup \{C\}$ are satisfiability equivalent
-[@DBLP:conf/cade/HeuleKB17].  There are various criteria of redundancy,
+\cite{DBLP:conf/cade/HeuleKB17}.  There are various criteria of redundancy,
 with different levels of expressivity and computational costs.
 
 - *RUP* --- a clause $C$ is a *reverse unit propagation* (RUP) inference
 in formula $F$ if $F' := F \cup \{ \overline{l} \,|\, l \in C \}$ is
-UP-unsatisfiable [@DBLP:conf/date/GoldbergN03].  To compute whether $C$
+UP-unsatisfiable \cite{DBLP:conf/date/GoldbergN03}.  To compute whether $C$
 is RUP, the negated literals in $C$ are added as assumptions and propagated
 until to determine whether the formula is UP-satisfiable. If the trail is
 a UP-model, $C$ is not RUP. Otherwise, if there are complementary literals
-implied by unit propagation there is no UP-model and $C$ is RUP.  A clause
-that is RUP in $F$ is logical consequence of $F$ [@DBLP:conf/isaim/Gelder08].
+implied by unit propagation there is no UP-model and $C$ is RUP.  A clause that
+is RUP in $F$ is logical consequence of $F$ \cite{DBLP:conf/isaim/Gelder08}.
 
 - *RAT* --- a clause $C$ is a *resolution asymmetric tautology* (RAT)
-[@DBLP:conf/cade/JarvisaloHB12] on some literal $l \in C$ with respect
+\cite{DBLP:conf/cade/JarvisaloHB12} on some literal $l \in C$ with respect
 to formula $F$ whenever for all clauses $D \in F$ where $\overline{l}
 \in D$, the resolvent on $l$ of $C$ and $D$, which is $(C \setminus \{l\})
 \cup (D \setminus \{\overline{l}\})$ is RUP in $F$. Clause $D$ is called a
@@ -265,10 +265,10 @@ yet adding it to $F$ preserves satisfiability. RAT inference is non-monotonic.
 
 \paragraph{DRAT Proofs} Proofs based on RUP alone are not expressive
 enough to simulate all inprocessing techniques in state-of-the-art
-SAT solvers [@DBLP:conf/cade/HeuleHW13]. Because of this, the more
-powerful criterion RAT is used today [@DBLP:journals/amai/Gelder12]
-[@DBLP:conf/cade/HeuleHW13].  A DRAT proof (*delete resolution asymmetric
-tautology*) [@DBLP:conf/sat/WetzlerHH14] [@DBLP:journals/corr/Heule16]
+SAT solvers \cite{DBLP:conf/cade/HeuleHW13}. Because of this, the more
+powerful criterion RAT is used today \cite{DBLP:journals/amai/Gelder12}
+\cite{DBLP:conf/cade/HeuleHW13}.  A DRAT proof (*delete resolution asymmetric
+tautology*) \cite{DBLP:conf/sat/WetzlerHH14} \cite{DBLP:journals/corr/Heule16}
 is a sequence of lemmas (clause introductions) and deletions, which can be
 applied to a formula to simulate the clause introductions, clause deletions
 and inprocessing steps that the solver performed. The *accumulated formula*
@@ -283,34 +283,34 @@ In *specified DRAT*, checking is performed with respect to the accumulated
 formula, while *operational DRAT* uses an *adjusted accumulated formula* that
 is computed the same way as the accumulated formula except that deletions
 of clauses that are unit with respect to the shared UP-model of the adjusted
-accumulated formula are ignored [@DBLP:conf/sat/Rebola-PardoB18].
+accumulated formula are ignored \cite{DBLP:conf/sat/Rebola-PardoB18}.
 
-A proof solely consisting of clause introductions will result in the
-checker's propagation routines slowing down due to the huge number of
-clauses just like in a CDCL solver that does not delete learned clauses.
-To counteract this, clause deletion information has been added, making the
-proof-checking time comparable to solving time [@DBLP:journals/stvr/HeuleHW14]
-[@DBLP:conf/sat/WetzlerHH14].  While deletions were added as an optimization,
-they can also enable additional inferences due to RAT being non-monotonic
-[@DBLP:conf/lpar/PhilippR17].  This means that ignoring deletions may prevent
-RAT inferences which is why a proof that is correct under specified DRAT
-may be incorrect under operational DRAT.
+A proof solely consisting of clause introductions will result in the checker's
+propagation routines slowing down due to the huge number of clauses just
+like in a CDCL solver that does not delete learned clauses.  To counteract
+this, clause deletion information has been added, making the proof-checking
+time comparable to solving time \cite{DBLP:journals/stvr/HeuleHW14}
+\cite{DBLP:conf/sat/WetzlerHH14}.  While deletions were added as an
+optimization, they can also enable additional inferences due to RAT being
+non-monotonic \cite{DBLP:conf/lpar/PhilippR17}.  This means that ignoring
+deletions may prevent RAT inferences which is why a proof that is correct
+under specified DRAT may be incorrect under operational DRAT.
 
 \paragraph{LRAT Proofs} The runtime and memory usage of DRAT
 checkers can exceed the ones of the solver that produced the proof
-[@DBLP:conf/aaai/Heule18]. The resulting need for a DRAT checker to be as
+\cite{DBLP:conf/aaai/Heule18}. The resulting need for a DRAT checker to be as
 efficient as possible requires mutable data structures that rely on pointer
 indirection which are difficult to verify.  The lack of a formally verified
-DRAT checker is remedied by making the DRAT checker output an annotated proof
-in the LRAT format [@DBLP:conf/cade/Cruz-FilipeHHKS17]. The LRAT proof can be
-checked by a formally verified checker without unit propagation, making sure
-that the formula formula is indeed unsatisfiable [@DBLP:conf/itp/HeuleHKW17].
-Most solvers can only generate DRAT proofs but DRAT checkers can be used to
-produce an LRAT proof from a DRAT proof. The LRAT proof resembles DRAT, but it
-includes clause hints to guide unit propagation: for each resolution candidate,
-the resolvent is shown to be a RUP inference by giving a propagation sequence
-that shows UP-unsatisfiability of the formula with the negated literals in
-the resolvent.
+DRAT checker is remedied by making the DRAT checker output an annotated
+proof in the LRAT format \cite{DBLP:conf/cade/Cruz-FilipeHHKS17}. The
+LRAT proof can be checked by a formally verified checker without unit
+propagation, making sure that the formula formula is indeed unsatisfiable
+\cite{DBLP:conf/itp/HeuleHKW17}.  Most solvers can only generate DRAT
+proofs but DRAT checkers can be used to produce an LRAT proof from a DRAT
+proof. The LRAT proof resembles DRAT, but it includes clause hints to guide
+unit propagation: for each resolution candidate, the resolvent is shown to be
+a RUP inference by giving a propagation sequence that shows UP-unsatisfiability
+of the formula with the negated literals in the resolvent.
 
 2.3 Proof Checking
 ------------------
@@ -333,8 +333,8 @@ clause is deleted, some literals may be removed.
 \paragraph{Backwards Checking} During search, SAT solvers cannot know which
 learned clauses are useful in a proof, so they add all of them as lemmas. This
 means that many lemmas in a proof might not be necessary.  *Backwards checking*
-[@DBLP:conf/fmcad/HeuleHW13] avoids checking superfluous lemmas by only
-checking *core* lemmas --- lemmas that are part of the *unsatisfiable
+\cite{DBLP:conf/fmcad/HeuleHW13} avoids checking superfluous lemmas by
+only checking *core* lemmas --- lemmas that are part of the *unsatisfiable
 core*, an unsatisfiable subset of an unsatisfiable formula.  Initially, the
 clauses from the propagation sequence that establishes UP-unsatisfiability
 of the formula is added to the core.  Then the proof is processed backwards;
@@ -345,13 +345,13 @@ and are virtually dropped from the proof.  Tools like `drat-trim` can output
 a *trimmed* proof that only contains core lemmas in DRAT or LRAT format.
 
 Backwards checking can be implemented using two passes over the proof:
-a forward pass that merely performs unit propagation after each proof step
-[@DBLP:conf/fmcad/Rebola-PardoC18] until UP-unsatisfiability is established,
-and a backward pass that checks lemmas as required.  The forward pass
-enables the checker to record the state of the trail at each proof step and
-efficiently restore it during the backward pass. If there are no deletions
-of unique reason clauses, the shared UP-model grows monotonically, and the
-trail can be restored by simply truncating it.
+a forward pass that merely performs unit propagation after each proof
+step \cite{DBLP:conf/fmcad/Rebola-PardoC18} until UP-unsatisfiability is
+established, and a backward pass that checks lemmas as required.  The forward
+pass enables the checker to record the state of the trail at each proof
+step and efficiently restore it during the backward pass. If there are no
+deletions of unique reason clauses, the shared UP-model grows monotonically,
+and the trail can be restored by simply truncating it.
 
 Here is an example for backwards checking: let $F = \{xyz,
 xy\overline{z}, \overline{x}y, x\overline{y}, \overline{x}\overline{y},
@@ -369,8 +369,8 @@ deleted from the proof.
 
 \paragraph{Core-first Unit Propagation} To keep the core small and
 reduce checking costs, core-first unit propagation was introduced
-[@DBLP:conf/fmcad/HeuleHW13].  It works by doing unit propagation in two
-alternating phases:
+\cite{DBLP:conf/fmcad/HeuleHW13}.  It works by doing unit propagation in
+two alternating phases:
 
 1. Propagate exhaustively using clauses already in the core.
 2. If there is some non-core unit clause with an unassigned unit literal,
@@ -405,11 +405,11 @@ trail. Instead, for each reason deletion, the removed literals are recorded
 by the checker, along with their positions in the trail and their reasons.
 This information can be used in the backward pass to restore the state of
 the trail to be exactly the same as in the forward pass for each proof step,
-which is what the algorithm from [@DBLP:conf/fmcad/Rebola-PardoC18] does
-along other non-trivial routines to maintain the watch invariants.
+which is what the algorithm from \cite{DBLP:conf/fmcad/Rebola-PardoC18}
+does along other non-trivial routines to maintain the watch invariants.
 
 \paragraph{Reason Deletions in Inprocessing Steps} Some inprocessing
-techniques introduce or delete variables [@DBLP:conf/sat/Rebola-PardoB18].
+techniques introduce or delete variables \cite{DBLP:conf/sat/Rebola-PardoB18}.
 A deletion of a variable means that both of its literals are deleted from
 all clauses.  A deletion of literal $l$ from a clause $C$ is modelled in
 the proof by first adding $C \setminus \{l\}$ and subsequently deleting $C$.
@@ -417,15 +417,16 @@ Under operational, the deletion of $C$ is not performed if $C$ is a reason.
 This may cause a misinterpretation of the proof if the variable $l$ is later
 reused by being introduced by another inprocessing step.
 
-Inprocessing steps for XOR reasoning [@DBLP:conf/jelia/PhilippR16] and
-symmetry breaking [@DBLP:conf/cade/HeuleHW15] are supported by proof fragments
-generated by hard-coded routines [@DBLP:conf/sat/Rebola-PardoB18].  It may
-not be easy or efficient for such routines to produce such proof fragments
-without reason deletions.  Under operational DRAT the deleted reason clauses
-would linger, thus the proof is checked in a different way than intended.
+Inprocessing steps for XOR reasoning \cite{DBLP:conf/jelia/PhilippR16}
+and symmetry breaking \cite{DBLP:conf/cade/HeuleHW15} are
+supported by proof fragments generated by hard-coded routines
+\cite{DBLP:conf/sat/Rebola-PardoB18}.  It may not be easy or efficient
+for such routines to produce proof fragments any without reason deletions.
+Under operational DRAT the deleted reason clauses would linger, thus the
+proof is checked in a different way than intended.
 
-3. DRAT Proofs without Deletions of Unique Reason Clauses
-=========================================================
+3 DRAT Proofs without Deletions of Unique Reason Clauses
+========================================================
 
 Some state-of-the-art solvers produce proofs with deletions of unique
 reason clauses.  A significant fraction of their proofs are incorrect
@@ -501,8 +502,8 @@ additions and deletions, also at most one each per variable, which is small
 compared to the rest of a proof.  The patches can be easily adapted to other
 `DRUPMiniSat`-based solvers.
 
-4. Complete and Efficient DRAT Proof Checking
-========================================
+4 Complete and Efficient DRAT Proof Checking
+============================================
 
 We implement a checker to compare the costs of checking specified and
 operation DRAT. Additionally an efficient checker for specified DRAT can be
@@ -541,9 +542,9 @@ reverse literals in resolvent, so unit literal $\overline{l}$ is satisfied, or
 rather $l$ is falsified. This makes $D$ a tautology which will never be used to
 derive a conflict and thus make an inference[^gratgen-noncore-rat-candidates].
 
-\paragraph{GRAT Toolchain} More recently, Peter Lammich has published the GRAT
-toolchain [@DBLP:conf/sat/Lammich17] that is able to outperform `DRAT-trim`
-[@DBLP:conf/cade/Lammich17].
+\paragraph{GRAT Toolchain} More recently, Peter Lammich has published the
+GRAT toolchain \cite{DBLP:conf/sat/Lammich17} that is able to outperform
+`DRAT-trim` \cite{DBLP:conf/cade/Lammich17}.
 
 They first produce a GRAT proof which is similar to LRAT with the `gratgen`
 tool, after which formally verified `gratchk` can be used to check the
@@ -565,11 +566,11 @@ Among others, they introduce two optimizations:
    the loop by partitioning the watchlists into core and non-core clauses.
 
 2. Resolution candidate caching / RAT run heuristic
-[@DBLP:conf/cade/Lammich17]:
+\cite{DBLP:conf/cade/Lammich17}:
    DRAT proofs tend to contain sequences of RAT lemmas with the same pivot,
    in which case they only compute the list of RAT candidates once per
    sequence and reuse it for all lemmas with the same pivot. We did not
-   implement that since we don't have benchmarks with a significant number
+   implement that since we do not have benchmarks with a significant number
    of RAT introductions compared to the number of RUP introductions.
 
 Among state-of-the-art DRAT checkers, `gratgen` is arguably the easiest to
@@ -582,11 +583,11 @@ During our research we found one issue in the implementation which was
 fixed[^fix-revise-watches].
 
 In previous experiments, `rupee` was an order of magnitude slower than
-`DRAT-trim` [@DBLP:conf/fmcad/Rebola-PardoC18].  We believe that this overhead
-is primarily not a consequence of algorithmic differences but of implementation
-details regarding the parsing implementation and missing function inlining.
-Additionally, `rupee` does not use core-first unit propagation while the
-other checkers do.
+`DRAT-trim` \cite{DBLP:conf/fmcad/Rebola-PardoC18}.  We believe that this
+overhead is primarily not a consequence of algorithmic differences but of
+implementation details regarding the parsing implementation and missing
+function inlining.  Additionally, `rupee` does not use core-first unit
+propagation while the other checkers do.
 
 4.2 Checker Implementation
 --------------------------
@@ -623,7 +624,7 @@ of DRAT where it is convenient or necessary for competitive performance. For
 example we permit sloppy input, and fail when given $2^{30}$ or more clauses.
 
 We also support a more powerful clausal proof format, DPR (*delete propagation
-redundancy*) [@DBLP:conf/cade/HeuleKB17].
+redundancy*) \cite{DBLP:conf/cade/HeuleKB17}.
 
 To automatically minimize inputs that expose bugs in our checker we have
 developed a set of scripts to delta-debug CNF and DRAT instances.
@@ -650,7 +651,7 @@ runtime assertions, including checks for arithmetic overflows and narrowing
 conversions that cause a change of value.
 
 4.3 SICK Format
-----------------
+---------------
 
 For DRAT proofs that are verified by `rate`, it can produce an LRAT proof
 containing core lemmas. The formally verified LRAT checker can be used
@@ -689,19 +690,20 @@ a tool.  However, a proof is never incorrectly rejected because the computed
 shared UP-model is too large, since a larger model increases the likelihood
 of finding a conflict.
 
-Proof incorrectness certificates have been proposed in
-[@DBLP:conf/sat/Rebola-PardoB18].  The format we use is called *SICK*. It was
-originally developed for `rupee`.  A certificate in our SICK format can be used
-by our tool `sick-check` to verify incorrectness of the proof without doing any
-unit propagation. Furthermore, the incorrectness certificate is tiny compared
-to the formula. We have fixed some bugs in our checker that were exposed by
-`sick-check`.  The SICK file format is using TOML[^toml] syntax.  See Figure
-\ref{grammar} for a grammar.  An example application of a SICK certificate is
-shown in Figure \ref{sick-example}.  The first two columns show a satisfiable
-formula with two binary clauses in DIMACS format and an incorrect DRAT proof
-for this formula. The proof consists of two lemmas, a size-one clause, and
-the empty clause.  The third column shows the corresponding SICK certificate,
-stating that the RAT check failed for the first lemma in the proof.
+Proof incorrectness certificates have been proposed
+in \cite{DBLP:conf/sat/Rebola-PardoB18}.  The format we use is called
+*SICK*. It was originally developed for `rupee`.  A certificate in our SICK
+format can be used by our tool `sick-check` to verify incorrectness of the
+proof without doing any unit propagation. Furthermore, the incorrectness
+certificate is tiny compared to the formula. We have fixed some bugs in our
+checker that were exposed by `sick-check`.  The SICK file format is using
+TOML[^toml] syntax.  See Figure \ref{grammar} for a grammar.  An example
+application of a SICK certificate is shown in Figure \ref{sick-example}.
+The first two columns show a satisfiable formula with two binary clauses
+in DIMACS format and an incorrect DRAT proof for this formula. The proof
+consists of two lemmas, a size-one clause, and the empty clause.  The third
+column shows the corresponding SICK certificate, stating that the RAT check
+failed for the first lemma in the proof.
 
 \begin{figure}
     \begin{tabular}{rcl}
@@ -800,8 +802,8 @@ design of this new syntax that takes into account the variants of DRAT with
 a fixed or an arbitrary pivot.
 
 
-5. Experimental Evaluation
-==========================
+5 Experimental Evaluation
+=========================
 
 Here we present a performance evaluation of our checker.  Technical details
 are available[^rate-experiments].  We analyze four checkers:
@@ -815,14 +817,14 @@ Only `rate` checks specified DRAT, the other three implement operational DRAT.
 
 \paragraph{Experimental Setting} Each individual benchmark consists of a
 SAT problem instance and a solver to produce the proof for this instance.
-For each benchmark, we run the solvers with the same limits as in the
-SAT competition --- a maximum of 5000 seconds CPU time and 24 GB memory
-using runlim[^runlim]. Then we run the checkers on the resulting proof
-(using a time limit of 5000 as in the competition).  For `rate`, `rate-d`
-`DRAT-trim`, we ensured that the LRAT proof is verified by the verfied checker
-`lrat-4`[^lrat-check] in preliminary runs.  However, we do not generate LRAT
-(or GRAT) proofs for the final measurements because based on preliminary
-experiments we don't expect any interesting differences stemming from LRAT
+For each benchmark, we run the solvers with the same limits as in the SAT
+competition --- a maximum of 5000 seconds CPU time and 24 GB memory using
+runlim[^runlim]. Then we run the checkers on the resulting proof (using
+a time limit of 5000 as in the competition).  For `rate`, `rate-d` and
+`DRAT-trim`, we did ensure that the LRAT proof is verified by the verfied
+checker `lrat-4`[^lrat-check] in preliminary runs.  However, we do not generate
+LRAT (or GRAT) proofs for the final measurements because based on preliminary
+experiments we do not expect any interesting differences stemming from LRAT
 proof output routines.  For proofs rejected by `rate`, we run `sick-check`,
 to double-check that the proof is incorrect under to the semantics of
 specified DRAT.  For the final evaluation we also disabled assertions and
@@ -830,8 +832,8 @@ logging in `rate` and `rate-d` which seems to give small speedups.
 
 We performed all experiments on a machine with two AMD Opteron 6272 CPUs
 with 16 cores each and 220 GB main memory running Linux version 4.9.189.
-We used GNU parallel [@Tange2018] to run 32 jobs simultaneously. Such a high
-load slows down the solvers and checkers, likely due to increased memory
+We used GNU parallel \cite{Tange2018} to run 32 jobs simultaneously. Such a
+high load slows down the solvers and checkers, likely due to increased memory
 pressure. Based on preliminary experiments we expect that the checkers are
 affected equally so we assume that a comparison between the checkers is fair.
 
@@ -916,20 +918,20 @@ red markers.
 memory overhead of checking specified DRAT over operational
 DRAT.](p/correlation-reason-deletions.pdf){#fig:correlation-reason-deletions}
 
-6. Conclusion
-=============
+6 Conclusion
+============
 
 State-of-the-art SAT solvers produce proofs with deletions of unique reason
 clauses. These proofs are often incorrect under specified DRAT. Under
 operational DRAT they are correct because those deletions will effectively
-be removed from the proof. In [Section 3][3. DRAT Proofs without Deletions
+be removed from the proof. In [Section 3][3 DRAT Proofs without Deletions
 of Unique Reason Clauses] we have explained how `DRUPMiniSat`-based solvers
 produce proofs with reason deletions and we have proposed patches to avoid
 them, removing the need to ignore some deletions to verify their proofs.
 
-As we explained at the end of [Section 2][2. Preliminaries], specified DRAT
+As we explained at the end of [Section 2][2 Preliminaries], specified DRAT
 is necessary to verify solvers' inprocessing steps that employ deletions
-of unique reason clauses [@DBLP:conf/sat/Rebola-PardoB18]. Our initial
+of unique reason clauses \cite{DBLP:conf/sat/Rebola-PardoB18}. Our initial
 research question was whether specified DRAT can be checked as efficiently
 as operational DRAT. Previous work has yielded an efficient algorithm but
 no competitive checker. We have implemented the first checker delivering
@@ -951,8 +953,8 @@ computes the accumulated formula up to the failed proof step and then checks
 that step without doing propagation. These certificates can be used to detect
 bugs in checkers (we did find some in `rate`) and pinpoint bugs in solvers.
 
-7. Future Work
-==============
+7 Future Work
+=============
 
 If specified DRAT were to be adopted, it might be beneficial to implement a
 way to perform deletions of non-unique reasons more efficiently than `rate`
@@ -965,7 +967,7 @@ if a reason clause for some literal $l$ is deleted, check if unit clause
 $l$ is in the formula. If it is, then the deleted reason is not unique and
 the shared UP-model will definitely not change.  This criterion might be
 sufficient for the proofs produced by the second variant of the patches from
-[section 3][3. DRAT Proofs without Deletions of Unique Reason Clauses].
+[section 3][3 DRAT Proofs without Deletions of Unique Reason Clauses].
 
 State-of-the-art DRAT checkers are heavily optimized for speed but they keep
 the entire input proof and the resulting LRAT proof in memory. If the available
@@ -1014,5 +1016,5 @@ See <https://www.cs.utexas.edu/~marijn/drup/>
 [^gratgen-noncore-rat-candidates]:
 <http://www21.in.tum.de/~lammich/grat/gratgen-doc/Unmarked_RAT_Candidates.html>
 
-References
-==========
+\printbibliography
+

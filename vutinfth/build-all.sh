@@ -1,6 +1,8 @@
 #!/bin/sh
 # Copyright (C) 2014-2019 by Thomas Auzinger <thomas@auzinger.name>
 
+set -eu
+
 CLASS=vutinfth
 SOURCE=submission
 
