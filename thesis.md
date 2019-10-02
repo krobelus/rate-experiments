@@ -751,21 +751,19 @@ column shows the corresponding SICK certificate, stating that the RAT check
 failed for the first lemma in the proof.
 
 \begin{figure}
-    {\small
-        \begin{tabular}{rcl}
-        SICK            & := & ProofFormat ProofStep NaturalModel Witness* \\
-        ProofFormat     & := & \texttt{proof\_format =}
-        ( \texttt{"DRAT-arbitrary-pivot"} | \texttt{"DRAT-pivot-is-first-literal"}) \\
-        ProofStep       & := & \texttt{proof\_step =} Integer \\
-        NaturalModel    & := & \texttt{natural\_model =} ListOfLiterals \\
-        Witness         & := & \texttt{[[witness]]} FailingClause FailingModel Pivot \\
-        FailingClause   & := & \texttt{failing\_clause =} ListOfLiterals \\
-        FailingModel    & := & \texttt{failing\_model =} ListOfLiterals \\
-        Pivot           & := & \texttt{pivot =} Literal \\
-        ListOfLiterals  & := & \texttt{[} (Literal \texttt{,})* \texttt{]} \\
-        \end{tabular}
-        \caption{The grammar of a SICK certificate\label{grammar}}
-    }
+    \begin{tabular}{rcl}
+    SICK            & := & ProofFormat [ProofStep] NaturalModel Witness* \\
+    ProofFormat     & := & \texttt{proof\_format = }FormatSpec \\
+    FormatSpec      & := & (\texttt{"DRAT-arbitrary-pivot"} | \texttt{"DRAT-pivot-is-first-literal"}) \\
+    ProofStep       & := & \texttt{proof\_step = }Integer \\
+    NaturalModel    & := & \texttt{natural\_model = }ListOfLiterals \\
+    Witness         & := & \texttt{[[witness]]} FailingClause FailingModel Pivot \\
+    FailingClause   & := & \texttt{failing\_clause = }ListOfLiterals \\
+    FailingModel    & := & \texttt{failing\_model = }ListOfLiterals \\
+    Pivot           & := & \texttt{pivot = }Literal \\
+    ListOfLiterals  & := & \texttt{[} (Literal \texttt{,})* \texttt{]} \\
+    \end{tabular}
+    \caption{The grammar of a SICK certificate\label{grammar}}
 \end{figure}
 
 \begin{figure}
@@ -796,6 +794,8 @@ failed for the first lemma in the proof.
   referenced proof step.  For a textual proof that has each proof step on
   a separate line, this corresponds to the line number of the introduction
   instruction that failed.
+  This may be omitted, which means that the proof does not add enough clauses
+  to make the accumulated formula UP-unsatisifiable.
 - `proof_format` describes the proof format to use.
    We added the distinction between these two formats because it was not
    clear which one should be used exclusively.
@@ -829,11 +829,11 @@ fulfill below properties.
 
 Let $F$ be the accumulated formula up to and excluding the lemma.
 
-1. The proof contains the `proof_step`.
-2. The given `natural_model` is the shared UP-model of $F$.
+1. The proof contains the `proof_step` (if present).
+2. The given `natural_model` is a UP-model of $F$.
 3. For each witness, consisting of `failing_clause`, `failing_model` and `pivot`.
     1. The `failing_clause` is in $F$.
-    3. The union of `natural_model` and `failing_model` is the shared UP-model of
+    3. The union of `natural_model` and `failing_model` is a UP-model of
        $F \cup \{ \overline{l} \,|\, l \in r\}$
        where $r$ is the resolvent on `pivot` of the lemma and the `failing_clause`.
 4. If the format is `DRAT-arbitrary-pivot`, the lemma is equal to the set
