@@ -19,7 +19,7 @@
 \usepackage[ruled,linesnumbered,algochapter]{algorithm2e} % Enables the writing of pseudo code.
 \usepackage[usenames,dvipsnames,table]{xcolor} % Allows the definition and use of colors. This package has to be included before tikz.
 \usepackage{nag}       % Issues warnings when best practices in writing LaTeX documents are violated.
-\usepackage{todonotes} % Provides tooltip-like todo notes.
+\usepackage{todonotes}
 \usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 
@@ -62,7 +62,7 @@
 
 % Set PDF document properties
 \hypersetup{
-    % pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
+    pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
     linkbordercolor = {Melon},                % The color of the borders of boxes around crosslinks (optional).
     pdfauthor       = {\authorname},          % The author's name in the document properties (optional).
     pdftitle        = {\thesistitle},         % The document's title in the document properties (optional).
@@ -84,7 +84,7 @@
 %  {title before name}{name}{title after name}{gender}
 %  where both titles are optional (i.e. can be given as empty brackets {}).
 \setauthor{}{\authorname}{}{male}
-\setadvisor{Associate Prof. Dipl.-Ing. D.Phil.}{Georg Weissenbacher}{}{male}
+\setadvisor{Associate Prof. Dipl.-Ing.}{Georg Weissenbacher}{D.Phil.}{male}
 
 \setfirstassistant{}{Adrián Rebola-Pardo}{MSc.}{male}
 
@@ -149,33 +149,34 @@
 
 \begin{kurzfassung}
 
-Das klauselbasierte Beweisformat DRAT ist der De-Facto-Standard um
+Das klauselbasierte Beweisformat DRAT ist der De-Facto-Standard, um
 Unerfüllbarkeitsergebnisse von SAT-Gleichungslösern zu verifizieren.
-Moderne DRAT-Beweisprüfer ignorieren Eliminierungsinstruktionen
-von sogenannten Unit-Klauseln, was bedeutet dass sich die Semantik der
-Beweisprüfer von der DRAT-Spezifikation unterscheidet; infolgedessen können
-sie, unter Umständen von SAT-Lösern verwendete Vereinfachungstechniken die
-Unit-Klauseln eliminieren, nicht verifizieren.  Moderne SAT-Löser generieren
-Beweise die von diesen DRAT-Prüfern akzeptiert werden, jedoch bezüglich der
-DRAT-Spezifikation inkorrekt sind, da sie Eliminierungsinstruktionen enthalten,
-die nicht-redundante Informationen löschen.  Wir schlagen Korrekturen for
-prämierte SAT-Löser vor, wodurch diese in der Lage sind, Beweise ohne
-ebenjene destruktiven Eliminierungen zu generieren, die ergo im Sinne der
-Spezifikation korrekt sind. Dennoch können Unit-Eliminierungen in Beweisen
-in Anbetracht der Verwendung von fortgeschrittenen Vereinfachungstechniken
-wohl kaum ausgeschlossen werden, sofern der Löseaufwand nicht darunter
-leiden soll.  Die Durchführung von Unit-Eliminierungen in Beweisprüfern
-kann rechenaufwändig sein.  Wir haben den ersten wettbewerbsfähigen Prüfer
-implementiert, der Unit-Eliminierungen berücksichtigt and präsentieren
-unsere Versuchsergebnisse, die darauf hindeuten, dass der Rechenaufwand
-für das Überprüfen von einem durchschnittlichen Beweis mit oder ohne
-Unit-Eliminierungen gleich ist.  Weiters führen wir das SICK-Format ein,
-das, vergleichsweise kleine, effizient überprüfbare Gegenbeispiele
-zu DRAT-Beweisen beschreibt. Indem wir diese Gegenbeispiele mit einem
-unabhängigen Programm überprüfen, stärken wir das Vertrauen in die
-Stichhaltigkeit der Inkorrektheits-Ergebnisse.  Außerdem kann diese Technik
-von Nutzen sein um Fehler in (der Beweisgenerierung von) SAT-Lösern und
-Prüfern zu finden.
+DRAT-Beweise bestehen aus Lemmas, die Klauseln hinzufügen
+und Klauseleliminierungen.  Moderne DRAT-Beweisprüfer ignorieren
+Eliminierungsinstruktionen von sogenannten Unit-Klauseln, was bedeutet dass
+sich die Semantik der Beweisprüfer von der DRAT-Spezifikation unterscheidet;
+infolgedessen können sie, unter Umständen von SAT-Lösern verwendete
+Vereinfachungstechniken die Unit-Klauseln eliminieren, nicht verifizieren.
+Moderne SAT-Löser generieren Beweise die von diesen DRAT-Prüfern akzeptiert
+werden, jedoch bezüglich der DRAT-Spezifikation inkorrekt sind, da sie
+Eliminierungsinstruktionen enthalten, die nicht-redundante Informationen
+löschen.  Wir schlagen Korrekturen für prämierte SAT-Löser vor, wodurch
+diese in der Lage sind, Beweise ohne ebenjene destruktiven Eliminierungen
+zu generieren, die ergo im Sinne der Spezifikation korrekt sind. Dennoch
+können Unit-Eliminierungen in Beweisen in Anbetracht der Verwendung von
+fortgeschrittenen Vereinfachungstechniken wohl kaum ausgeschlossen werden,
+sofern der Löseaufwand nicht darunter leiden soll.  Die Durchführung von
+Unit-Eliminierungen in Beweisprüfern kann rechenaufwändig sein.  Wir haben
+den ersten wettbewerbsfähigen Prüfer implementiert, der Unit-Eliminierungen
+berücksichtigt and präsentieren unsere Versuchsergebnisse, die darauf
+hindeuten, dass der Rechenaufwand für das Überprüfen von einem
+durchschnittlichen Beweis mit oder ohne Unit-Eliminierungen gleich ist.
+Weiters führen wir das SICK-Format ein, das, vergleichsweise kleine, effizient
+überprüfbare Gegenbeispiele zu DRAT-Beweisen beschreibt. Indem wir diese
+Gegenbeispiele mit einem unabhängigen Programm überprüfen, stärken wir das
+Vertrauen in die Stichhaltigkeit der Inkorrektheits-Ergebnisse.  Außerdem
+kann diese Technik von Nutzen sein um Fehler in (der Beweisgenerierung von)
+SAT-Lösern und Prüfern zu finden.
 
 \end{kurzfassung}
 
