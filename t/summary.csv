@@ -1,0 +1,7 @@
+benchmarks where the solver terminates and UNSATISFIABLE in the competition     3653
+    from which our solver run successfully  generates a proof                   3605
+        from which rate does not reject the proof                               843
+                                from which verified                             839
+                                timeout                                         2
+                                memout                                          1
+                                error                                           1
