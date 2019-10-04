@@ -22,7 +22,7 @@ pandoc := pandoc --filter pandoc-fignos
 # 	sed -i '1i# $(TITLE)' $@
 abstract: thesis.md
 	awk '/Abstract:/{a=1;$$1=""}{if(a)print}/^$$/{if(a)exit}' $< > $@
-vutinfth/submission.pdf: vutinfth/submission.tex thesis.md $(tables) $(plots) Makefile abstract
+vutinfth/submission.pdf: vutinfth/submission.tex thesis.md $(tables) $(plots) Makefile abstract title.tex
 	awk 'BEGIN{p=1}/^\\maketitle$$/{p=0}/^1./{p=1}/\\printbibliography/{p=0}{if(p)print}' thesis.md | \
 	perl -ne 's/(\[|^)\d+(\.\d+)* /\1/; print' | \
 	$(pandoc) --from=markdown -o vutinfth/thesis-for-submission.tex
@@ -32,7 +32,7 @@ thesis.pdf: thesis.tex $(tables) $(plots) Makefile
 	xelatex thesis
 	biber thesis
 	xelatex thesis
-thesis.tex: thesis.md $(tables) $(plots) Makefile references.bib
+thesis.tex: thesis.md $(tables) $(plots) Makefile references.bib title.tex
 	@# $(pandoc) --biblatex --bibliography=references.bib --csl=ieee.csl $< -o $@ --standalone
 	$(pandoc) $< -o $@ --standalone
 thesis.html: thesis.md $(tables) $(plots) Makefile
@@ -54,7 +54,7 @@ $(tables): results.csv table.py
 	mkdir $@
 	./table.py $@ < $<
 
-poster/poster.pdf: poster/poster.tex $(plots)
+poster/poster.pdf: poster/poster.tex $(plots) title.tex
 	cd poster && pdflatex -shell-escape -halt-on-error poster.tex
 	cd poster && pdflatex -shell-escape -halt-on-error poster.tex
 
