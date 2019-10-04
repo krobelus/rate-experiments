@@ -100,8 +100,8 @@ incorrect result due to these clauses.
 
 Moving from operational DRAT to specified DRAT requires changes in some
 state-of-the-art SAT solvers because their proofs can be incorrect under
-specified DRAT.  To the best of our knowledge, all of those solvers are
-based on `MiniSat`\cite{DBLP:conf/sat/EenS03}.  Their proofs can be incorrect
+specified DRAT.  To the best of our knowledge, all of those solvers are based
+on `MiniSat` \cite{DBLP:conf/sat/EenS03}.  Their proofs can be incorrect
 under specified DRAT because they may contain some deletions of unit clauses.
 As we did not see a motivation for those deletions, we investigated how they
 are being generated.  We found that the solvers who emit the problematic
@@ -134,8 +134,8 @@ operational DRAT checkers.  This motivates our central research question:
 To answer this, we implemented a checker for specified DRAT with
 state-of-the-art performance.  Our experimental results suggest that specified
 and operational DRAT are equally expensive to check on the average real-world
-instance.  We also observe that a high number of unit deletions tends to
-have a significant negative impact on checking performance for specified DRAT.
+instance.  We also observe that a high number of unit deletions may have a
+significant negative impact on checking performance for specified DRAT.
 
 The majority of solvers at SAT competitions are derived from `MiniSat` and
 produce proofs that are incorrect under specified DRAT. For those incorrect
@@ -151,19 +151,19 @@ proof, e.g.\ it allows the definition of the SICK format to be much simpler.
 We contribute an extension to the SICK format to support a slightly different
 semantics of DRAT checking.
 
-This thesis is organized as follows: In [the following section][2
-Preliminaries] we will introduce preliminary knowledge about SAT solving,
-proofs of unsatisfiability and proof checking, including the optimization
-challenges of specified DRAT checking.  In [Section 3][3 A Small Tweak to
-Proof Generation in `MiniSat`-based SAT Solvers] we propose how to change
-`MiniSat`-based solvers to produce unambiguously correct proofs.  [Section
-4][4 A Complete and Efficient DRAT Proof Checker] concerns the efficient
-implementation of our specified DRAT checker:  after briefly discussing
-other checkers we present our implementation and describe the SICK format for
-certificates of proof incorrectness.  Experimental results evaluating checker
-performance are given in [Section 5][5 Experimental Evaluation].  Finally,
-we draw a conclusion in [Section 6][6 Conclusion] and give outlook on future
-work in the area of DRAT proof-checking in [the last section][7 Future Work].
+This thesis is organized as follows: In [the next section][2 Preliminaries]
+we will introduce preliminary knowledge about SAT solving, proofs of
+unsatisfiability and proof checking, including the optimization challenges of
+specified DRAT checking.  In [Section 3][3 A Tiny Tweak to Proof Generation
+in `MiniSat`-based SAT Solvers] we propose how to change `MiniSat`-based
+solvers to produce unambiguously correct proofs.  [Section 4][4 A Complete
+and Efficient DRAT Proof Checker] concerns the efficient implementation
+of our specified DRAT checker:  after briefly discussing other checkers we
+present our implementation and describe the SICK format for certificates of
+proof incorrectness.  Experimental results evaluating checker performance
+are given in [Section 5][5 Experimental Evaluation].  Finally, we draw a
+conclusion in [Section 6][6 Conclusion] and give outlook on future work in
+the area of DRAT proof-checking in [the last section][7 Future Work].
 
 2 Preliminaries
 ===============
@@ -463,7 +463,7 @@ for such routines to produce proof fragments any without reason deletions.
 Under operational DRAT the deleted reason clauses would linger, thus the
 proof is checked in a different way than intended.
 
-3 A Small Tweak to Proof Generation in `MiniSat`-based SAT Solvers
+3 A Tiny Tweak to Proof Generation in `MiniSat`-based SAT Solvers
 ================================================================
 
 Some state-of-the-art solvers produce proofs with deletions of unique
@@ -689,9 +689,8 @@ developers have the highest contribution rate to open source projects.
 Based on our experience, we believe that it is a viable alternative to C
 or C++ for SAT solving, assuming people are willing to learn the language.
 The first Rust-based solver to take part in competitions, `varisat`[^varisat],
-is a great example of this. They use a library that implements a missing
-language feature, adding convenience features to the type system that is
-sometimes inflexible due to Rust's borrow checker [^partial-ref].
+is a great example of this. They use a library[^partial-ref] to avoid writing
+a lot of boilerplate code necessary to satisfy Rust's borrow checker.
 
 Rust aims to avoid any undefined behavior.  For example, buffer overflows are
 prevented by performing runtime bounds checks upon array access.  While for
@@ -719,43 +718,42 @@ On top of that, to show that $C$ is not RAT, it suffices to show that any
 resolvent with $C$ is not RUP.  For example, consider formula $F = \{xy,
 \overline{x}y, x\overline{y}\}$ and lemma $\overline{x}\overline{y}$ which
 is neither RUP nor RAT. To refute RUP for lemma $\overline{x}\overline{y}$
-we find a UP-model of $F \cup \{xy\}$, for example $\{xy\}$.  To refute RAT
-for $\overline{x}\overline{y}$ on pivot $\overline{x}$ we check that some
-resolvent on $\overline{x}$ is not RUP.  The first resolvent $y\overline{y}$
-is a tautology and thus trivially RUP but the second resolvent $\overline{y}$
-is not: $F \cup \{y\}$ has a UP-model $\{xy\}$. The same thing can be shown
-for the resolvents on the other pivot $\overline{y}$.
+we find a UP-model of $F \cup \{xy\}$, for example $\emptyset$ or $\{xy\}$.
+To refute RAT for $\overline{x}\overline{y}$ on pivot $\overline{x}$ we
+check that some resolvent on $\overline{x}$ is not RUP.  The first resolvent
+$y\overline{y}$ is a tautology and thus trivially RUP but the second resolvent
+$\overline{y}$ is not: $F \cup \{y\}$ has a UP-model $\{xy\}$. The same
+thing can be shown for the resolvents on the other pivot $\overline{y}$.
 
-Since our checker already computes the shared UP-models for each RUP check,
-we can output those and check the inference with an independent tool.
-This tool can be much simpler than the checker because it does not need
-to implement unit propagation. This is useful because unit propagation
-with watch lists is non-trivial to implement correctly for specified DRAT.
-A bug in a watch list implementation often cause problems when it causes some
-clauses to not be watched when they are unit which means that the propagation
-may be incomplete.  If so, the shared UP-model computed by the checker is
-smaller than the actual shared UP-model. This can be detected easily by
-looking for a clause that is unit but its unit literal is not yet assigned.
-On the other hand, if the checker's shared UP-model is bigger than the actual
-shared UP-model, that would be a bug that is not easily be detected by such
-a tool.  However, a proof is never incorrectly rejected because the computed
-shared UP-model is too large, since a larger model increases the likelihood
-of finding a conflict.
+Since our checker already computes the shared UP-model for each RUP check,
+we can output that for an incorrect inference and check the inference with
+an independent tool.  This tool can be much simpler than the checker because
+it does not need to implement unit propagation. This is useful because unit
+propagation with watchlists is non-trivial to implement correctly for specified
+DRAT.  A bug in a watchlist implementation typically provokes problems when
+it causes some clause to not be watched when it is unit which means that the
+propagation may be incomplete.  If so, the shared UP-model computed by the
+checker is smaller than the actual shared UP-model. This can be detected easily
+by looking for a clause that is unit but not satisifed.  On the other hand,
+if the checker's shared UP-model is bigger than the actual shared UP-model,
+that would be a bug that is not easily be detected by such a tool.  However,
+a proof is never incorrectly rejected because the computed shared UP-model is
+too large, since a larger model increases the likelihood of finding a conflict.
 
-Proof incorrectness certificates have been proposed
-in \cite{DBLP:conf/sat/Rebola-PardoB18}.  The format we use is called
-*SICK*. It was originally developed for `rupee`.  A certificate in our SICK
-format can be used by our tool `sick-check` to verify incorrectness of the
-proof without doing any unit propagation. Furthermore, the incorrectness
-certificate is tiny compared to the formula. We have fixed some bugs in our
-checker that were exposed by `sick-check`.  The SICK file format is using
-TOML[^toml] syntax.  See Figure \ref{grammar} for a grammar.  An example
-application of a SICK certificate is shown in Figure \ref{sick-example}.
-The first two columns show a satisfiable formula with two binary clauses
-in DIMACS format and an incorrect DRAT proof for this formula. The proof
-consists of two lemmas, a size-one clause, and the empty clause.  The third
-column shows the corresponding SICK certificate, stating that the RAT check
-failed for the first lemma in the proof.
+Proof incorrectness certificates have been proposed in
+\cite{DBLP:conf/sat/Rebola-PardoB18}.  The format we use is called *SICK*. It
+was originally developed for `rupee`.  A certificate in our SICK format can
+be used by our tool `sick-check` to verify incorrectness of the proof without
+doing any unit propagation. Furthermore, the incorrectness certificate is
+tiny compared to the formula. We have fixed some bugs in our checker that
+were exposed by `sick-check`.  The SICK file format is using TOML[^toml]
+syntax; see Figure \ref{grammar} for a grammar.  An example application of
+a SICK certificate is shown in Figure \ref{sick-example}.  The first two
+columns show a satisfiable formula with two binary clauses in DIMACS format
+and an incorrect DRAT proof for this formula. The proof consists of two
+lemmas, a size-one clause, and the empty clause.  The third column shows the
+corresponding SICK certificate, stating that the RUP and RAT checks failed
+for the first lemma in the proof.
 
 \begin{figure}
     \begin{tabular}{rcl}
@@ -801,8 +799,8 @@ failed for the first lemma in the proof.
   referenced proof step.  For a textual proof that has each proof step on
   a separate line, this corresponds to the line number of the introduction
   instruction that failed.
-  This may be omitted, which means that the proof does not add enough clauses
-  to make the accumulated formula UP-unsatisifiable.
+  If `proof_step` is omitted, it means that the proof does not add enough
+  clauses to make the accumulated formula UP-unsatisifiable.
 - `proof_format` describes the proof format to use.
    We added the distinction between these two formats because it was not
    clear which one should be used exclusively.
@@ -817,6 +815,8 @@ failed for the first lemma in the proof.
    proof formats such as PR however require specifying the witness explicitly.
 
 - `natural_model` gives the shared UP-model before checking this proof step.
+   If `proof_step` is omitted, this is the shared UP-model after applying
+   all proof steps.
 
 Each witness is a counter-example to some inference and comprises the
 following elements:
@@ -828,8 +828,9 @@ following elements:
   when performing the failed inference check.
 - `pivot`: This specifies the pivot literal.
 
-The absence of a witness means that a RUP check failed.  If the lemma is the
-empty clause, a witness is never needed, since the empty clause cannot be RAT.
+If the lemma is the empty clause, no witness is necessary, since the empty
+clause cannot be RAT. Additionally, if the `proof_step` is omitted, no
+witness is necessary either.
 
 \paragraph{Semantics} Our tool `sick-check` verifies SICK certificates that
 fulfill below properties.
@@ -871,19 +872,20 @@ are available[^rate-experiments].  We analyze four checkers:
 Only `rate` checks specified DRAT, the other three implement operational DRAT.
 
 \paragraph{Experimental Setting} Each individual benchmark consists of a
-SAT problem instance and a solver to produce the proof for this instance.
+SAT problem instance and a solver to produce a proof for this instance.
 For each benchmark, we run the solvers with the same limits as in the SAT
-competition --- a maximum of 5000 seconds CPU time and 24 GB memory using
-runlim[^runlim]. Then we run the checkers on the resulting proof (using
-a time limit of 5000 as in the competition).  For `rate`, `rate-d` and
-`DRAT-trim`, we did ensure that the LRAT proof is verified by the verfied
-checker `lrat-4`[^lrat-check] in preliminary runs.  However, we do not generate
-LRAT (or GRAT) proofs for the final measurements because based on preliminary
-experiments we do not expect any interesting differences stemming from LRAT
-proof output routines.  For proofs rejected by `rate`, we run `sick-check`,
-to double-check that the proof is incorrect under to the semantics of
-specified DRAT.  For the final evaluation we also disabled assertions and
-logging in `rate` and `rate-d` which seems to give small speedups.
+competition --- a maximum of 5000 seconds CPU time and 24 GB memory, both
+imposed by runlim[^runlim]. Then we run the checkers on the resulting proof
+using a time limit of 20000 seconds, as in the competition.  For `rate`,
+`rate-d` and `DRAT-trim`, we did ensure that the LRAT proof is verified by
+the verfied checker `lrat-4`[^lrat-check] in preliminary runs.  However,
+we do not generate LRAT (or GRAT) proofs for the final measurements because
+based on preliminary experiments we do not expect any interesting differences
+stemming from LRAT proof output routines.  For proofs rejected by `rate`,
+we run `sick-check`, to double-check that the proof is incorrect under to
+the semantics of specified DRAT.  For the final evaluation we also disabled
+assertions and logging in `rate` and `rate-d` which seems to give small
+speedups.
 
 We performed all experiments on a machine with two AMD Opteron 6272 CPUs
 with 16 cores each and 220 GB main memory running Linux version 4.9.189.
@@ -898,15 +900,15 @@ benchmarks that are not interesting for our purpose of evaluating `rate's`
 performance.  We consider only unsatisfiable instances where the solver does
 not time out, and where the resulting proof is not rejected by `rate`. The
 latter condition ensures a fair comparison in terms of checker performance:
-when `rate` rejects a proof it exits as soon as an incorrect instruction is
-encountered in the backward pass. This means that it verified only a fraction
-of the proof while other checkers would verify the entire proof. Hence it
-is not useful for benchmarking checker performance to include proofs that
+when `rate` rejects a proof it terminates as soon as an incorrect instruction
+is encountered in the backward pass. This means that it has verified only a
+fraction of the proof while other checkers would verify the entire proof. Hence
+it is not useful for benchmarking checker performance to include proofs that
 are rejected under specified DRAT.
 
 Starting from the benchmarks where --- according to the competition
 results[^sc18-results] --- the solver successfully produced a proof of
-unsatisfiability, here is how many benchmarks where removed by the criteria
+unsatisfiability, here is how many benchmarks were removed by the criteria
 mentioned above:
 
 \begin{tabular}{p{.07\textwidth}p{.07\textwidth}p{.07\textwidth}lr}
@@ -929,7 +931,7 @@ mentioned above:
 We present performance data as reported by `runlim` --- time in seconds and
 memory usage in megabytes (2^20^ bytes).
 
-On an individual instance two checkers might have different performance
+On an individual instance, two checkers can exhibit different performance
 because of different propagation orders and, as a result, different
 clauses being added to the core. Instead we compare the distribution of the
 checkers' performance.  The distribution has a long tail of instances where
@@ -966,8 +968,8 @@ Handling reason deletions may require extra time and memory. Figure
 @fig:correlation-reason-deletions shows the number of reason deletions and
 the overhead of `rate` compared to `rate-d` --- among our benchmarks runtime
 at most doubles. Currently, `rate` incurs these extra costs also for proofs
-that contain no unique reason deletions --- these instances are shown with
-red markers.
+that contain no unique reason deletions (where unit deletions could simply
+be ignored altogether) --- these instances are shown with red markers.
 
 ![The number of reason deletions compared to the runtime and
 memory overhead of checking specified DRAT over operational
@@ -979,34 +981,35 @@ DRAT.](p/correlation-reason-deletions.pdf){#fig:correlation-reason-deletions}
 State-of-the-art SAT solvers produce proofs with deletions of unique
 reason clauses. These proofs are often incorrect under specified DRAT. Under
 operational DRAT they are correct because those deletions will effectively be
-removed from the proof. In [Section 3][3 A Small Tweak to Proof Generation
+removed from the proof. In [Section 3][3 A Tiny Tweak to Proof Generation
 in `MiniSat`-based SAT Solvers] we have explained how `DRUPMiniSat`-based
 solvers produce proofs with unique reason deletions that render them incorrect
 under specified DRAT, and we have proposed patches to avoid those deletions,
 removing the need to ignore deletions to verify their proofs.
 
-As we explained at the end of [Section 2][2 Preliminaries], specified DRAT
-is necessary to verify solvers' inprocessing steps that employ deletions
-of unique reason clauses \cite{DBLP:conf/sat/Rebola-PardoB18}. Our initial
-research question was whether specified DRAT can be checked as efficiently
-as operational DRAT. Previous work has yielded an efficient algorithm but
-no competitive checker. We have implemented the first checker delivering
-state-of-the-art performance while supporting both specified and operational
-DRAT. We provide experimental results suggesting that that the cost for
-specified DRAT is, on average, the same but a high number of reason deletions
-may make it significantly more costly.
+As we explained at the end of [Section 2][2 Preliminaries], specified DRAT is
+necessary to verify solvers' inprocessing steps that employ deletions of unique
+reason clauses \cite{DBLP:conf/sat/Rebola-PardoB18}. Our research question
+was whether specified DRAT can be checked as efficiently as operational
+DRAT. Previous work has yielded an efficient algorithm but no competitive
+checker. We have implemented the first checker delivering state-of-the-art
+performance while supporting both specified and operational DRAT. We provide
+experimental results suggesting that that the cost for specified DRAT is,
+on average, the same but a high number of reason deletions may make it
+significantly more costly.
 
-The two-watched literal scheme is difficult to implement correctly, and
-efficient algorithm to check specified DRAT further complicates that.
-Our checker implementation is able to output LRAT and GRAT certificates
-that can be verified by a formally verified checker, giving some confidence
-that `rate` gave the right answer. However, many proofs are rejected by
-`rate`. We needed a way to trust those incorrectness results.  We extended
-the previously unpublished SICK format for proof incorrectness certificates
-and implemented a tool, `sick-check` that verifies those certificates,
-independent of `rate` and also much simpler than `rate`: `sick-check` merely
-computes the accumulated formula up to the failed proof step and then checks
-that step without doing propagation. These certificates can be used to detect
+The two-watched literal scheme is difficult to implement correctly, and the
+optimizations from \cite{DBLP:conf/fmcad/Rebola-PardoC18} to check specified
+DRAT efficiently further complicate that.  Our checker implementation
+is able to output LRAT and GRAT certificates that can be verified by a
+formally verified checker, giving some confidence that `rate` gave the right
+answer. However, many proofs are rejected by `rate`. We needed a way to
+trust those incorrectness results.  We extended the previously unpublished
+SICK format for proof incorrectness certificates and implemented a tool,
+`sick-check` that verifies those certificates, independent of `rate`.
+Since `sick-check` merely computes the accumulated formula up to the failed
+proof step and then checks that step without doing any propagation it is
+much simpler than a DRAT checker. These certificates can be used to detect
 bugs in checkers (we did find some in `rate`) and pinpoint bugs in solvers.
 
 7 Future Work
@@ -1023,18 +1026,18 @@ if a reason clause for some literal $l$ is deleted, check if unit clause $l$
 is in the formula. If it is, then the deleted reason is not unique and the
 shared UP-model will definitely not change.  This criterion might be sufficient
 for the proofs produced by the second variant of the patches from [section
-3][3 A Small Tweak to Proof Generation in `MiniSat`-based SAT Solvers].
+3][3 A Tiny Tweak to Proof Generation in `MiniSat`-based SAT Solvers].
 
-State-of-the-art DRAT checkers are heavily optimized for speed but they keep
-the entire input proof and the resulting LRAT proof in memory. If the available
-memory is at premium, some changes could be made to do backwards checking in
-an online fashion, processing one proof step at a time.  Similarly, an LRAT
-proof line could be written to disk immediately checking a corresponding
-lemma, with some postprocessing to fix the clause IDs.
+State-of-the-art DRAT checkers are heavily optimized for speed but they
+keep the entire input proof and the resulting LRAT proof in memory. If the
+available memory is at premium, some changes could be made to do backwards
+checking in an online fashion, processing one proof step at a time.  Similarly,
+an LRAT proof line could be written to disk immediately after checking the
+corresponding lemma, with some postprocessing to fix the clause IDs.
 
 It might be possible to forego DRAT completely and directly generate LRAT
-in a solver which is already done by `varisat`. This removes the need for
-a complex checker at the cost of a larger proof artifact.
+in a solver which is already supported by `varisat`. This removes the need
+for a complex checker at the cost of a larger proof artifact.
 
 [^lrat-check]: <https://github.com/acl2/acl2/tree/master/books/projects/sat/lrat>
 [^rupee]: <https://github.com/arpj-rebola/rupee>

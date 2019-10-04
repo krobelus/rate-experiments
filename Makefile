@@ -10,12 +10,14 @@ fignos := $(error) pandoc-fignos using pipenv install and activate the pipenv vi
 placetable := $(error) pandoc-placetable using stack install
 
 build-dependencies:
-	@which pandoc-citeproc   >/dev/null || ( echo $(citeproc)   && exit 1 )
-	@which pandoc-fignos     >/dev/null || ( echo $(fignos)     && exit 1 )
-	@which pandoc-placetable >/dev/null || ( echo $(placetable) && exit 1 )
+	@:
+	@#which pandoc-citeproc   >/dev/null || ( echo $(citeproc)   && exit 1 )
+	@#which pandoc-fignos     >/dev/null || ( echo $(fignos)     && exit 1 )
+	@#which pandoc-placetable >/dev/null || ( echo $(placetable) && exit 1 )
 
 # pandoc := pandoc --filter pandoc-fignos --filter pandoc-citeproc --filter pandoc-placetable
-pandoc := pandoc --filter pandoc-fignos
+# pandoc := pandoc --filter pandoc-fignos
+pandoc := pandoc
 
 # thesis.markdown: thesis.md $(tables) $(plots) Makefile
 # 	$(pandoc) $< -o $@ -t gfm

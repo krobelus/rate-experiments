@@ -164,7 +164,7 @@ DRAT-Prüfern akzeptiert werden, jedoch bezüglich der DRAT-Spezifikation
 inkorrekt sind, da sie Eliminierungsinstruktionen enthalten, die
 nicht-redundante Informationen löschen.  Wir schlagen Korrekturen für
 prämierte SAT-Löser vor, wodurch diese in der Lage sind, Beweise ohne
-ebenjene destruktiven Eliminierungen zu generieren, die ergo im Sinne der
+ebenjene kontraproduktiven Eliminierungen zu generieren, die ergo im Sinne der
 Spezifikation korrekt sind. Dennoch können Unit-Eliminierungen in Beweisen
 in Anbetracht der Verwendung von fortgeschrittenen Vereinfachungstechniken
 wohl kaum ausgeschlossen werden, sofern der Löseaufwand nicht darunter leiden
@@ -172,7 +172,7 @@ soll.  Die Durchführung von Unit-Eliminierungen in Beweisprüfern kann viel
 Rechenzeit beanspruchen.  Wir haben den ersten wettbewerbsfähigen Prüfer
 implementiert, der Unit-Eliminierungen berücksichtigt and präsentieren
 unsere Versuchsergebnisse, die darauf hindeuten, dass der Rechenaufwand
-für das Überprüfen von einem durchschnittlichen Beweis mit oder ohne
+für das Überprüfen eines durchschnittlichen Beweises mit oder ohne
 Unit-Eliminierungen gleich ist.  Weiters führen wir das SICK-Format ein,
 das, vergleichsweise kleine und effizient überprüfbare Gegenbeispiele
 zu DRAT-Beweisen beschreibt. Indem wir diese Gegenbeispiele mit einem
