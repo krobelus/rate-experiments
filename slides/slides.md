@@ -91,7 +91,7 @@
 > - ... but an operational checker ignores those deletions, so
     verification succeeds.
 > - Why generate the deletions in the first place?<br/>
-    We provide patches to avoid the deletions!
+    We provide patches to avoid them!
 
 ## Checking Specified DRAT
 
@@ -114,7 +114,7 @@
 
 ## rate vs. other checkers
 
-![](https://github.com/krobelus/rate-experiments/slides/cactus.png)
+![](https://raw.githubusercontent.com/krobelus/rate-experiments/master/slides/cactus.png)
 
 ## Answering the Research Question
 
@@ -125,7 +125,7 @@
 
 ## Overhead of reason deletions
 
-![](https://github.com/krobelus/rate-experiments/slides/overhead.png)
+![](https://raw.githubusercontent.com/krobelus/rate-experiments/master/slides/overhead.png)
 
 ## Double Checking Incorrectness Results
 
