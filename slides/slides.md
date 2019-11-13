@@ -1,5 +1,5 @@
 ---
-title: On DRAT Proof Checking
+title: Complete DRAT Proof Checking
 author: Johannes Altmanninger
 date: November 13, 2019
 theme: CambridgeUS
@@ -16,7 +16,7 @@ theme: CambridgeUS
 
 ## DRAT Proofs
 
-- Used for verifying the SAT solvers' unsatisfiability results
+- Used for verifying SAT solvers' unsatisfiability results
 - Log of clause introductions and deletions
 - Proof checker can reproduce unsatisfiability
 - Introduced clauses are redundant (RAT)
@@ -51,16 +51,17 @@ $F \land \overline{x} \vdash_1 \bot$
 
 Resulting DRAT Proof: (**add** $x$)
 
-## Two flavors of DRAT
+## Two Flavors of DRAT
 
 - *Operational DRAT* ignores deletions of unit clauses
-    - Implemented by state-of-the-art checkers
+
+  Implemented by state-of-the-art checkers
     
 - *Specified DRAT* honors all deletions
 
 Operational DRAT is much easier to implement *efficiently*
 
-## Motivation for using specified DRAT
+## Motivation for Using Specified DRAT
 
 - Operational DRAT is insufficient to verify proofs with arbitrary deletions,
   which are used to support advanced inprocessing techniques
@@ -95,12 +96,10 @@ Is it possible to check specified DRAT as efficiently as operational DRAT?
 - Prerequisite for adoption of specified DRAT
 - Allows to detect rejections of valid proofs under operational DRAT
 
-Most solvers do not use inprocessing techniques whose verification
-  requires specified DRAT\dots
+Most solvers' proofs can be verified using operational DRAT just fine ---
+their proofs are correct after dropping any unit deletions
 
-\dots so they should not produce any unique reason deletions
-
-## Why are so many proofs incorrect under specfied DRAT?
+## Why are so many proofs incorrect under specified DRAT?
 
 DRUPMinisat-based solvers delete unique reason clauses that are still
 used to show unsatisfiability
@@ -115,11 +114,11 @@ We provide patches to avoid them!
 
 $F = xyz \land \overline{x}yz \land x\overline{y}z \land \overline{x}\,\overline{y}z \land \overline{z}$
 
-Clause $\overline{z}$ is satisfied, so it is deleted during simplification.
+Clause $\overline{z}$ is satisfied, so it is deleted during simplification
 
 Resulting DRAT Proof: (**del** $\overline{z}$, **add** $x$)
 
-Correct under operational DRAT, but incorrect under specified DRAT.
+Correct under operational DRAT, but incorrect under specified DRAT
 
 ## Checking Specified DRAT
 
@@ -144,12 +143,12 @@ aka "`rate` ain't trustworthy either"
 
 ## Answering the Research Question
 
-Is it possible to check specified DRAT as efficiently as operational DRAT?
+> Is it possible to check specified DRAT as efficiently as operational DRAT?
 
 - On the average instance, the cost is the same
 - Specified DRAT is usually more costly on proofs with many deletions
 
-## Overhead of reason deletions
+## Overhead of Reason Deletions
 
 \includegraphics[height=0.65\textwidth]{overhead.pdf}
 
